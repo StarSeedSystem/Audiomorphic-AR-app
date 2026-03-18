@@ -1,0 +1,25 @@
+{
+  "appId": "com.audiomorphic.vr",
+  "productName": "Audiomorphic VR",
+  "directories": {
+    "output": "release/macos"
+  },
+  "compression": "maximum",
+  "files": [
+    "dist/**/*",
+    "electron/**/*",
+    "package.json",
+    "audiomorphic-ar.png",
+    "!**/*.dmg",
+    "!**/*.apk",
+    "!**/*.zip",
+    "!release/**/*"
+  ],
+  "mac": {
+    "category": "public.app-category.music",
+    "target": "dmg",
+    "icon": "audiomorphic-ar.png",
+    "asar": true
+  }
+}
+

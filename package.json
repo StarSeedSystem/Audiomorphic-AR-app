@@ -1,0 +1,40 @@
+{
+  "name": "audiomorphic-vr",
+  "displayName": "Audiomorphic VR",
+  "description": "Audiomorphic VR Visualizer",
+  "author": "Audiomorphic",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "build:android": "vite build && npx cap sync android && cd android && ./gradlew assembleRelease && cd .. && cp android/app/build/outputs/apk/release/app-release.apk dist/audiomorphic.apk && zip -9 -j dist/audiomorphic-android.zip dist/audiomorphic.apk",
+    "build:macos": "vite build && electron-builder && cp release/macos/*.dmg dist/ && zip -9 -j dist/audiomorphic-mac.zip release/macos/*.dmg"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.5.0",
+    "@react-three/postprocessing": "^3.0.4",
+    "@react-three/xr": "^6.6.29",
+    "lucide-react": "^0.560.0",
+    "postprocessing": "^6.38.3",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "three": "^0.183.2"
+  },
+  "devDependencies": {
+    "electron": "^34.3.0",
+    "@capacitor/cli": "^7.0.0",
+    "@types/node": "^22.14.0",
+    "@types/three": "^0.183.1",
+    "@vitejs/plugin-react": "^5.0.0",
+    "electron-builder": "^25.1.8",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
+  }
+}
