@@ -14,7 +14,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({ params, setParams, audioAct
   const [selectedSgEditMode, setSelectedSgEditMode] = useState<SacredGeometryMode>('flowerOfLife');
 
   const handleInstallClick = () => {
-    window.open("https://drive.google.com/drive/folders/1bZ8yvbWr7r3eJUdKIQCSSuu-p398mAkn?usp=sharing", "_blank");
+    window.open("https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/tag/v1.1.0", "_blank");
   };
 
   useEffect(() => {
@@ -387,7 +387,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({ params, setParams, audioAct
               {isFullscreen ? 'Salir' : 'Pantalla Completa'}
             </button>
             <a 
-              href="https://github.com/alexbordongarrigos/Audiomorphic-AR-app.git"
+              href="https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/tag/v1.1.0"
               target="_blank"
               rel="noopener noreferrer"
               className="liquid-bubble px-6 py-3 font-bold flex items-center gap-2 text-emerald-300"

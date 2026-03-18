@@ -6,6 +6,12 @@
 
 This contains everything you need to run your app locally.
 
+## Descargar Instaladores
+- **Android APK**: [Descargar .apk (5.2MB)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.1.0/audiomorphic.apk)
+- **macOS DMG**: [Descargar .dmg (144MB)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.1.0/Audiomorphic%20VR-1.0.0-arm64.dmg)
+
+Ver todas las versiones en [GitHub Releases](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases).
+
 View your app in AI Studio: https://ai.studio/apps/5d54fdf0-acd8-4a8a-b499-b9adf7af85a8
 
 ## Run Locally
