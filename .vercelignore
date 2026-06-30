@@ -1,0 +1,18 @@
+# Native builds, installers and heavy artifacts — not needed for the Vite web deploy
+android
+ios
+electron
+instaladores
+final_installers(anterior)
+final_installers
+release
+dist
+node_modules
+migrated_prompt_history
+audiomorphic-visualizer-ar-app
+*.apk
+*.dmg
+*.zip
+*.keystore
+*.jks
+build-android.sh
