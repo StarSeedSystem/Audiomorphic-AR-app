@@ -1,9 +1,18 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Crown, HelpCircle } from 'lucide-react';
 import ControlPanel from './components/ControlPanel';
 import VisualizerCanvas from './components/VisualizerCanvas';
 import VisualizerVR from './components/VisualizerVR';
+import SubscriptionModal from './components/SubscriptionModal';
+import IntroGuide from './components/IntroGuide';
+import SystemGuide from './components/SystemGuide';
 import { VisualizerParams, DEFAULT_PARAMS, GeometryInfo, GeometryRegime } from './types';
 import { useAudioAnalyzer } from './hooks/useAudioAnalyzer';
+import { useStarSeedIdentity } from './hooks/useStarSeedIdentity';
+import { useSubscription } from './hooks/useSubscription';
+
+// localStorage flag: the smart intro guide is shown only the first time.
+const INTRO_SEEN_KEY = 'audiomorphic.intro.seen.v1';
 
 // --- TREATISE DATA: GENESIS & MUSIC ---
 const GENESIS_STAGES = [
@@ -94,7 +103,39 @@ const App: React.FC = () => {
   const [params, setParams] = useState<VisualizerParams>(DEFAULT_PARAMS);
   const { isActive, startAudio, stopAudio, getAudioMetrics } = useAudioAnalyzer();
   const [controlsVisible, setControlsVisible] = useState(true);
-  
+
+  // --- IDENTITY + SUBSCRIPTION (tasks #44/#45/#46) ---
+  const starseed = useStarSeedIdentity();
+  const subscription = useSubscription(starseed.isLoggedIn);
+
+  const [showSubscription, setShowSubscription] = useState(false);
+  const [showSystemGuide, setShowSystemGuide] = useState(false);
+  const [showIntro, setShowIntro] = useState(false);
+
+  // Smart intro: show to NEW or NOT-logged-in users; never block returners.
+  useEffect(() => {
+    try {
+      const seen = window.localStorage.getItem(INTRO_SEEN_KEY) === 'true';
+      if (!seen || !starseed.isLoggedIn) {
+        // Small delay so the visualizer paints first.
+        const t = setTimeout(() => setShowIntro(true), 600);
+        return () => clearTimeout(t);
+      }
+    } catch {
+      // If storage is unavailable, show the intro once defensively.
+      const t = setTimeout(() => setShowIntro(true), 600);
+      return () => clearTimeout(t);
+    }
+  }, [starseed.isLoggedIn]);
+
+  const markIntroSeen = useCallback(() => {
+    try {
+      window.localStorage.setItem(INTRO_SEEN_KEY, 'true');
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   // Logic Refs
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const animationFrameRef = useRef<number>(0);
@@ -336,6 +377,41 @@ const App: React.FC = () => {
       </div>
       )}
 
+      {/* --- COMPACT TOOLBAR: subscription (crown) + system guide (?) --- */}
+      <div
+        className="absolute top-6 left-6 z-40 flex items-center gap-3 transition-opacity duration-500"
+        style={{ opacity: controlsVisible ? 1 : 0.4 }}
+      >
+        <button
+          onClick={() => setShowSubscription(true)}
+          aria-label="Suscripción y planes"
+          title="Suscripción y planes"
+          className="group flex items-center gap-2 px-3.5 py-2 rounded-full border border-amber-500/40 bg-amber-500/10 text-amber-200 backdrop-blur-md hover:bg-amber-500/20 hover:border-amber-400/60 transition-all shadow-[0_0_18px_rgba(245,158,11,0.18)]"
+        >
+          <Crown className="w-4 h-4 drop-shadow-[0_0_6px_rgba(245,158,11,0.7)]" />
+          <span className="text-xs font-bold uppercase tracking-wider hidden sm:inline">
+            {subscription.tier.id === 'free' && subscription.state.viaStarSeed
+              ? 'StarSeed'
+              : subscription.tier.id === 'premium'
+                ? 'Premium'
+                : subscription.tier.id === 'starseed'
+                  ? 'StarSeed'
+                  : subscription.tier.id === 'code'
+                    ? 'Código'
+                    : 'Planes'}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setShowSystemGuide(true)}
+          aria-label="Guía completa"
+          title="Guía completa"
+          className="flex items-center justify-center w-9 h-9 rounded-full border border-cyan-500/40 bg-cyan-500/10 text-cyan-200 backdrop-blur-md hover:bg-cyan-500/20 hover:border-cyan-400/60 transition-all shadow-[0_0_18px_rgba(0,242,254,0.15)]"
+        >
+          <HelpCircle className="w-4.5 h-4.5" />
+        </button>
+      </div>
+
       {!params.vrMode && (
         <div 
           className={`
@@ -357,6 +433,31 @@ const App: React.FC = () => {
           />
         </div>
       )}
+
+      {/* --- #44 Subscription modal --- */}
+      <SubscriptionModal
+        open={showSubscription}
+        onClose={() => setShowSubscription(false)}
+        tiers={subscription.tiers}
+        currentPlan={subscription.state.plan}
+        viaStarSeed={subscription.state.viaStarSeed}
+        redeemedCode={subscription.state.redeemedCode}
+        hasStarSeed={starseed.isLoggedIn}
+        starSeedName={starseed.displayName}
+        onSelectPlan={subscription.selectPlan}
+        onRedeemCode={subscription.redeemCode}
+      />
+
+      {/* --- #45 Smart intro guide (first run / no-login) --- */}
+      <IntroGuide
+        open={showIntro}
+        onClose={() => setShowIntro(false)}
+        onComplete={markIntroSeen}
+        onOpenSystemGuide={() => setShowSystemGuide(true)}
+      />
+
+      {/* --- #46 Full system guide (anytime) --- */}
+      <SystemGuide open={showSystemGuide} onClose={() => setShowSystemGuide(false)} />
     </div>
   );
 };
