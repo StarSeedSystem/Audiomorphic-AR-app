@@ -13,3 +13,10 @@ root.render(
     <App />
   </React.StrictMode>
 );
+
+// PWA: registro del Service Worker (aditivo · defensivo · solo navegador con soporte y https).
+if (typeof window !== 'undefined' && 'serviceWorker' in navigator && window.location.protocol === 'https:') {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js', { scope: './' }).catch((e) => console.warn('SW no registrado:', e));
+  });
+}
