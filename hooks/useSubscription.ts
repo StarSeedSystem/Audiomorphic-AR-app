@@ -1,30 +1,27 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ThankYouCardRecord } from '../lib/starseedDb';
 
 /**
  * useSubscription
  * ---------------------------------------------------------------------------
- * Functional subscription state for Audiomorphic. There is NO real billing
- * backend, so this hook implements a fully working UI-layer subscription:
+ * Sistema de Donaciones Exclusivas Opcionales & Reconocimiento (sin bloqueo).
  *
- *   - Tiers: free (StarSeed OS), code, starseed, premium.
- *   - Persists the active plan in localStorage under
- *     `audiomorphic.subscription.v1`.
- *   - Redeem-code flow: validates format, accepts a few hardcoded demo codes
- *     and any code starting with `SS-` (StarSeed ecosystem codes).
- *
- * All access to localStorage is guarded so it never throws (Vite SPA; no SSR).
+ * Transforma las antiguas opciones de suscripción de pago en donaciones voluntarias:
+ *   - Los mismos importes y opciones (0€, Código, StarSeed, 4,99€).
+ *   - NINGUNA opción bloquea el acceso. El visualizador, micrófono, AR/VR y filtros
+ *     son 100% libres y soberanos para todos los usuarios.
+ *   - Al donar u optar por cualquier nivel, se otorga una Tarjeta Virtual 3D
+ *     de agradecimiento dinámicamente animada.
  */
 
 export type PlanId = 'free' | 'code' | 'starseed' | 'premium';
 
 export interface SubscriptionState {
   plan: PlanId;
-  /** When the plan was selected/redeemed (ISO string). */
   since: string;
-  /** The code that was redeemed, if the plan came from a code. */
   redeemedCode?: string;
-  /** True when the plan was granted because a StarSeed session was present. */
   viaStarSeed?: boolean;
+  totalDonated?: number;
 }
 
 export interface TierFeature {
@@ -37,11 +34,13 @@ export interface TierDefinition {
   name: string;
   tagline: string;
   price: string;
+  amountNumber: number;
   accent: 'cyan' | 'emerald' | 'purple' | 'amber';
+  cardTheme: 'gold' | 'iridescent' | 'holographic' | 'celestial';
   features: TierFeature[];
 }
 
-export const SUBSCRIPTION_STORAGE_KEY = 'audiomorphic.subscription.v1';
+export const SUBSCRIPTION_STORAGE_KEY = 'audiomorphic.subscription.v2';
 
 const DEMO_CODES: Record<string, PlanId> = {
   'AUDIO-PREMIUM': 'premium',
@@ -51,63 +50,71 @@ const DEMO_CODES: Record<string, PlanId> = {
   'NEON-DREAM': 'code',
 };
 
-// Order matters for display (lowest → highest).
+// All features are included for all tiers - no lockouts!
 export const TIERS: TierDefinition[] = [
   {
     id: 'free',
-    name: 'Gratis vía StarSeed OS',
-    tagline: 'Gratis con tu cuenta StarSeed',
+    name: 'Semilla Libre',
+    tagline: 'Acceso universal y libre',
     price: '0€',
+    amountNumber: 0,
     accent: 'emerald',
+    cardTheme: 'celestial',
     features: [
-      { label: 'Visualizador completo y micrófono', included: true },
-      { label: 'Piloto Automático (Deriva, Armónico)', included: true },
-      { label: 'Génesis Geométrico básico', included: true },
-      { label: 'Modos AR / VR experimentales', included: true },
-      { label: 'Filtros AR premium', included: false },
-      { label: 'Soporte prioritario', included: false },
+      { label: 'Visualizador completo y micrófono en vivo', included: true },
+      { label: 'Piloto Automático (Deriva, Armónico, Génesis)', included: true },
+      { label: 'Geometría Sagrada (Flor de la Vida, Metatrón, etc.)', included: true },
+      { label: 'Modos 3D VR y Realidad Aumentada (AR)', included: true },
+      { label: 'Todos los filtros psicodélicos y efectos visuales', included: true },
+      { label: 'Tarjeta de Agradecimiento de la Comunidad', included: true },
     ],
   },
   {
     id: 'code',
-    name: 'Código',
-    tagline: 'Canjea un código de acceso',
+    name: 'Código Comunitario',
+    tagline: 'Canjea un código de la comunidad',
     price: 'Código',
+    amountNumber: 0,
     accent: 'cyan',
+    cardTheme: 'holographic',
     features: [
-      { label: 'Todo lo de Gratis', included: true },
-      { label: 'Desbloqueo según el código canjeado', included: true },
-      { label: 'Acceso a betas y campañas', included: true },
-      { label: 'Filtros AR premium (si el código lo incluye)', included: true },
-      { label: 'Soporte prioritario', included: false },
+      { label: 'Visualizador completo 100% desbloqueado', included: true },
+      { label: 'Tarjeta Holográfica 3D exclusiva de Canje', included: true },
+      { label: 'Guardado de tarjeta en biblioteca personal', included: true },
+      { label: 'Presets de la comunidad compartidos', included: true },
+      { label: 'Sincronización con la red StarSeed', included: true },
     ],
   },
   {
     id: 'starseed',
-    name: 'StarSeed',
-    tagline: 'Plan vinculado al ecosistema',
+    name: 'StarSeed Ecosistema',
+    tagline: 'Donación & Vínculo Soberano',
     price: 'Ecosistema',
+    amountNumber: 0,
     accent: 'purple',
+    cardTheme: 'iridescent',
     features: [
-      { label: 'Todo lo de Gratis', included: true },
-      { label: 'Sincronización con el ecosistema StarSeed', included: true },
-      { label: 'Presets compartidos entre apps StarSeed', included: true },
-      { label: 'Génesis Geométrico avanzado', included: true },
-      { label: 'Filtros AR premium', included: true },
+      { label: 'Visualizador completo 100% desbloqueado', included: true },
+      { label: 'Tarjeta 3D Tornasol & Iridiscente interactiva', included: true },
+      { label: 'Sincronización en tiempo real con StarSeed OS', included: true },
+      { label: 'Biblioteca compartida con Omnifrecuencias y OS', included: true },
+      { label: 'Ajuste y memoria automática de carpetas', included: true },
     ],
   },
   {
     id: 'premium',
-    name: 'Premium',
-    tagline: 'Todo desbloqueado',
-    price: '4,99€/mes',
+    name: 'Donación Cósmica',
+    tagline: 'Apoyo voluntario a la investigación sonora',
+    price: '4,99€',
+    amountNumber: 4.99,
     accent: 'amber',
+    cardTheme: 'gold',
     features: [
-      { label: 'Todo lo de StarSeed', included: true },
-      { label: 'Todos los filtros AR y efectos', included: true },
-      { label: 'Exportación y grabación (próximamente)', included: true },
-      { label: 'Resolución y detalle máximos', included: true },
-      { label: 'Soporte prioritario', included: true },
+      { label: 'Visualizador completo 100% desbloqueado', included: true },
+      { label: 'Tarjeta Virtual de Oro Iridiscente 3D de Mecenas', included: true },
+      { label: 'Efectos holográficos reactivos al giroscopio', included: true },
+      { label: 'Guardado permanente en la Biblioteca Soberana', included: true },
+      { label: 'Agradecimiento especial en el Manifiesto StarSeed', included: true },
     ],
   },
 ];
@@ -117,7 +124,7 @@ export const getTier = (plan: PlanId): TierDefinition =>
 
 const DEFAULT_STATE: SubscriptionState = {
   plan: 'free',
-  since: new Date(0).toISOString(),
+  since: new Date().toISOString(),
   viaStarSeed: false,
 };
 
@@ -132,7 +139,7 @@ const readState = (): SubscriptionState | null => {
       if (validPlans.includes(parsed.plan)) return parsed as SubscriptionState;
     }
   } catch {
-    /* ignore malformed/inaccessible storage */
+    /* ignore */
   }
   return null;
 };
@@ -141,7 +148,7 @@ const writeState = (state: SubscriptionState): void => {
   try {
     window.localStorage.setItem(SUBSCRIPTION_STORAGE_KEY, JSON.stringify(state));
   } catch {
-    /* ignore quota/privacy errors */
+    /* ignore */
   }
 };
 
@@ -149,13 +156,12 @@ export interface RedeemResult {
   ok: boolean;
   message: string;
   plan?: PlanId;
+  card?: ThankYouCardRecord;
 }
 
-/** Validate a code's *format* (does not check redeemability). */
 export const isValidCodeFormat = (raw: string): boolean => {
   const code = raw.trim().toUpperCase();
-  if (code.length < 4 || code.length > 32) return false;
-  // Letters, numbers and dashes only.
+  if (code.length < 3 || code.length > 32) return false;
   return /^[A-Z0-9-]+$/.test(code);
 };
 
@@ -163,18 +169,19 @@ export interface UseSubscriptionResult {
   state: SubscriptionState;
   tier: TierDefinition;
   tiers: TierDefinition[];
-  /** Whether a StarSeed identity is currently linked (drives free-plan UX). */
   hasStarSeed: boolean;
-  selectPlan: (plan: PlanId) => void;
-  redeemCode: (raw: string) => RedeemResult;
+  selectPlan: (plan: PlanId, donorName?: string) => ThankYouCardRecord;
+  makeDonation: (plan: PlanId, donorName?: string, customAmount?: string) => ThankYouCardRecord;
+  redeemCode: (raw: string, donorName?: string) => RedeemResult;
   resetToFree: () => void;
 }
 
-export const useSubscription = (hasStarSeed: boolean = false): UseSubscriptionResult => {
+export const useSubscription = (
+  hasStarSeed: boolean = false,
+  onCardIssued?: (card: Omit<ThankYouCardRecord, 'id' | 'issuedAt'>) => ThankYouCardRecord
+): UseSubscriptionResult => {
   const [state, setState] = useState<SubscriptionState>(() => readState() || DEFAULT_STATE);
 
-  // If a StarSeed session appears and the user is still on the default free
-  // plan, flag the free plan as granted via StarSeed (prominent UX).
   useEffect(() => {
     if (hasStarSeed && state.plan === 'free' && !state.viaStarSeed) {
       const next: SubscriptionState = { ...state, viaStarSeed: true, since: new Date().toISOString() };
@@ -188,21 +195,68 @@ export const useSubscription = (hasStarSeed: boolean = false): UseSubscriptionRe
     writeState(next);
   }, []);
 
+  const createCardForPlan = useCallback(
+    (plan: PlanId, donorName: string = 'Viajero Cósmico', customAmount?: string): ThankYouCardRecord => {
+      const t = getTier(plan);
+      const cardDraft = {
+        donorName,
+        tierId: plan,
+        tierName: t.name,
+        amount: customAmount || t.price,
+        folderPath: 'Biblioteca/Donaciones y Agradecimientos',
+        cardTheme: t.cardTheme,
+        message:
+          plan === 'premium'
+            ? 'Gracias infinitas por tu apoyo generoso y voluntario a la investigación de Audiomorphic y StarSeed OS.'
+            : plan === 'starseed'
+            ? 'Gracias por formar parte viva del ecosistema StarSeed y resonar con la conciencia armónica.'
+            : plan === 'code'
+            ? 'Gracias por activar tu código de comunidad y expandir la geometría sagrada.'
+            : 'Bienvenido a la comunidad abierta de Audiomorphic. Tu presencia hace resonar la red.',
+      };
+
+      if (onCardIssued) {
+        return onCardIssued(cardDraft);
+      }
+
+      return {
+        ...cardDraft,
+        id: 'card-' + Date.now(),
+        issuedAt: new Date().toISOString(),
+      };
+    },
+    [onCardIssued]
+  );
+
   const selectPlan = useCallback(
-    (plan: PlanId) => {
+    (plan: PlanId, donorName?: string): ThankYouCardRecord => {
       const next: SubscriptionState = {
         plan,
         since: new Date().toISOString(),
-        viaStarSeed: plan === 'free' ? hasStarSeed : false,
+        viaStarSeed: plan === 'starseed' || (plan === 'free' && hasStarSeed),
         redeemedCode: undefined,
       };
       persist(next);
+      return createCardForPlan(plan, donorName);
     },
-    [hasStarSeed, persist]
+    [hasStarSeed, persist, createCardForPlan]
+  );
+
+  const makeDonation = useCallback(
+    (plan: PlanId, donorName?: string, customAmount?: string): ThankYouCardRecord => {
+      const next: SubscriptionState = {
+        ...state,
+        plan,
+        since: new Date().toISOString(),
+      };
+      persist(next);
+      return createCardForPlan(plan, donorName, customAmount);
+    },
+    [state, persist, createCardForPlan]
   );
 
   const redeemCode = useCallback(
-    (raw: string): RedeemResult => {
+    (raw: string, donorName?: string): RedeemResult => {
       const code = raw.trim().toUpperCase();
       if (!code) {
         return { ok: false, message: 'Introduce un código.' };
@@ -210,21 +264,16 @@ export const useSubscription = (hasStarSeed: boolean = false): UseSubscriptionRe
       if (!isValidCodeFormat(code)) {
         return {
           ok: false,
-          message: 'Formato inválido. Usa letras, números y guiones (4–32 caracteres).',
+          message: 'Formato inválido. Usa letras, números y guiones (3–32 caracteres).',
         };
       }
 
-      let grantedPlan: PlanId | null = null;
+      let grantedPlan: PlanId = 'code';
 
       if (DEMO_CODES[code]) {
         grantedPlan = DEMO_CODES[code];
-      } else if (code.startsWith('SS-')) {
-        // StarSeed ecosystem codes grant the StarSeed plan.
+      } else if (code.startsWith('SS-') || code.startsWith('STAR-')) {
         grantedPlan = 'starseed';
-      }
-
-      if (!grantedPlan) {
-        return { ok: false, message: 'Código no reconocido. Verifica e inténtalo de nuevo.' };
       }
 
       const next: SubscriptionState = {
@@ -235,10 +284,17 @@ export const useSubscription = (hasStarSeed: boolean = false): UseSubscriptionRe
       };
       persist(next);
 
+      const card = createCardForPlan(grantedPlan, donorName || `Donador #${code.slice(-4)}`);
       const tierName = getTier(grantedPlan).name;
-      return { ok: true, message: `¡Código canjeado! Plan activo: ${tierName}.`, plan: grantedPlan };
+
+      return {
+        ok: true,
+        message: `¡Código canjeado con éxito! Se ha generado tu Tarjeta 3D (${tierName}).`,
+        plan: grantedPlan,
+        card,
+      };
     },
-    [persist]
+    [persist, createCardForPlan]
   );
 
   const resetToFree = useCallback(() => {
@@ -258,6 +314,7 @@ export const useSubscription = (hasStarSeed: boolean = false): UseSubscriptionRe
     tiers: TIERS,
     hasStarSeed,
     selectPlan,
+    makeDonation,
     redeemCode,
     resetToFree,
   };

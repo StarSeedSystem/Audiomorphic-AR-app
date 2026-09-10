@@ -1,17 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { VisualizerParams, SacredGeometryMode, SacredGeometrySettings } from '../types';
-import { Activity, Zap, Maximize, Minimize, RotateCw, Palette, Target, Music, BrainCircuit, Wind, Droplets, Waves, Shuffle, Sprout, Glasses, Download } from 'lucide-react';
+import { Activity, Zap, Maximize, Minimize, RotateCw, Palette, Target, Music, BrainCircuit, Wind, Droplets, Waves, Shuffle, Sprout, Glasses, Download, Bookmark, ChevronUp, ChevronDown, Plus, Info, Check } from 'lucide-react';
+import { AudiomorphicPresetRecord } from '../lib/starseedDb';
 
 interface ControlPanelProps {
   params: VisualizerParams;
   setParams: React.Dispatch<React.SetStateAction<VisualizerParams>>;
   audioActive: boolean;
   toggleAudio: () => void;
+  presets?: AudiomorphicPresetRecord[];
+  onApplyPreset?: (preset: AudiomorphicPresetRecord) => void;
+  onReorderPresets?: (orderedIds: string[]) => void;
+  onSaveCurrentAsPreset?: (title: string, category: 'genesis' | 'harmonic' | 'drift' | 'quantum' | 'community' | 'custom', folder?: string) => void;
+  onOpenInfoHub?: () => void;
 }
 
-const ControlPanel: React.FC<ControlPanelProps> = ({ params, setParams, audioActive, toggleAudio }) => {
+const ControlPanel: React.FC<ControlPanelProps> = ({
+  params,
+  setParams,
+  audioActive,
+  toggleAudio,
+  presets = [],
+  onApplyPreset,
+  onReorderPresets,
+  onSaveCurrentAsPreset,
+  onOpenInfoHub,
+}) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [selectedSgEditMode, setSelectedSgEditMode] = useState<SacredGeometryMode>('flowerOfLife');
+  const [isSavingPreset, setIsSavingPreset] = useState(false);
+  const [newPresetTitle, setNewPresetTitle] = useState('');
+  const [newPresetCategory, setNewPresetCategory] = useState<'genesis' | 'harmonic' | 'drift' | 'quantum' | 'custom'>('custom');
+  const [newPresetFolder, setNewPresetFolder] = useState('Biblioteca/Mis Presets');
+  const [activePresetId, setActivePresetId] = useState<string | null>(null);
 
   const handleInstallClick = () => {
     window.open("https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/tag/v1.1.0", "_blank");
@@ -73,7 +94,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({ params, setParams, audioAct
         <input
           type="number"
           step="any"
-          value={typeof params[key] === 'number' ? Number(params[key]).toFixed(3) : params[key] as number}
+          value={typeof params[key] === 'number' ? Number(params[key]).toFixed(3) : (params[key] as unknown as number)}
           onChange={(e) => handleChange(key, parseFloat(e.target.value))}
           disabled={disabled}
           className="font-mono text-xs text-cyan-200 bg-black/30 border border-white/10 rounded-lg px-2 py-1 focus:border-cyan-400 outline-none text-right w-20 hover:border-white/30 transition-all shadow-inner"
@@ -84,7 +105,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({ params, setParams, audioAct
         min={min}
         max={max}
         step={step}
-        value={params[key] as number}
+        value={params[key] as unknown as number}
         onChange={(e) => handleChange(key, parseFloat(e.target.value))}
         disabled={disabled}
         className="liquid-slider"
@@ -395,11 +416,198 @@ const ControlPanel: React.FC<ControlPanelProps> = ({ params, setParams, audioAct
               <Download className="w-5 h-5" />
               Instalar
             </a>
+            {onOpenInfoHub && (
+              <button
+                type="button"
+                onClick={onOpenInfoHub}
+                className="liquid-bubble px-6 py-3 font-bold flex items-center gap-2 text-cyan-300 shadow-[0_0_20px_rgba(0,242,254,0.25)]"
+                title="Abrir Centro de Información & Red StarSeed"
+              >
+                <Info className="w-5 h-5" />
+                Información
+              </button>
+            )}
           </div>
         </div>
 
         <div className="p-8 overflow-y-auto flex-1 liquid-scroll">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+            {/* Presets de Ajustes Automáticos (Librería Soberana) */}
+            <div className="col-span-1 lg:col-span-2 liquid-section border-cyan-500/30 shadow-[inset_0_0_30px_rgba(0,242,254,0.05)]">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-5">
+                <div>
+                  <h3 className="text-xl font-bold neon-text flex items-center gap-2.5">
+                    <Bookmark className="w-6 h-6 text-cyan-400" />
+                    Presets de Ajustes Automáticos
+                  </h3>
+                  <p className="text-xs text-gray-300 mt-1">
+                    Configuraciones sincronizadas con tu cuenta y la librería de StarSeed OS. Ajusta el orden a tu gusto con las flechas.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2.5 w-full sm:w-auto">
+                  <button
+                    type="button"
+                    onClick={() => setIsSavingPreset(!isSavingPreset)}
+                    className="flex-1 sm:flex-none liquid-bubble px-4 py-2 text-xs font-bold uppercase tracking-wider text-emerald-300 flex items-center justify-center gap-1.5"
+                  >
+                    <Plus className="w-4 h-4" /> Guardar Actual
+                  </button>
+                  {onOpenInfoHub && (
+                    <button
+                      type="button"
+                      onClick={onOpenInfoHub}
+                      className="flex-1 sm:flex-none liquid-bubble px-4 py-2 text-xs font-bold uppercase tracking-wider text-cyan-300 flex items-center justify-center gap-1.5"
+                    >
+                      Ver Librería Completa
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Save preset inline drawer */}
+              {isSavingPreset && (
+                <div className="mb-6 p-4 rounded-2xl bg-black/40 border border-emerald-500/30 backdrop-blur-md animate-in fade-in duration-300 space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold uppercase tracking-wider text-emerald-300">
+                      Guardar configuración actual en tu biblioteca
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsSavingPreset(false)}
+                      className="text-gray-400 hover:text-white text-xs"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <input
+                      type="text"
+                      placeholder="Nombre del preset..."
+                      value={newPresetTitle}
+                      onChange={(e) => setNewPresetTitle(e.target.value)}
+                      className="bg-black/50 border border-white/15 rounded-xl px-3 py-2 text-xs text-white placeholder-gray-500 outline-none focus:border-emerald-400"
+                    />
+                    <select
+                      value={newPresetCategory}
+                      onChange={(e) => setNewPresetCategory(e.target.value as any)}
+                      className="bg-black/50 border border-white/15 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-emerald-400"
+                    >
+                      <option value="custom">Categoría: Personal</option>
+                      <option value="genesis">Categoría: Génesis Sagrado</option>
+                      <option value="harmonic">Categoría: Armónicos</option>
+                      <option value="drift">Categoría: Deriva</option>
+                      <option value="quantum">Categoría: Cuántica</option>
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (newPresetTitle.trim() && onSaveCurrentAsPreset) {
+                          onSaveCurrentAsPreset(newPresetTitle.trim(), newPresetCategory, newPresetFolder);
+                          setNewPresetTitle('');
+                          setIsSavingPreset(false);
+                        }
+                      }}
+                      className="py-2 px-4 rounded-xl bg-emerald-500/30 border border-emerald-400/50 text-emerald-200 text-xs font-bold uppercase tracking-wider hover:bg-emerald-500/40"
+                    >
+                      Confirmar y Guardar
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Presets List with adjustable ordering */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                {presets.slice(0, 9).map((preset, index) => {
+                  const isActive = activePresetId === preset.id;
+                  return (
+                    <div
+                      key={preset.id}
+                      className={`p-3.5 rounded-2xl border transition-all flex flex-col justify-between ${
+                        isActive
+                          ? 'bg-cyan-500/15 border-cyan-400/50 shadow-[0_0_20px_rgba(0,242,254,0.2)]'
+                          : 'bg-white/5 border-white/10 hover:border-white/20'
+                      }`}
+                    >
+                      <div>
+                        <div className="flex justify-between items-start mb-1">
+                          <span className="text-xs font-bold text-white truncate max-w-[170px]">
+                            {preset.title}
+                          </span>
+                          <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-white/10 text-cyan-300 border border-white/10">
+                            {preset.category}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-gray-300 line-clamp-2 leading-relaxed mb-3">
+                          {preset.description}
+                        </p>
+                      </div>
+
+                      <div className="flex justify-between items-center pt-2 border-t border-white/10 text-xs">
+                        {/* Up/Down order adjustment buttons */}
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            disabled={index === 0}
+                            title="Subir prioridad en el menú"
+                            onClick={() => {
+                              if (index > 0 && onReorderPresets) {
+                                const newOrder = presets.map((p) => p.id);
+                                const temp = newOrder[index];
+                                newOrder[index] = newOrder[index - 1];
+                                newOrder[index - 1] = temp;
+                                onReorderPresets(newOrder);
+                              }
+                            }}
+                            className="p-1 rounded-lg bg-black/40 hover:bg-white/10 text-gray-400 hover:text-white disabled:opacity-30 disabled:pointer-events-none"
+                          >
+                            <ChevronUp className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={index === presets.length - 1}
+                            title="Bajar prioridad en el menú"
+                            onClick={() => {
+                              if (index < presets.length - 1 && onReorderPresets) {
+                                const newOrder = presets.map((p) => p.id);
+                                const temp = newOrder[index];
+                                newOrder[index] = newOrder[index + 1];
+                                newOrder[index + 1] = temp;
+                                onReorderPresets(newOrder);
+                              }
+                            }}
+                            className="p-1 rounded-lg bg-black/40 hover:bg-white/10 text-gray-400 hover:text-white disabled:opacity-30 disabled:pointer-events-none"
+                          >
+                            <ChevronDown className="w-3.5 h-3.5" />
+                          </button>
+                          <span className="text-[10px] text-gray-400 font-mono ml-0.5">#{index + 1}</span>
+                        </div>
+
+                        {/* Apply button */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (onApplyPreset) {
+                              onApplyPreset(preset);
+                              setActivePresetId(preset.id);
+                            }
+                          }}
+                          className={`px-3 py-1 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1 ${
+                            isActive
+                              ? 'bg-cyan-500/30 text-cyan-200 border border-cyan-400/50'
+                              : 'bg-white/10 text-white hover:bg-white/20 border border-white/15'
+                          }`}
+                        >
+                          {isActive ? <Check className="w-3 h-3" /> : null}
+                          {isActive ? 'Activo' : 'Aplicar'}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
             
             {/* Auto Pilot Section */}
             <div className="liquid-section">

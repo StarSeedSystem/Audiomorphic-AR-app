@@ -1,15 +1,17 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Crown, HelpCircle } from 'lucide-react';
+import { HelpCircle, Info, Bookmark, Heart } from 'lucide-react';
 import ControlPanel from './components/ControlPanel';
 import VisualizerCanvas from './components/VisualizerCanvas';
 import VisualizerVR from './components/VisualizerVR';
-import SubscriptionModal from './components/SubscriptionModal';
 import IntroGuide from './components/IntroGuide';
 import SystemGuide from './components/SystemGuide';
+import InfoHubModal, { InfoHubTab } from './components/InfoHubModal';
 import { VisualizerParams, DEFAULT_PARAMS, GeometryInfo, GeometryRegime } from './types';
 import { useAudioAnalyzer } from './hooks/useAudioAnalyzer';
 import { useStarSeedIdentity } from './hooks/useStarSeedIdentity';
 import { useSubscription } from './hooks/useSubscription';
+import { useStarSeedSync } from './hooks/useStarSeedSync';
+import { AudiomorphicPresetRecord } from './lib/starseedDb';
 
 // localStorage flag: the smart intro guide is shown only the first time.
 const INTRO_SEEN_KEY = 'audiomorphic.intro.seen.v1';
@@ -104,13 +106,63 @@ const App: React.FC = () => {
   const { isActive, startAudio, stopAudio, getAudioMetrics } = useAudioAnalyzer();
   const [controlsVisible, setControlsVisible] = useState(true);
 
-  // --- IDENTITY + SUBSCRIPTION (tasks #44/#45/#46) ---
+  // --- IDENTITY + SYNC + DONATIONS (Tasks #44/#45/#46 + Hub Soberano) ---
   const starseed = useStarSeedIdentity();
-  const subscription = useSubscription(starseed.isLoggedIn);
+  const sync = useStarSeedSync(starseed.session?.id);
+  const subscription = useSubscription(starseed.isLoggedIn, sync.addThankYouCard);
 
+  const [showInfoHub, setShowInfoHub] = useState(false);
+  const [infoHubInitialTab, setInfoHubInitialTab] = useState<InfoHubTab>('guide');
   const [showSubscription, setShowSubscription] = useState(false);
   const [showSystemGuide, setShowSystemGuide] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
+
+  const handleApplyPreset = useCallback((preset: AudiomorphicPresetRecord) => {
+    if (!preset.params) return;
+    setParams((prev) => ({
+      ...prev,
+      ...preset.params,
+    }));
+  }, []);
+
+  const handleSaveCurrentAsPreset = useCallback(
+    (title: string, category: 'genesis' | 'harmonic' | 'drift' | 'quantum' | 'community' | 'custom', folder?: string) => {
+      sync.savePreset({
+        title,
+        description: `Configuración sonora guardada (${new Date().toLocaleDateString()})`,
+        category,
+        author: {
+          id: starseed.session?.id,
+          name: starseed.displayName || 'Mecenas Local',
+          handle: starseed.handle || undefined,
+        },
+        isOfficial: false,
+        isPublic: false,
+        folderPath: folder || 'Biblioteca/Mis Presets',
+        params: {
+          k: params.k,
+          psi: params.psi,
+          autoPilot: params.autoPilot,
+          autoPilotMode: params.autoPilotMode,
+          genesisStage: params.genesisStage,
+          autoViscosity: params.autoViscosity,
+          autoSpeed: params.autoSpeed,
+          baseHue: params.baseHue,
+          hueRange: params.hueRange,
+          saturation: params.saturation,
+          brightness: params.brightness,
+          harmonicColor: params.harmonicColor,
+          harmonicSensitivity: params.harmonicSensitivity,
+          harmonicDepth: params.harmonicDepth,
+          sgResonanceModes: params.sgResonanceModes,
+          sgDrawMode: params.sgDrawMode,
+          sgShowNodes: params.sgShowNodes,
+          sgAutoResonance: params.sgAutoResonance,
+        },
+      });
+    },
+    [sync, starseed, params]
+  );
 
   // Smart intro: show to NEW or NOT-logged-in users; never block returners.
   useEffect(() => {
@@ -377,35 +429,45 @@ const App: React.FC = () => {
       </div>
       )}
 
-      {/* --- COMPACT TOOLBAR: subscription (crown) + system guide (?) --- */}
+      {/* --- COMPACT TOOLBAR: Información & Red StarSeed + Donaciones + Ayuda Rápida --- */}
       <div
         className="absolute top-6 left-6 z-40 flex items-center gap-3 transition-opacity duration-500"
         style={{ opacity: controlsVisible ? 1 : 0.4 }}
       >
         <button
-          onClick={() => setShowSubscription(true)}
-          aria-label="Suscripción y planes"
-          title="Suscripción y planes"
+          onClick={() => {
+            setInfoHubInitialTab('guide');
+            setShowInfoHub(true);
+          }}
+          aria-label="Centro de Información y Red StarSeed"
+          title="Centro de Información y Red StarSeed"
+          className="group flex items-center gap-2 px-3.5 py-2 rounded-full border border-cyan-500/40 bg-cyan-500/10 text-cyan-200 backdrop-blur-md hover:bg-cyan-500/20 hover:border-cyan-400/60 transition-all shadow-[0_0_20px_rgba(0,242,254,0.22)]"
+        >
+          <Info className="w-4 h-4 text-cyan-300 drop-shadow-[0_0_6px_rgba(0,242,254,0.8)]" />
+          <span className="text-xs font-bold uppercase tracking-wider hidden sm:inline">
+            Información & Red
+          </span>
+        </button>
+
+        <button
+          onClick={() => {
+            setInfoHubInitialTab('donations');
+            setShowInfoHub(true);
+          }}
+          aria-label="Donaciones y Tarjetas 3D"
+          title="Donaciones y Tarjetas 3D"
           className="group flex items-center gap-2 px-3.5 py-2 rounded-full border border-amber-500/40 bg-amber-500/10 text-amber-200 backdrop-blur-md hover:bg-amber-500/20 hover:border-amber-400/60 transition-all shadow-[0_0_18px_rgba(245,158,11,0.18)]"
         >
-          <Crown className="w-4 h-4 drop-shadow-[0_0_6px_rgba(245,158,11,0.7)]" />
+          <Heart className="w-3.5 h-3.5 text-amber-300 drop-shadow-[0_0_6px_rgba(245,158,11,0.7)]" />
           <span className="text-xs font-bold uppercase tracking-wider hidden sm:inline">
-            {subscription.tier.id === 'free' && subscription.state.viaStarSeed
-              ? 'StarSeed'
-              : subscription.tier.id === 'premium'
-                ? 'Premium'
-                : subscription.tier.id === 'starseed'
-                  ? 'StarSeed'
-                  : subscription.tier.id === 'code'
-                    ? 'Código'
-                    : 'Planes'}
+            Donaciones
           </span>
         </button>
 
         <button
           onClick={() => setShowSystemGuide(true)}
-          aria-label="Guía completa"
-          title="Guía completa"
+          aria-label="Guía rápida"
+          title="Guía rápida"
           className="flex items-center justify-center w-9 h-9 rounded-full border border-cyan-500/40 bg-cyan-500/10 text-cyan-200 backdrop-blur-md hover:bg-cyan-500/20 hover:border-cyan-400/60 transition-all shadow-[0_0_18px_rgba(0,242,254,0.15)]"
         >
           <HelpCircle className="w-4.5 h-4.5" />
@@ -430,25 +492,31 @@ const App: React.FC = () => {
             setParams={setParams} 
             audioActive={isActive}
             toggleAudio={toggleAudio}
+            presets={sync.allPresetsOrdered}
+            onApplyPreset={handleApplyPreset}
+            onReorderPresets={sync.updatePresetOrder}
+            onSaveCurrentAsPreset={handleSaveCurrentAsPreset}
+            onOpenInfoHub={() => {
+              setInfoHubInitialTab('presets');
+              setShowInfoHub(true);
+            }}
           />
         </div>
       )}
 
-      {/* --- #44 Subscription modal --- */}
-      <SubscriptionModal
-        open={showSubscription}
-        onClose={() => setShowSubscription(false)}
-        tiers={subscription.tiers}
-        currentPlan={subscription.state.plan}
-        viaStarSeed={subscription.state.viaStarSeed}
-        redeemedCode={subscription.state.redeemedCode}
-        hasStarSeed={starseed.isLoggedIn}
-        starSeedName={starseed.displayName}
-        onSelectPlan={subscription.selectPlan}
-        onRedeemCode={subscription.redeemCode}
+      {/* --- Centro Soberano de Información & Red (Tabs: Guía, Ecosistema, Cuenta con login trasladado, Donaciones 3D, Presets) --- */}
+      <InfoHubModal
+        open={showInfoHub}
+        onClose={() => setShowInfoHub(false)}
+        initialTab={infoHubInitialTab}
+        identity={starseed}
+        subscription={subscription}
+        sync={sync}
+        onApplyPreset={handleApplyPreset}
+        currentParams={params}
       />
 
-      {/* --- #45 Smart intro guide (first run / no-login) --- */}
+      {/* --- Smart intro guide (first run / no-login) --- */}
       <IntroGuide
         open={showIntro}
         onClose={() => setShowIntro(false)}
@@ -456,7 +524,7 @@ const App: React.FC = () => {
         onOpenSystemGuide={() => setShowSystemGuide(true)}
       />
 
-      {/* --- #46 Full system guide (anytime) --- */}
+      {/* --- Full system guide (anytime) --- */}
       <SystemGuide open={showSystemGuide} onClose={() => setShowSystemGuide(false)} />
     </div>
   );

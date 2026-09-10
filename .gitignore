@@ -23,6 +23,8 @@ dist-ssr
 *.sln
 # Custom
 final_installers
+final_installers(anterior)
+instaladores
 release
 *.keystore
 *.jks

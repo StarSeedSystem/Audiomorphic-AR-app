@@ -17,10 +17,12 @@
   "dependencies": {
     "@capacitor/android": "^7.0.0",
     "@capacitor/core": "^7.0.0",
+    "@fortawesome/fontawesome-svg-core": "^6.6.0",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
     "@react-three/postprocessing": "^3.0.4",
     "@react-three/xr": "^6.6.29",
+    "@supabase/supabase-js": "^2.116.0",
     "lucide-react": "^0.560.0",
     "postprocessing": "^6.38.3",
     "react": "^19.2.3",
@@ -28,11 +30,11 @@
     "three": "^0.183.2"
   },
   "devDependencies": {
-    "electron": "^34.3.0",
     "@capacitor/cli": "^7.0.0",
     "@types/node": "^22.14.0",
     "@types/three": "^0.183.1",
     "@vitejs/plugin-react": "^5.0.0",
+    "electron": "^34.3.0",
     "electron-builder": "^25.1.8",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
