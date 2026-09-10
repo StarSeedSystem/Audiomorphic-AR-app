@@ -12,13 +12,13 @@ export default defineConfig(({ mode }) => {
       },
       plugins: [react()],
       define: {
-        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY || ''),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || '')
+        'process.env': env,
+        'process.platform': JSON.stringify(process.platform || 'darwin'),
+        'global': 'window'
       },
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),
-          'hls.js': path.resolve(__dirname, 'node_modules/hls.js/dist/hls.js'),
         }
       }
     };

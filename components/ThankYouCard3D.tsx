@@ -35,9 +35,9 @@ export const ThankYouCard3D: React.FC<ThankYouCard3DProps> = ({
     }
   };
 
-  const isGold = card.cardTheme === 'gold' || card.tierId === 'premium';
+  const isGold = card.cardTheme === 'gold' || card.tierId === 'creator' || card.tierId === 'premium';
   const isPurple = card.cardTheme === 'iridescent' || card.tierId === 'starseed';
-  const isCyan = card.cardTheme === 'holographic' || card.tierId === 'code';
+  const isCyan = card.cardTheme === 'holographic' || card.tierId === 'master' || card.tierId === 'code';
 
   const themeGradient = isGold
     ? 'linear-gradient(135deg, rgba(255,215,0,0.25) 0%, rgba(218,165,32,0.15) 35%, rgba(255,248,220,0.3) 70%, rgba(184,134,11,0.25) 100%)'

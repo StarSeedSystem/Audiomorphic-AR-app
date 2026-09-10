@@ -1,6 +1,15 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import { AuthProvider } from './contexts/AuthContext';
+import { ErrorBoundary } from './components/ErrorBoundary';
+
+import { Capacitor } from '@capacitor/core';
+import { KeepAwake } from '@capacitor-community/keep-awake';
+
+if (Capacitor.isNativePlatform()) {
+  KeepAwake.keepAwake().catch(console.error);
+}
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -10,13 +19,10 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <App />
+    <ErrorBoundary>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </ErrorBoundary>
   </React.StrictMode>
 );
-
-// PWA: registro del Service Worker (aditivo · defensivo · solo navegador con soporte y https).
-if (typeof window !== 'undefined' && 'serviceWorker' in navigator && window.location.protocol === 'https:') {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js', { scope: './' }).catch((e) => console.warn('SW no registrado:', e));
-  });
-}

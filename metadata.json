@@ -1,7 +1,9 @@
 {
-  "name": "AudioMorphic Visualizer AR app",
-  "description": "A mathematical audio visualization tool that generates complex geometric patterns driven by real-time microphone input, relating spiral expansion to volume and rotation to frequency. Now in VR!",
+  "name": "AudioMorphic Visualizer AR app PRO con suscripción",
+  "description": "A mathematical audio visualization tool that generates complex geometric patterns driven by real-time microphone input, relating spiral expansion to volume and rotation to frequency. Now in VR!, version con suscripcion para funcines completas en version FULL con pago anual pago unico",
   "requestFramePermissions": [
-    "microphone"
+    "microphone",
+    "camera",
+    "display-capture"
   ]
 }

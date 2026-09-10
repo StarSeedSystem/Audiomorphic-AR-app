@@ -1,0 +1,178 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {userId}
+    // Fields:
+    //   - uid: string (required, immutable) - The user's UID
+    //   - email: string (required) - The user's email address
+    //   - subscriptionTier: string (required) - 'free', 'trial', 'annual', 'lifetime'
+    //   - trialEndTime: number (optional) - Timestamp for trial expiration
+    //   - createdAt: number (required, immutable) - Creation timestamp
+    //   - updatedAt: number (required) - Last update timestamp
+    //
+    // Collection: presets
+    // Document ID: {presetId}
+    // Fields:
+    //   - uid: string (required, immutable) - Preset ID
+    //   - userId: string (required, immutable) - Owner ID
+    //   - name: string (required) - Preset name
+    //   - params: string (required) - JSON stringified params
+    //   - createdAt: number (required, immutable) - Creation timestamp
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    // Check if the user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Check if user owns the resource
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Verify UID hasn't been tampered with on create
+    function uidUnchanged() {
+      return !('uid' in request.resource.data) || request.resource.data.uid == request.auth.uid;
+    }
+    
+    // Ensure uid field is not modified on update
+    function uidNotModified() {
+      return !('uid' in request.resource.data) || request.resource.data.uid == resource.data.uid;
+    }
+    
+    // Validate required fields exist
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+    
+    // Validate email format
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    // Validate that the document contains only the allowed fields
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // Domain Validators
+    function isValidUser(data) {
+      return hasRequiredFields(['uid', 'email', 'subscriptionTier']) &&
+             data.uid is string && data.uid.size() > 0 && data.uid.size() < 128 &&
+             isValidEmail(data.email) &&
+             (data.subscriptionTier == 'free' || data.subscriptionTier == 'trial' || data.subscriptionTier == 'annual' || data.subscriptionTier == 'lifetime') &&
+             (!('createdAt' in data) || data.createdAt is number) &&
+             (!('updatedAt' in data) || data.updatedAt is number) &&
+             (!('trialEndTime' in data) || data.trialEndTime is number) &&
+             (!('hasUsedTrial' in data) || data.hasUsedTrial is bool);
+    }
+
+    function isValidPreset(data) {
+      let allowedFields = ['uid', 'userId', 'name', 'params', 'createdAt'];
+      return hasOnlyAllowedFields(allowedFields) &&
+             hasRequiredFields(allowedFields) &&
+             data.uid is string && data.uid.size() > 0 && data.uid.size() < 128 &&
+             data.userId is string && data.userId.size() > 0 && data.userId.size() < 128 &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.params is string && data.params.size() > 0 && data.params.size() < 500000 && // Max 500KB string
+             data.createdAt is number;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      // Users can read their own profile
+      allow read: if isOwner(userId);
+      
+      // Users can create their own profile. Only alexbordongarrigos@gmail.com can create as lifetime.
+      allow create: if isOwner(userId) && 
+                       isValidUser(request.resource.data) && 
+                       uidUnchanged() &&
+                       request.resource.data.uid == userId &&
+                       (
+                         (request.auth.token.email == "alexbordongarrigos@gmail.com" && request.resource.data.subscriptionTier == 'lifetime') ||
+                         (request.auth.token.email != "alexbordongarrigos@gmail.com" && request.resource.data.subscriptionTier == 'free')
+                       );
+                       
+      // Users can update their own profile. Tier changes allowed: free→trial (with trialEndTime), trial→free (expiry), admin→lifetime
+      allow update: if isOwner(userId) && 
+                       isValidUser(request.resource.data) && 
+                       uidNotModified() &&
+                       (!('createdAt' in resource.data) || request.resource.data.createdAt == resource.data.createdAt) &&
+                       (
+                         // No tier change
+                         request.resource.data.subscriptionTier == resource.data.subscriptionTier ||
+                         // Admin can set lifetime
+                         (request.auth.token.email == "alexbordongarrigos@gmail.com" && request.resource.data.subscriptionTier == 'lifetime') ||
+                         // User activates trial (free → trial, must include trialEndTime and hasUsedTrial: true, and must not have used trial before)
+                         (resource.data.subscriptionTier == 'free' && 
+                          request.resource.data.subscriptionTier == 'trial' && 
+                          'trialEndTime' in request.resource.data && request.resource.data.trialEndTime is number &&
+                          request.resource.data.hasUsedTrial == true && 
+                          (!('hasUsedTrial' in resource.data) || resource.data.hasUsedTrial != true)) ||
+                         // User trial expires (trial → free)
+                         (resource.data.subscriptionTier == 'trial' && request.resource.data.subscriptionTier == 'free')
+                       );
+                       
+      // Users cannot delete their profile directly
+      allow delete: if false;
+
+      // Stripe Extension Data
+      match /checkout_sessions/{id} {
+        allow read, write: if isOwner(userId);
+      }
+      match /subscriptions/{id} {
+        allow read: if isOwner(userId);
+      }
+      match /payments/{id} {
+        allow read: if isOwner(userId);
+      }
+    }
+
+    match /products/{id} {
+      allow read: if true;
+
+      match /prices/{priceId} {
+        allow read: if true;
+      }
+
+      match /tax_rates/{taxRateId} {
+        allow read: if true;
+      }
+    }
+
+    match /presets/{presetId} {
+      // Users can read their own presets
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      // Users can create presets
+      allow create: if isAuthenticated() &&
+                       isValidPreset(request.resource.data) &&
+                       request.resource.data.userId == request.auth.uid;
+                       
+      // Users can update their own presets
+      allow update: if isAuthenticated() &&
+                       resource.data.userId == request.auth.uid &&
+                       isValidPreset(request.resource.data) &&
+                       request.resource.data.userId == resource.data.userId &&
+                       request.resource.data.uid == resource.data.uid &&
+                       request.resource.data.createdAt == resource.data.createdAt;
+                       
+      // Users can delete their own presets
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+  }
+}

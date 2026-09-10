@@ -1,5 +1,143 @@
-/* Empty CSS file to satisfy index.html and Vite build requirements */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --neon-cyan: #06b6d4;
+  --neon-purple: #a855f7;
+  --neon-emerald: #10b981;
+}
+
 body {
   margin: 0;
   padding: 0;
+  background-color: #050505;
+  color: #e5e5e5;
+  font-family: 'Inter', sans-serif;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, rgba(6, 182, 212, 0.5), rgba(168, 85, 247, 0.5));
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, rgba(6, 182, 212, 0.8), rgba(168, 85, 247, 0.8));
+}
+
+.glass-morphism {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.neon-glow {
+  box-shadow: 0 0 15px rgba(6, 182, 212, 0.3), inset 0 0 5px rgba(6, 182, 212, 0.1);
+}
+
+.premium-gradient-text {
+  background: linear-gradient(135deg, #fff 0%, rgba(255, 255, 255, 0.7) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Premium Liquid Bubble Effect */
+.liquid-bubble {
+  position: relative;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+
+.liquid-bubble:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.6), 0 0 15px rgba(6, 182, 212, 0.2);
+}
+
+/* Neon Icon Effects */
+.icon-neon {
+  filter: drop-shadow(0 0 5px currentColor);
+  transition: filter 0.3s ease;
+}
+
+.liquid-bubble:hover .icon-neon {
+  filter: drop-shadow(0 0 8px currentColor);
+}
+
+/* Animations */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-in-top {
+  from { transform: translateY(-10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.animate-in {
+  animation-fill-mode: forwards;
+}
+
+.fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+.slide-in-from-top-2 {
+  animation: slide-in-top 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* Native Select Refined for Android/Mobile Crystal Look */
+.liquid-select-native {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  background-color: rgba(6, 10, 15, 0.9) !important;
+  color: #fff !important;
+  border-radius: 8px !important;
+  padding: 10px 35px 10px 12px !important;
+  font-size: 14px !important;
+  border: 1px solid rgba(0, 255, 255, 0.3) !important;
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.1), inset 0 0 5px rgba(0, 255, 255, 0.05) !important;
+  cursor: pointer;
+  width: 100%;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='rgba(0, 255, 255, 0.7)' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 10px center !important;
+  background-size: 16px !important;
+  transition: all 0.2s ease !important;
+}
+
+.liquid-select-native:focus {
+  outline: none !important;
+  border-color: rgba(0, 255, 255, 0.8) !important;
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.2), inset 0 0 8px rgba(0, 255, 255, 0.1) !important;
+}
+
+.liquid-select-native option {
+  background-color: #060a0f !important;
+  color: #fff !important;
+  padding: 12px !important;
+}
+
+.liquid-select-container {
+  position: relative;
+  overflow: visible !important;
 }

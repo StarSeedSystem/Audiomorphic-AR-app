@@ -1,42 +1,101 @@
 {
-  "name": "audiomorphic-vr",
-  "displayName": "Audiomorphic VR",
-  "description": "Audiomorphic VR Visualizer",
-  "author": "Audiomorphic",
+  "name": "audiomorphic-ar",
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "main": "electron/main.cjs",
+  "main": "electron-main.cjs",
+  "author": "Audiomorphic",
+  "build": {
+    "appId": "com.audiomorphic.app",
+    "productName": "Audiomorphic AR",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "build/icon.icns",
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "Audiomorphic requiere acceso al micrófono para analizar el audio en tiempo real.",
+        "NSCameraUsageDescription": "Audiomorphic requiere acceso a la cámara para las funciones de Realidad Aumentada.",
+        "NSDesktopFolderUsageDescription": "Audiomorphic requiere permiso para gestionar archivos de configuración.",
+        "NSAppleEventsUsageDescription": "Audiomorphic requiere permisos del sistema para interactuar con dispositivos de audio."
+      }
+    },
+    "dmg": {
+      "background": "build/background.png",
+      "iconSize": 128,
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ],
+      "window": {
+        "width": 540,
+        "height": 380
+      }
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.png"
+    },
+    "files": [
+      "dist/**/*",
+      "electron-main.cjs",
+      "preload.cjs",
+      "build/**/*"
+    ]
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "clean": "rm -rf dist dist-electron android/app/src/main/assets/public",
+    "build:desktop": "npm run clean && npm run build && npx electron-builder --mac --win",
+    "pack": "bash scripts/pack-all.sh",
     "preview": "vite preview",
-    "build:android": "vite build && npx cap sync android && cd android && ./gradlew assembleRelease && cd .. && cp android/app/build/outputs/apk/release/app-release.apk dist/audiomorphic.apk && zip -9 -j dist/audiomorphic-android.zip dist/audiomorphic.apk",
-    "build:macos": "vite build && electron-builder && cp release/macos/*.dmg dist/ && zip -9 -j dist/audiomorphic-mac.zip release/macos/*.dmg"
+    "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "@capacitor/android": "^7.0.0",
-    "@capacitor/core": "^7.0.0",
-    "@fortawesome/fontawesome-svg-core": "^6.6.0",
+    "@capacitor-community/keep-awake": "^8.0.0",
+    "@capacitor/android": "^8.3.0",
+    "@capacitor/cli": "^7.6.1",
+    "@capacitor/core": "^8.3.0",
+    "@codetrix-studio/capacitor-google-auth": "^3.4.0-rc.4",
+    "@mediapipe/tasks-vision": "^0.10.33",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
     "@react-three/postprocessing": "^3.0.4",
     "@react-three/xr": "^6.6.29",
-    "@supabase/supabase-js": "^2.116.0",
+    "@supabase/supabase-js": "^2.45.0",
+    "firebase": "^12.11.0",
+    "firebase-admin": "^13.7.0",
+    "hls.js": "^1.7.2",
     "lucide-react": "^0.560.0",
+    "motion": "^12.38.0",
     "postprocessing": "^6.38.3",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
+    "stripe": "^21.0.1",
     "three": "^0.183.2"
   },
   "devDependencies": {
-    "@capacitor/cli": "^7.0.0",
     "@types/node": "^22.14.0",
     "@types/three": "^0.183.1",
+    "@vercel/node": "^5.6.24",
     "@vitejs/plugin-react": "^5.0.0",
-    "electron": "^34.3.0",
-    "electron-builder": "^25.1.8",
+    "concurrently": "^9.2.1",
+    "electron": "^41.1.1",
+    "electron-builder": "^26.8.1",
     "typescript": "~5.8.2",
-    "vite": "^6.2.0"
+    "vite": "^6.2.0",
+    "wait-on": "^9.0.4"
   }
 }

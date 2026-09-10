@@ -10,6 +10,13 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+dist-electron
+build
+android
+ios
+Instaladores
+release
+final_installers*
 *.local
 
 # Editor directories and files
@@ -21,15 +28,6 @@ dist-ssr
 *.ntvs*
 *.njsproj
 *.sln
-# Custom
-final_installers
-final_installers(anterior)
-instaladores
-release
-*.keystore
-*.jks
-.env
-.env.*
-!.env.example
+*.sw?
 .vercel
-.env*
+.env*.local
