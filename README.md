@@ -13,7 +13,7 @@
   Motor armónico en tiempo real impulsado por la Web Audio API, Three.js WebGL, WebXR y el Tratado de Unificación Armónica.
 </p>
 
-[✨ Probar en la Web](https://audiomorphic-ar.vercel.app) • [📥 Descargas por SO](#-descargas-oficiales-por-sistema-operativo) • [📐 Principios Matemáticos](#-principios-matem%C3%A1ticos--geometr%C3%ADa-sagrada) • [🔄 Actualizaciones Inteligentes](#-sistema-inteligente-de-actualizaciones-en-la-app) • [💖 Fundación StarSeed](https://linktr.ee/FundacionStarseed)
+[✨ Probar en la Web](https://audiomorphic.vercel.app) • [📥 Descargas por SO](#-descargas-oficiales-por-sistema-operativo) • [📐 Principios Matemáticos](#-principios-matem%C3%A1ticos--geometr%C3%ADa-sagrada) • [🔄 Actualizaciones Inteligentes](#-sistema-inteligente-de-actualizaciones-en-la-app) • [💖 Fundación StarSeed](https://linktr.ee/FundacionStarseed)
 
 ---
 

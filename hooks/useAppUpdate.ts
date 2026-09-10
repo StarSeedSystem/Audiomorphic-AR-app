@@ -107,7 +107,7 @@ export const OFFICIAL_DOWNLOADS: PlatformDownloads = {
   },
   web: {
     name: 'Web App Soberana (PWA)',
-    url: 'https://audiomorphic-ar.vercel.app',
+    url: 'https://audiomorphic.vercel.app',
     status: '100% Operativa',
   },
   mirrorDrive: GOOGLE_DRIVE_MIRROR,
