@@ -38,13 +38,14 @@
 
 | Sistema Operativo | Formato / Tipo | Arquitectura | Tamaño | Enlace de Descarga Directa |
 | :--- | :--- | :--- | :--- | :--- |
-| **🪟 Windows 10 / 11** | Paquete Portable (`.zip`) | ARM64 & x64 Universal | `~457 MB` | [⬇️ Descargar Windows (.zip)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.1.0/Audiomorphic_AR_v1.1.0_Windows.zip) |
-| **🍎 macOS (Apple Silicon)** | Imagen de Disco (`.dmg`) | Apple Silicon (M1 / M2 / M3 / M4) | `~213 MB` | [⬇️ Descargar Apple Silicon (.dmg)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.1.0/Audiomorphic_AR_v1.1.0_macOS_arm64.dmg) |
-| **🍎 macOS Universal** | Archivo `.zip` con DMG | Intel & Apple Silicon | `~213 MB` | [⬇️ Descargar Mac Universal (.zip)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.1.0/audiomorphic-mac.zip) |
-| **🤖 Android** | Paquete APK Nativo (`.apk`) | Android 8.0+ (Oreo o sup.) | `~6.9 MB` | [⬇️ Descargar APK Oficial (.apk)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.1.0/audiomorphic.apk) |
-| **🤖 Android (ZIP)** | Archivo Comprimido (`.zip`) | Android 8.0+ | `~6.4 MB` | [⬇️ Descargar Android ZIP (.zip)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.1.0/audiomorphic-android.zip) |
+| **🪟 Windows 10 / 11** | Paquete Portable (`.zip`) | ARM64 & x64 Universal | `~247 MB` | [⬇️ Descargar Windows (.zip)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.1.0/Audiomorphic_v1.1.0_Windows.zip) |
+| **🍎 macOS (Apple Silicon)** | Imagen de Disco (`.dmg`) | Apple Silicon (M1 / M2 / M3 / M4) | `~232 MB` | [⬇️ Descargar Apple Silicon (.dmg)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.1.0/Audiomorphic_v1.1.0_macOS_arm64.dmg) |
+| **🍎 macOS Universal** | Archivo `.zip` con DMG | Intel & Apple Silicon | `~232 MB` | [⬇️ Descargar Mac Universal (.zip)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.1.0/audiomorphic-mac.zip) |
+| **🐧 Linux (x64)** | Paquete Portable (`.tar.gz`) | PC / Laptop x86_64 | `~774 MB` | [⬇️ Descargar Linux x64 (.tar.gz)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.1.0/Audiomorphic_v1.1.0_Linux_x64.tar.gz) |
+| **🐧 Linux (ARM64)** | Paquete Portable (`.tar.gz`) | ARM64 (Raspberry Pi / Asahi) | `~694 MB` | [⬇️ Descargar Linux ARM64 (.tar.gz)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.1.0/Audiomorphic_v1.1.0_Linux_arm64.tar.gz) |
+| **🤖 Android** | Paquete APK Nativo (`.apk`) | Android 8.0+ (Oreo o sup.) | `~5.4 MB` | [⬇️ Descargar APK Oficial (.apk)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.1.0/Audiomorphic_v1.1.0.apk) |
 | **🌐 Web App / PWA** | Web Progresiva Instalable | Chrome, Edge, Safari, Firefox | En vivo | [🚀 Abrir Web App Soberana](https://audiomorphic.vercel.app) |
-| **🐧 Linux & Mirror** | Espejo Oficial en Google Drive | Todos los Sistemas | Universal | [☁️ Carpeta de Instaladores Mirror](https://drive.google.com/drive/folders/1bZ8yvbWr7r3eJUdKIQCSSuu-p398mAkn?usp=sharing) |
+| **☁️ Espejo Drive** | Espejo Oficial en Google Drive | Todos los Sistemas | Universal | [☁️ Carpeta de Instaladores Mirror](https://drive.google.com/drive/folders/1bZ8yvbWr7r3eJUdKIQCSSuu-p398mAkn?usp=sharing) |
 
 ### ☁️ Mirror Oficial en Google Drive
 Si experimentas límites de ancho de banda o requieres descargas de alta velocidad en cualquier parte del mundo, accede a la carpeta espejo oficial:
@@ -56,19 +57,27 @@ Si experimentas límites de ancho de banda o requieres descargas de alta velocid
 
 Audiomorphic requiere acceso a interfaces de hardware específicas para generar la sinestesia en tiempo real:
 
+### 🐧 Linux (Ubuntu, Debian, Fedora, Arch, SteamOS)
+1. **Ejecución Portable:** Descomprime con `tar -xzf Audiomorphic_v1.1.0_Linux_x64.tar.gz` y ejecuta `./audiomorphic.sh` o `./audiomorphic`.
+2. **Pantalla Completa Inmersiva:** La aplicación se abre por defecto en modo pantalla completa cubriendo la barra superior del entorno (GNOME, KDE Plasma, XFCE). Puedes alternar con `F11` o la tecla `Escape`.
+3. **Audio (ALSA, PulseAudio y PipeWire):** Soporta enrutamiento dinámico de salidas de audio a través de `select-audio-output` y captura de audio de escritorio mediante `WebRTCPipeWireCapturer` en sesiones Wayland y X11.
+4. **Cámara y AR:** Compatible con dispositivos V4L2 (`/dev/video*`) para tracking de realidad aumentada.
+
 ### 🍎 macOS
 1. **Micrófono:** Al abrir la app por primera vez, pulsa **"Permitir"** en el cuadro de diálogo de macOS. Si lo denegaste por error, ve a *Ajustes del Sistema → Privacidad y Seguridad → Micrófono* y activa la casilla de **Audiomorphic**.
 2. **Cámara (Modos AR):** Requerida únicamente si activas la Realidad Aumentada para superponer la espiral sobre tu entorno. Se gestiona en *Ajustes del Sistema → Privacidad y Seguridad → Cámara*.
-3. **Pantalla Completa:** Pulsa el botón verde de la ventana o el botón *Pantalla Completa* en el menú de control para una inmersión sin distracciones.
+3. **Pantalla Completa:** Inicia en pantalla completa total y puedes alternar con `F11` o el atajo de pantalla completa.
 
 ### 🪟 Windows
 1. **Micrófono:** Ve a *Configuración de Windows → Privacidad y Seguridad → Micrófono* y asegúrate de que esté habilitada la opción *"Permitir que las aplicaciones de escritorio accedan al micrófono"*.
 2. **Aceleración por Hardware:** Asegúrate de tener actualizados los controladores de tu tarjeta gráfica (NVIDIA, AMD o Intel) para renderizar la espiral fractal a 60/120 FPS.
+3. **Pantalla Completa:** Inicia cubriendo la barra de tareas y ventana completa; presiona `F11` para alternar.
 
 ### 🤖 Android
-1. **Permiso de Grabación de Audio:** Necesario para el análisis de frecuencia por FFT en tiempo real.
-2. **Cámara:** Requerida para los modos de AR espacial.
-3. **Pantalla Siempre Activa:** La app integra el plugin nativo `KeepAwake` para evitar que el dispositivo se bloquee durante sesiones de música.
+1. **Pantalla Completa Inmersiva (Edge-to-Edge):** La app cubre el 100% de la pantalla por encima de la barra superior de estado y barra de navegación, adaptándose a notch y recortes de cámara.
+2. **Permiso de Grabación de Audio y Salidas Bluetooth:** Análisis de frecuencia FFT en tiempo real y soporte para auriculares inalámbricos.
+3. **Cámara:** Requerida para los modos de AR espacial.
+4. **Pantalla Siempre Activa:** Integra `FLAG_KEEP_SCREEN_ON` para evitar bloqueos durante sesiones de escucha activa.
 
 ---
 

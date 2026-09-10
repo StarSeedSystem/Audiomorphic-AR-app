@@ -59,7 +59,7 @@ async function createWindow() {
     height: 900,
     minWidth: 960,
     minHeight: 540,
-    fullscreen: false,
+    fullscreen: true,
     autoHideMenuBar: true,
     frame: true,
     title: "Audiomorphic",
@@ -73,12 +73,12 @@ async function createWindow() {
     },
   });
 
-  // Launch maximized to fill the entire desktop screen by default
-  mainWindow.maximize();
+  // Launch in fullscreen to cover all elements including top bar and taskbars
+  mainWindow.setFullScreen(true);
 
-  // Support F11 shortcut to toggle true borderless fullscreen
+  // Support F11 and Escape shortcut to toggle true borderless fullscreen
   mainWindow.webContents.on('before-input-event', (event, input) => {
-    if (input.key === 'F11' && input.type === 'keyDown') {
+    if ((input.key === 'F11' || (input.key === 'Escape' && mainWindow.isFullScreen())) && input.type === 'keyDown') {
       mainWindow.setFullScreen(!mainWindow.isFullScreen());
       event.preventDefault();
     }
@@ -137,9 +137,15 @@ async function createWindow() {
     }
   });
 
-  // Permissions: Allow media, inputs and output routing (speakers/bluetooth)
+  // Permissions: Allow media, inputs and output routing (speakers/bluetooth/audio interfaces)
+  const allowedPermissions = [
+    'media', 'camera', 'microphone', 'display-capture', 'notifications',
+    'speaker-selection', 'audio-capture', 'video-capture', 'midi', 'midi-sysex',
+    'pointerLock', 'fullscreen', 'window-management', 'device-info', 'background-sync',
+    'accessibility-events'
+  ];
+
   mainWindow.webContents.session.setPermissionRequestHandler((webContents, permission, callback) => {
-    const allowedPermissions = ['media', 'camera', 'microphone', 'display-capture', 'notifications', 'speaker-selection', 'audio-capture', 'video-capture'];
     if (allowedPermissions.includes(permission)) {
       console.log(`Granting permission: ${permission}`);
       callback(true);
@@ -150,9 +156,31 @@ async function createWindow() {
   });
   
   mainWindow.webContents.session.setPermissionCheckHandler((webContents, permission) => {
-    if (['camera', 'media', 'microphone', 'display-capture', 'notifications', 'speaker-selection', 'audio-capture', 'video-capture'].includes(permission)) return true;
-    return false;
+    return allowedPermissions.includes(permission);
   });
+
+  // Handle audio output device routing for PulseAudio/ALSA/PipeWire/CoreAudio/WASAPI
+  if (mainWindow.webContents.session.on) {
+    mainWindow.webContents.session.on('select-audio-output', (event, audioOutputDevices, callback) => {
+      callback(audioOutputDevices[0]?.deviceId || '');
+    });
+  }
+
+  // Display media request handler for desktop and system audio loopback capture (Wayland/PipeWire/X11)
+  if (mainWindow.webContents.session.setDisplayMediaRequestHandler) {
+    mainWindow.webContents.session.setDisplayMediaRequestHandler((request, callback) => {
+      desktopCapturer.getSources({ types: ['screen', 'window'] }).then((sources) => {
+        if (sources.length > 0) {
+          callback({ video: sources[0], audio: 'loopback' });
+        } else {
+          callback({});
+        }
+      }).catch((err) => {
+        console.error('DisplayMedia handler error:', err);
+        callback({});
+      });
+    });
+  }
 
   // Handle media access status check
   ipcMain.handle('get-media-access-status', async (event, mediaType) => {
@@ -201,7 +229,15 @@ async function createWindow() {
 // Enable WebXR, hardware acceleration and autoplay policies
 app.commandLine.appendSwitch('enable-webxr');
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
-app.commandLine.appendSwitch('enable-features', 'WebXR,WebXRIncubations,AudioServiceOutOfProcess,SpeakerSelection');
+app.commandLine.appendSwitch('enable-features', 'WebXR,WebXRIncubations,AudioServiceOutOfProcess,SpeakerSelection,WebRTCPipeWireCapturer,VaapiVideoDecoder');
+
+// Linux-specific audio & display architecture (PulseAudio, ALSA, PipeWire, Wayland, X11)
+if (process.platform === 'linux') {
+  app.commandLine.appendSwitch('alsa-output-device', 'default');
+  app.commandLine.appendSwitch('enable-audio-service-sandbox');
+  app.commandLine.appendSwitch('enable-raw-audio-capture');
+  app.commandLine.appendSwitch('ozone-platform-hint', 'auto');
+}
 
 app.whenReady().then(async () => {
   // Explicitly ask for microphone, camera, and screen permissions on macOS

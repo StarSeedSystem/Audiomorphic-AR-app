@@ -5,6 +5,7 @@
   "type": "module",
   "main": "electron-main.cjs",
   "author": "Audiomorphic",
+  "description": "Visualizador sinestésico de audio y geometría sagrada",
   "build": {
     "appId": "com.audiomorphic.app",
     "productName": "Audiomorphic",
@@ -50,6 +51,17 @@
     "win": {
       "target": "nsis",
       "icon": "build/icon.png"
+    },
+    "linux": {
+      "target": [
+        "tar.gz",
+        "zip"
+      ],
+      "icon": "build/icon.png",
+      "category": "AudioVideo",
+      "maintainer": "Audiomorphic <contact@audiomorphic.app>",
+      "synopsis": "Visualizador audiomórfico y sinestésico de geometría sagrada y audio espacial",
+      "description": "Visualizador sinestésico interactivo con geometría sagrada, aceleración WebGL y soporte para realidad virtual y aumentada."
     },
     "files": [
       "dist/**/*",

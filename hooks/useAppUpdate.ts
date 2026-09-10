@@ -22,6 +22,9 @@ export interface PlatformDownloads {
   linux: {
     name: string;
     version: string;
+    tarGzUrl: string;
+    x64Url: string;
+    arm64Url: string;
     appImageUrl: string;
     debUrl: string;
     size: string;
@@ -77,32 +80,35 @@ export const OFFICIAL_DOWNLOADS: PlatformDownloads = {
   windows: {
     name: 'Windows 10 / 11',
     version: CURRENT_APP_VERSION,
-    installerUrl: `${GITHUB_REPO_URL}/releases/download/v${CURRENT_APP_VERSION}/Audiomorphic_AR_v${CURRENT_APP_VERSION}_Windows.zip`,
-    portableUrl: `${GITHUB_REPO_URL}/releases/download/v${CURRENT_APP_VERSION}/Audiomorphic_AR_v${CURRENT_APP_VERSION}_Windows.zip`,
-    size: '~457 MB',
+    installerUrl: `${GITHUB_REPO_URL}/releases/download/v${CURRENT_APP_VERSION}/Audiomorphic_v${CURRENT_APP_VERSION}_Windows.zip`,
+    portableUrl: `${GITHUB_REPO_URL}/releases/download/v${CURRENT_APP_VERSION}/Audiomorphic_v${CURRENT_APP_VERSION}_Windows.zip`,
+    size: '~247 MB',
     arch: 'x64 & ARM64 Universal',
   },
   macos: {
     name: 'macOS (Apple Silicon & Intel)',
     version: CURRENT_APP_VERSION,
-    arm64DmgUrl: `${GITHUB_REPO_URL}/releases/download/v${CURRENT_APP_VERSION}/Audiomorphic_AR_v${CURRENT_APP_VERSION}_macOS_arm64.dmg`,
+    arm64DmgUrl: `${GITHUB_REPO_URL}/releases/download/v${CURRENT_APP_VERSION}/Audiomorphic_v${CURRENT_APP_VERSION}_macOS_arm64.dmg`,
     intelDmgUrl: `${GITHUB_REPO_URL}/releases/download/v${CURRENT_APP_VERSION}/audiomorphic-mac.zip`,
-    size: '~213 MB',
+    size: '~232 MB',
     arch: 'Apple Silicon (M1/M2/M3/M4) & Intel Universal',
   },
   linux: {
     name: 'Linux (Universal)',
     version: CURRENT_APP_VERSION,
-    appImageUrl: GOOGLE_DRIVE_MIRROR,
-    debUrl: GOOGLE_DRIVE_MIRROR,
-    size: 'Drive Mirror',
-    arch: 'x64 & arm64',
+    tarGzUrl: `${GITHUB_REPO_URL}/releases/download/v${CURRENT_APP_VERSION}/Audiomorphic_v${CURRENT_APP_VERSION}_Linux_x64.tar.gz`,
+    x64Url: `${GITHUB_REPO_URL}/releases/download/v${CURRENT_APP_VERSION}/Audiomorphic_v${CURRENT_APP_VERSION}_Linux_x64.tar.gz`,
+    arm64Url: `${GITHUB_REPO_URL}/releases/download/v${CURRENT_APP_VERSION}/Audiomorphic_v${CURRENT_APP_VERSION}_Linux_arm64.tar.gz`,
+    appImageUrl: `${GITHUB_REPO_URL}/releases/download/v${CURRENT_APP_VERSION}/Audiomorphic_v${CURRENT_APP_VERSION}_Linux.tar.gz`,
+    debUrl: `${GITHUB_REPO_URL}/releases/download/v${CURRENT_APP_VERSION}/Audiomorphic_v${CURRENT_APP_VERSION}_Linux.tar.gz`,
+    size: '~774 MB (x64) / ~694 MB (arm64)',
+    arch: 'x64 & ARM64 (ALSA, Pulse & PipeWire)',
   },
   android: {
     name: 'Android (APK Nativo)',
     version: CURRENT_APP_VERSION,
-    apkUrl: `${GITHUB_REPO_URL}/releases/download/v${CURRENT_APP_VERSION}/audiomorphic.apk`,
-    size: '~6.9 MB',
+    apkUrl: `${GITHUB_REPO_URL}/releases/download/v${CURRENT_APP_VERSION}/Audiomorphic_v${CURRENT_APP_VERSION}.apk`,
+    size: '~5.4 MB',
     minSdk: 'Android 8.0+ (Oreo o superior)',
   },
   web: {

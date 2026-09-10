@@ -1111,34 +1111,53 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                     </div>
                   </div>
 
-                  {/* 4. Linux & Web / Mirror */}
-                  <div className="p-5 rounded-2xl bg-black/40 border border-white/10 hover:border-white/20 transition-all flex flex-col justify-between">
+                  {/* 4. Linux */}
+                  <div className={`p-5 rounded-2xl border transition-all flex flex-col justify-between ${
+                    updateSystem.detectedOS === 'linux'
+                      ? 'bg-amber-950/40 border-amber-400/60 shadow-[0_0_20px_rgba(245,158,11,0.2)]'
+                      : 'bg-black/40 border-white/10 hover:border-white/20'
+                  }`}>
                     <div>
                       <div className="flex justify-between items-start mb-2">
-                        <Globe className="text-amber-400" size={24} />
-                        <span className="px-2 py-0.5 rounded-full bg-white/10 text-amber-300 text-[9px] font-mono">
-                          Universal
-                        </span>
+                        <Terminal className="text-amber-400" size={24} />
+                        {updateSystem.detectedOS === 'linux' ? (
+                          <span className="px-2 py-0.5 rounded-full bg-amber-500 text-black text-[9px] font-black uppercase font-mono">
+                            Tu Sistema
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full bg-white/10 text-amber-300 text-[9px] font-mono">
+                            x64 & ARM64
+                          </span>
+                        )}
                       </div>
-                      <h5 className="font-bold text-white text-base">Linux & Espejo</h5>
-                      <p className="text-xs text-gray-400 mb-1">AppImage, DEB y Drive</p>
-                      <span className="text-[10px] text-amber-300 font-mono block mb-4">Todos los formatos</span>
+                      <h5 className="font-bold text-white text-base">Linux</h5>
+                      <p className="text-xs text-gray-400 mb-1">ALSA, PulseAudio & PipeWire</p>
+                      <span className="text-[10px] text-amber-300 font-mono block mb-4">Pantalla completa y accesos de audio</span>
                     </div>
                     <div className="space-y-2">
                       <a
-                        href={updateSystem.downloads.linux.appImageUrl}
+                        href={updateSystem.downloads.linux.x64Url || updateSystem.downloads.linux.tarGzUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-full py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                        className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all shadow-[0_0_15px_rgba(245,158,11,0.3)] cursor-pointer"
+                      >
+                        <Download size={14} />
+                        <span>Linux x64 (.tar.gz)</span>
+                      </a>
+                      <a
+                        href={updateSystem.downloads.linux.arm64Url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full py-2 rounded-xl bg-white/10 hover:bg-white/15 text-gray-200 text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                       >
                         <Download size={13} />
-                        <span>Linux (.AppImage)</span>
+                        <span>Linux ARM64 (.tar.gz)</span>
                       </a>
                       <a
                         href={updateSystem.downloads.mirrorDrive}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-full py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-amber-200 text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                        className="w-full py-1.5 rounded-lg text-[10px] text-amber-300/80 hover:text-amber-200 flex items-center justify-center gap-1 transition-colors cursor-pointer"
                       >
                         <span>Google Drive Mirror ↗</span>
                       </a>
