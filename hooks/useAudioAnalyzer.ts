@@ -10,22 +10,58 @@ export const useAudioAnalyzer = () => {
 
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>('');
+  const [outputDevices, setOutputDevices] = useState<MediaDeviceInfo[]>([]);
+  const [selectedOutputDeviceId, setSelectedOutputDeviceId] = useState<string>('');
 
   useEffect(() => {
     const getDevices = async () => {
       try {
+        if (!navigator.mediaDevices?.enumerateDevices) return;
         const devs = await navigator.mediaDevices.enumerateDevices();
+        
+        // Input devices (micrófonos, líneas de entrada)
         const audioDevs = devs.filter(d => d.kind === 'audioinput');
         setDevices(audioDevs);
         if (audioDevs.length > 0 && !selectedDeviceId) {
            setSelectedDeviceId(audioDevs[0].deviceId);
         }
-      } catch (e) {}
+
+        // Output devices (altavoces, auriculares bluetooth, interfaces de sonido)
+        const outputDevs = devs.filter(d => d.kind === 'audiooutput');
+        setOutputDevices(outputDevs);
+        if (outputDevs.length > 0 && !selectedOutputDeviceId) {
+          setSelectedOutputDeviceId(outputDevs[0].deviceId);
+        }
+      } catch (e) {
+        console.warn('Error al enumerar dispositivos de audio:', e);
+      }
     };
     getDevices();
-    navigator.mediaDevices.addEventListener('devicechange', getDevices);
-    return () => navigator.mediaDevices.removeEventListener('devicechange', getDevices);
-  }, [selectedDeviceId]);
+    navigator.mediaDevices?.addEventListener?.('devicechange', getDevices);
+    return () => navigator.mediaDevices?.removeEventListener?.('devicechange', getDevices);
+  }, [selectedDeviceId, selectedOutputDeviceId]);
+
+  const setAudioOutputDevice = async (sinkId: string) => {
+    setSelectedOutputDeviceId(sinkId);
+    try {
+      if (audioContextRef.current && 'setSinkId' in audioContextRef.current) {
+        await (audioContextRef.current as any).setSinkId(sinkId);
+      }
+    } catch (e) {
+      console.warn('AudioContext setSinkId no soportado en esta plataforma:', e);
+    }
+
+    try {
+      const mediaElements = document.querySelectorAll('audio, video');
+      mediaElements.forEach(async (el: any) => {
+        if (typeof el.setSinkId === 'function') {
+          try {
+            await el.setSinkId(sinkId);
+          } catch (err) {}
+        }
+      });
+    } catch (e) {}
+  };
 
   const startAudio = async (sourceType: 'microphone' | 'system' = 'microphone', deviceId?: string) => {
     try {
@@ -182,5 +218,17 @@ export const useAudioAnalyzer = () => {
     return { volume, frequency, bass, mid, treble };
   }, [isActive]);
 
-  return { isActive, error, devices, selectedDeviceId, setSelectedDeviceId, startAudio, stopAudio, getAudioMetrics };
+  return { 
+    isActive, 
+    error, 
+    devices, 
+    selectedDeviceId, 
+    setSelectedDeviceId, 
+    outputDevices, 
+    selectedOutputDeviceId, 
+    setAudioOutputDevice, 
+    startAudio, 
+    stopAudio, 
+    getAudioMetrics 
+  };
 };

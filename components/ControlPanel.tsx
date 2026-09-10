@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { VisualizerParams, SacredGeometryMode, SacredGeometrySettings, DEFAULT_PARAMS, AutoPilotMode, BackgroundMode, GeometryInfo, SubscriptionTier } from '../types';
-import { Activity, Zap, Maximize, Minimize, RotateCw, Palette, Target, Music, BrainCircuit, Wind, Droplets, Waves, Shuffle, Sprout, Glasses, Download, X, RotateCcw, Save, Upload, Heart, Lock, Unlock, LogIn, LogOut, User, Star, Cloud, Trash2, Info, ChevronUp, ChevronDown } from 'lucide-react';
+import { Activity, Zap, Maximize, Minimize, RotateCw, Palette, Target, Music, BrainCircuit, Wind, Droplets, Waves, Shuffle, Sprout, Glasses, Download, X, RotateCcw, Save, Upload, Heart, Lock, Unlock, LogIn, LogOut, User, Star, Cloud, Trash2, Info, ChevronUp, ChevronDown, Volume2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
 import { collection, addDoc, getDocs, query, where, deleteDoc, doc } from 'firebase/firestore';
@@ -24,6 +24,9 @@ interface ControlPanelProps {
   audioDevices?: MediaDeviceInfo[];
   selectedAudioDeviceId?: string;
   onAudioDeviceChange?: (deviceId: string) => void;
+  outputAudioDevices?: MediaDeviceInfo[];
+  selectedOutputAudioDeviceId?: string;
+  onOutputAudioDeviceChange?: (deviceId: string) => void;
   onOpenInfo?: (tab?: 'guide' | 'ecosystem' | 'account' | 'donations' | 'presets' | 'updates') => void;
 }
 
@@ -63,6 +66,9 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   audioDevices = [],
   selectedAudioDeviceId = '',
   onAudioDeviceChange,
+  outputAudioDevices = [],
+  selectedOutputAudioDeviceId = '',
+  onOutputAudioDeviceChange,
   onOpenInfo
 }) => {
   const { user, login, setAuthModalOpen, logout, createStripeCheckout } = useAuth();
@@ -2152,13 +2158,26 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               </div>
               
               {params.audioSource === 'microphone' && audioDevices.length > 0 && (
-                <div className="max-w-[150px]">
+                <div className="max-w-[150px]" title="Dispositivo de Entrada (Micrófono)">
                   <LiquidSelect
                     value={selectedAudioDeviceId}
                     onChange={(val) => onAudioDeviceChange?.(val)}
                     options={audioDevices.map(device => ({
                       value: device.deviceId,
                       label: device.label || `Entrada ${device.deviceId.slice(0, 5)}`
+                    }))}
+                  />
+                </div>
+              )}
+
+              {outputAudioDevices.length > 0 && (
+                <div className="max-w-[150px]" title="Salida de Audio (Altavoces / Auriculares / Bluetooth)">
+                  <LiquidSelect
+                    value={selectedOutputAudioDeviceId}
+                    onChange={(val) => onOutputAudioDeviceChange?.(val)}
+                    options={outputAudioDevices.map(device => ({
+                      value: device.deviceId,
+                      label: `🔊 ${device.label || `Salida ${device.deviceId.slice(0, 5)}`}`
                     }))}
                   />
                 </div>

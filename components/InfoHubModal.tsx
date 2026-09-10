@@ -931,9 +931,13 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                         <span className="text-[10px] text-gray-400">Ruteo de altavoces</span>
                       </div>
                     </div>
-                    <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-mono text-[10px]">
-                      {updateSystem.permissions.audioOutput ? 'Soportado' : 'Estándar OS'}
-                    </span>
+                    <button
+                      onClick={() => updateSystem.requestAudioOutputAccess()}
+                      className="px-2 py-0.5 rounded-md bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 font-mono text-[10px] transition-colors cursor-pointer"
+                      title="Enrutar y seleccionar dispositivo de salida de audio"
+                    >
+                      {updateSystem.permissions.audioOutput ? '🔊 Enrutar / Probar' : 'Enrutado OS'}
+                    </button>
                   </div>
 
                   {/* Pantalla Siempre Encendida (Wake Lock) */}

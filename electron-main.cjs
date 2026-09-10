@@ -55,12 +55,15 @@ async function createWindow() {
   const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
   
   mainWindow = new BrowserWindow({
-    width: 1280,
-    height: 720,
+    width: 1440,
+    height: 900,
+    minWidth: 960,
+    minHeight: 540,
     fullscreen: false,
-    autoHideMenuBar: false,
+    autoHideMenuBar: true,
     frame: true,
-    title: "Audiomorphic AR",
+    title: "Audiomorphic",
+    backgroundColor: '#050505',
     icon: path.join(__dirname, 'build', 'icon.png'),
     webPreferences: {
       nodeIntegration: false,
@@ -70,8 +73,16 @@ async function createWindow() {
     },
   });
 
-  // Remove forced fullscreen that prevents closing
-  // mainWindow.maximize(); 
+  // Launch maximized to fill the entire desktop screen by default
+  mainWindow.maximize();
+
+  // Support F11 shortcut to toggle true borderless fullscreen
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    if (input.key === 'F11' && input.type === 'keyDown') {
+      mainWindow.setFullScreen(!mainWindow.isFullScreen());
+      event.preventDefault();
+    }
+  });
 
   // Apply User-Agent to the current session
   mainWindow.webContents.setUserAgent(userAgent);
@@ -126,9 +137,9 @@ async function createWindow() {
     }
   });
 
-  // Permissions
+  // Permissions: Allow media, inputs and output routing (speakers/bluetooth)
   mainWindow.webContents.session.setPermissionRequestHandler((webContents, permission, callback) => {
-    const allowedPermissions = ['media', 'camera', 'microphone', 'display-capture', 'notifications'];
+    const allowedPermissions = ['media', 'camera', 'microphone', 'display-capture', 'notifications', 'speaker-selection', 'audio-capture', 'video-capture'];
     if (allowedPermissions.includes(permission)) {
       console.log(`Granting permission: ${permission}`);
       callback(true);
@@ -139,7 +150,7 @@ async function createWindow() {
   });
   
   mainWindow.webContents.session.setPermissionCheckHandler((webContents, permission) => {
-    if (['camera', 'media', 'microphone', 'display-capture', 'notifications'].includes(permission)) return true;
+    if (['camera', 'media', 'microphone', 'display-capture', 'notifications', 'speaker-selection', 'audio-capture', 'video-capture'].includes(permission)) return true;
     return false;
   });
 
@@ -190,7 +201,7 @@ async function createWindow() {
 // Enable WebXR, hardware acceleration and autoplay policies
 app.commandLine.appendSwitch('enable-webxr');
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
-app.commandLine.appendSwitch('enable-features', 'WebXR,WebXRIncubations');
+app.commandLine.appendSwitch('enable-features', 'WebXR,WebXRIncubations,AudioServiceOutOfProcess,SpeakerSelection');
 
 app.whenReady().then(async () => {
   // Explicitly ask for microphone, camera, and screen permissions on macOS

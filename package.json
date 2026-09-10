@@ -23,7 +23,9 @@
         "NSMicrophoneUsageDescription": "Audiomorphic requiere acceso al micrófono para analizar el audio en tiempo real.",
         "NSCameraUsageDescription": "Audiomorphic requiere acceso a la cámara para las funciones de Realidad Aumentada.",
         "NSDesktopFolderUsageDescription": "Audiomorphic requiere permiso para gestionar archivos de configuración.",
-        "NSAppleEventsUsageDescription": "Audiomorphic requiere permisos del sistema para interactuar con dispositivos de audio."
+        "NSAppleEventsUsageDescription": "Audiomorphic requiere permisos del sistema para interactuar con dispositivos de audio.",
+        "NSBluetoothAlwaysUsageDescription": "Audiomorphic requiere acceso a Bluetooth para sincronizar y enrutar salidas de audio con auriculares y altavoces inalámbricos.",
+        "NSBluetoothPeripheralUsageDescription": "Audiomorphic requiere Bluetooth para comunicarse con dispositivos y periféricos de audio."
       }
     },
     "dmg": {

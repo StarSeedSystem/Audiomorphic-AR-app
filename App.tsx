@@ -230,6 +230,9 @@ const App: React.FC = () => {
     devices, 
     selectedDeviceId, 
     setSelectedDeviceId, 
+    outputDevices,
+    selectedOutputDeviceId,
+    setAudioOutputDevice,
     startAudio, 
     stopAudio, 
     getAudioMetrics 
@@ -939,6 +942,9 @@ const App: React.FC = () => {
               audioDevices={devices}
               selectedAudioDeviceId={selectedDeviceId}
               onAudioDeviceChange={setSelectedDeviceId}
+              outputAudioDevices={outputDevices}
+              selectedOutputAudioDeviceId={selectedOutputDeviceId}
+              onOutputAudioDeviceChange={setAudioOutputDevice}
             />
           </div>
         </>

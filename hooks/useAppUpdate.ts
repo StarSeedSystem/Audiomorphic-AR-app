@@ -254,6 +254,22 @@ export const useAppUpdate = () => {
     }
   };
 
+  // Request or select audio output (Speakers / Bluetooth / HDMI)
+  const requestAudioOutputAccess = async (): Promise<boolean> => {
+    try {
+      if (typeof (navigator.mediaDevices as any)?.selectAudioOutput === 'function') {
+        const device = await (navigator.mediaDevices as any).selectAudioOutput();
+        refreshPermissions();
+        return !!device;
+      }
+      return true;
+    } catch (e) {
+      console.warn('Audio output device request:', e);
+      refreshPermissions();
+      return false;
+    }
+  };
+
   // Save settings
   const updateSettings = (newSettings: Partial<UpdateSettings>) => {
     setSettings((prev) => {
@@ -335,6 +351,7 @@ export const useAppUpdate = () => {
     refreshPermissions,
     requestMicrophoneAccess,
     requestCameraAccess,
+    requestAudioOutputAccess,
     checkForUpdates,
     applyOtaUpdate,
   };
