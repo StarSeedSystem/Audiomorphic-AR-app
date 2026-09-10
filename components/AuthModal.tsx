@@ -56,7 +56,7 @@ export const AuthModal: React.FC = () => {
       </div>
 
       {/* Tarjeta glass centrada (~420px) */}
-      <div className="relative w-full max-w-[420px] my-auto bg-white/[0.04] backdrop-blur-2xl border border-white/10 rounded-3xl shadow-[0_20px_70px_rgba(0,0,0,0.7)] overflow-hidden p-7 sm:p-8">
+      <div className="relative w-full max-w-[420px] my-auto max-h-[92dvh] overflow-y-auto bg-white/[0.04] backdrop-blur-2xl border border-white/10 rounded-3xl shadow-[0_20px_70px_rgba(0,0,0,0.7)] p-5 sm:p-8">
         <button
           onClick={() => setAuthModalOpen(false)}
           className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"

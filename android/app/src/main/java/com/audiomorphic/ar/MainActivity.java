@@ -46,6 +46,12 @@ public class MainActivity extends BridgeActivity {
         setupEdgeToEdgeFullscreen();
     }
 
+    @Override
+    public void onConfigurationChanged(android.content.res.Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        setupEdgeToEdgeFullscreen();
+    }
+
     private void setupEdgeToEdgeFullscreen() {
         Window window = getWindow();
         if (window == null) return;

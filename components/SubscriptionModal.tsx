@@ -117,30 +117,30 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       `}</style>
 
       <div
-        className="sub-panel w-full max-w-5xl max-h-[90vh] flex flex-col relative"
+        className="sub-panel w-full max-w-5xl h-[100dvh] sm:h-auto max-h-[92vh] rounded-none sm:rounded-[32px] flex flex-col relative overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-6 sm:px-8 py-5 border-b border-white/10 flex justify-between items-center bg-white/5 rounded-t-[32px]">
+        <div className="px-4 sm:px-8 py-3.5 sm:py-5 border-b border-white/10 flex justify-between items-center bg-white/5 shrink-0">
           <div>
-            <h2 className="text-2xl font-bold flex items-center gap-3 text-amber-200">
-              <Crown className="w-7 h-7 text-amber-300 drop-shadow-[0_0_10px_rgba(245,158,11,0.7)]" />
+            <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2.5 text-amber-200">
+              <Crown className="w-6 h-6 sm:w-7 sm:h-7 text-amber-300 drop-shadow-[0_0_10px_rgba(245,158,11,0.7)]" />
               Suscripción
             </h2>
-            <p className="text-sm text-amber-100/70 mt-1 font-medium tracking-wide">
+            <p className="text-xs sm:text-sm text-amber-100/70 mt-0.5 sm:mt-1 font-medium tracking-wide">
               Elige tu plan y desbloquea Audiomorphic
             </p>
           </div>
           <button
             onClick={onClose}
             aria-label="Cerrar"
-            className="p-2 rounded-full bg-black/30 border border-white/10 text-gray-300 hover:text-white hover:border-white/30 transition-all"
+            className="p-2 rounded-full bg-black/30 border border-white/10 text-gray-300 hover:text-white hover:border-white/30 transition-all cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="p-6 sm:p-8 overflow-y-auto sub-scroll flex-1">
+        <div className="p-4 sm:p-8 overflow-y-auto sub-scroll flex-1 pb-safe">
           {/* Current plan + StarSeed banner */}
           <div className="mb-6 flex flex-col gap-4">
             <div className="flex flex-wrap items-center gap-3 p-4 rounded-2xl bg-black/30 border border-white/10">
@@ -196,7 +196,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
           </div>
 
           {/* Tiers grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
             {tiers.map((tier) => {
               const a = ACCENTS[tier.accent];
               const isCurrent = tier.id === currentPlan;

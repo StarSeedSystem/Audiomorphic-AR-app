@@ -240,28 +240,44 @@ const VisualizerCanvas: React.FC<VisualizerCanvasProps> = ({ params, getAudioMet
     const canvas = canvasRef.current;
     if (!canvas) return;
     
-    // Resize Observer to handle window changes
-    const resizeObserver = new ResizeObserver(entries => {
-      const { width, height } = entries[0].contentRect;
+    // Resize Observer and orientation listeners to handle window/device rotation
+    const updateDimensions = (w?: number, h?: number) => {
+      const parent = canvas.parentElement;
+      const width = w ?? (parent ? parent.clientWidth : window.innerWidth);
+      const height = h ?? (parent ? parent.clientHeight : window.innerHeight);
       const dpr = window.devicePixelRatio || 1;
       
       canvas.width = width * dpr;
       canvas.height = height * dpr;
       
       const ctx = canvas.getContext('2d');
-      if(ctx) ctx.scale(dpr, dpr);
+      if (ctx) ctx.scale(dpr, dpr);
       
-      // Keep CSS size matched
       canvas.style.width = `${width}px`;
       canvas.style.height = `${height}px`;
       
-      // We store logical size for the draw function to use
       (canvas as any).logicalWidth = width;
       (canvas as any).logicalHeight = height;
+    };
+
+    const resizeObserver = new ResizeObserver(entries => {
+      const { width, height } = entries[0].contentRect;
+      updateDimensions(width, height);
     });
 
     if (canvas.parentElement) {
       resizeObserver.observe(canvas.parentElement);
+    }
+
+    const handleOrientationChange = () => {
+      updateDimensions();
+      setTimeout(updateDimensions, 150);
+    };
+
+    window.addEventListener('orientationchange', handleOrientationChange);
+    window.addEventListener('resize', handleOrientationChange);
+    if (typeof screen !== 'undefined' && screen.orientation) {
+      screen.orientation.addEventListener('change', handleOrientationChange);
     }
 
     let animationFrameId: number;
@@ -856,6 +872,11 @@ const VisualizerCanvas: React.FC<VisualizerCanvasProps> = ({ params, getAudioMet
     return () => {
       cancelAnimationFrame(animationFrameId);
       resizeObserver.disconnect();
+      window.removeEventListener('orientationchange', handleOrientationChange);
+      window.removeEventListener('resize', handleOrientationChange);
+      if (typeof screen !== 'undefined' && screen.orientation) {
+        screen.orientation.removeEventListener('change', handleOrientationChange);
+      }
     };
   }, []); 
 

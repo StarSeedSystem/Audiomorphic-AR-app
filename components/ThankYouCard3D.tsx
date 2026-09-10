@@ -69,7 +69,7 @@ export const ThankYouCard3D: React.FC<ThankYouCard3DProps> = ({
       >
         {/* The 3D Card Object */}
         <div
-          className="relative w-[320px] sm:w-[350px] h-[480px] rounded-[28px] transition-transform duration-100 ease-out"
+          className="relative w-[280px] xs:w-[320px] sm:w-[350px] h-[420px] sm:h-[480px] rounded-[24px] sm:rounded-[28px] transition-transform duration-100 ease-out"
           style={{
             transformStyle: 'preserve-3d',
             transform: cardTransform,

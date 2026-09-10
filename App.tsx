@@ -853,49 +853,56 @@ const App: React.FC = () => {
       </div>
 
       {!EMBED.bg && !(params.vrMode || params.arPortalMode) && params.showIndicators && (
-        <div className="absolute top-6 right-6 flex items-center gap-3 z-20 transition-opacity duration-500" style={{ opacity: controlsVisible ? 1 : 0.7 }}>
-           <div className={`flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-mono backdrop-blur-sm transition-colors duration-300 pointer-events-none
+        <div 
+          className="absolute top-3 right-3 sm:top-6 sm:right-6 flex items-center gap-1.5 sm:gap-3 z-20 transition-opacity duration-500 max-w-[calc(100vw-1.5rem)] overflow-hidden" 
+          style={{ 
+            top: 'max(0.75rem, env(safe-area-inset-top))', 
+            right: 'max(0.75rem, env(safe-area-inset-right))',
+            opacity: controlsVisible ? 1 : 0.7 
+          }}
+        >
+           <div className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full border text-[11px] sm:text-xs font-mono backdrop-blur-sm transition-colors duration-300 pointer-events-none shrink-0
              ${isActive 
                ? 'bg-red-500/10 border-red-500/40 text-red-400 animate-pulse' 
                : 'bg-gray-800/30 border-gray-700 text-gray-500'}
            `}>
-             <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-red-500' : 'bg-gray-500'}`}></div>
-             {isActive ? 'MIC LIVE' : 'MIC OFF'}
+             <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${isActive ? 'bg-red-500' : 'bg-gray-500'}`}></div>
+             <span>{isActive ? 'MIC' : 'OFF'}</span>
            </div>
            
            {params.autoPilot && (
-             <div className="flex items-center gap-2 px-3 py-1 rounded-full border border-indigo-500/40 bg-indigo-500/10 text-indigo-400 text-xs font-mono backdrop-blur-sm shadow-[0_0_15px_rgba(99,102,241,0.3)]">
-                <Zap className="w-3.5 h-3.5 text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
-                <span className="font-bold tracking-wider">Audiomorphic</span>
-                <RotateCw size={10} className="animate-spin ml-1 text-cyan-400/50" /> 
-                {params.autoRandomMode === 'sacred' ? 'RESONANCIAS SAGRADAS' :
-                 params.autoRandomMode === 'rhythmic' ? 'RITMOS MUSICALES' :
-                 params.autoPilotMode === 'harmonic' ? 'ARQUITECTURA ARMÓNICA' : 
-                 params.autoPilotMode === 'genesis' ? 'GÉNESIS GEOMÉTRICO' : 
-                 'AUTO-DERIVA'}
+             <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full border border-indigo-500/40 bg-indigo-500/10 text-indigo-400 text-[11px] sm:text-xs font-mono backdrop-blur-sm shadow-[0_0_15px_rgba(99,102,241,0.3)] shrink min-w-0">
+                <Zap className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)] shrink-0" />
+                <span className="font-bold tracking-wider hidden md:inline">Audiomorphic</span>
+                <RotateCw size={10} className="animate-spin text-cyan-400/50 shrink-0 hidden xs:inline" /> 
+                <span className="truncate max-w-[85px] xs:max-w-[120px] sm:max-w-none">
+                  {params.autoRandomMode === 'sacred' ? 'RESONANCIAS' :
+                   params.autoRandomMode === 'rhythmic' ? 'RITMOS' :
+                   params.autoPilotMode === 'harmonic' ? 'ARMÓNICA' : 
+                   params.autoPilotMode === 'genesis' ? 'GÉNESIS' : 
+                   'DERIVA'}
+                </span>
              </div>
            )}
 
            <button
              onClick={() => handleOpenInfo('guide')}
-             className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-cyan-500/40 bg-cyan-950/60 hover:bg-cyan-900/80 text-cyan-300 text-xs font-mono backdrop-blur-md transition-all shadow-[0_0_12px_rgba(6,182,212,0.3)] pointer-events-auto cursor-pointer"
+             className="flex items-center gap-1 px-2.5 sm:px-3 py-1 rounded-full border border-cyan-500/40 bg-cyan-950/60 hover:bg-cyan-900/80 text-cyan-300 text-[11px] sm:text-xs font-mono backdrop-blur-md transition-all shadow-[0_0_12px_rgba(6,182,212,0.3)] pointer-events-auto cursor-pointer shrink-0"
              title="Centro de Información & Red StarSeed"
            >
-             <Info size={13} className="text-cyan-400" />
+             <Info size={12} className="text-cyan-400" />
              <span className="font-semibold tracking-wide">Info</span>
            </button>
            <button
              onClick={() => handleOpenInfo('donations')}
-             className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-amber-500/40 bg-amber-950/60 hover:bg-amber-900/80 text-amber-300 text-xs font-mono backdrop-blur-md transition-all shadow-[0_0_12px_rgba(245,158,11,0.3)] pointer-events-auto cursor-pointer"
+             className="flex items-center gap-1 px-2.5 sm:px-3 py-1 rounded-full border border-amber-500/40 bg-amber-950/60 hover:bg-amber-900/80 text-amber-300 text-[11px] sm:text-xs font-mono backdrop-blur-md transition-all shadow-[0_0_12px_rgba(245,158,11,0.3)] pointer-events-auto cursor-pointer shrink-0"
              title="Donaciones Opcionales & Tarjeta Virtual 3D"
            >
-             <Heart size={13} className="text-amber-400" fill="currentColor" />
+             <Heart size={12} className="text-amber-400" fill="currentColor" />
              <span className="font-semibold tracking-wide">Donar</span>
            </button>
       </div>
       )}
-
-      {/* Persistent Profile Menu Removed - Now exclusively inside ControlPanel & InfoHubModal */}
 
       {!EMBED.bg && error && (
         <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-50 bg-red-900/80 border border-red-500 text-red-100 px-6 py-3 rounded-lg shadow-lg backdrop-blur-md text-sm font-mono flex items-center gap-3">
@@ -919,7 +926,7 @@ const App: React.FC = () => {
           />
           <div 
             className={`
-              absolute top-1/2 left-1/2 z-30 w-[95vw] md:w-[90vw] max-w-5xl h-[90vh] flex flex-col
+              absolute top-1/2 left-1/2 z-30 w-[96vw] sm:w-[92vw] max-w-5xl h-[94dvh] sm:h-[90vh] max-h-[920px] flex flex-col
               transform -translate-x-1/2 -translate-y-1/2 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]
               ${controlsVisible ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none'}
             `}

@@ -141,3 +141,38 @@ body {
   position: relative;
   overflow: visible !important;
 }
+
+/* Fluid scrollbar hiding for horizontal tab bars */
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+}
+.no-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+/* Mobile Safe Area Padding */
+.pt-safe {
+  padding-top: max(0.5rem, env(safe-area-inset-top));
+}
+.pb-safe {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+.pl-safe {
+  padding-left: max(0.5rem, env(safe-area-inset-left));
+}
+.pr-safe {
+  padding-right: max(0.5rem, env(safe-area-inset-right));
+}
+
+/* Smartphone Landscape Optimizations */
+@media (max-height: 520px) and (orientation: landscape) {
+  .info-hub-shell {
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+  }
+  .liquid-panel {
+    border-radius: 20px !important;
+  }
+}

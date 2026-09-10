@@ -252,81 +252,69 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
       `}</style>
 
       <div
-        className="info-hub-shell w-full max-w-6xl h-[94vh] max-h-[920px] flex flex-col relative overflow-hidden"
+        className="info-hub-shell w-full sm:w-[95vw] md:w-[90vw] max-w-6xl h-[100dvh] sm:h-[94vh] max-h-[920px] rounded-none sm:rounded-[32px] flex flex-col relative overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* HERO HEADER (Elegante fusión del diseño de SubscriptionScreen & AboutScreen) */}
-        <div className="relative p-6 sm:p-8 border-b border-white/10 text-center overflow-hidden shrink-0">
-          <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 via-purple-500/20 to-emerald-500/20 opacity-60 pointer-events-none"></div>
-          
-          <button 
-            onClick={onClose}
-            className="absolute top-4 right-4 md:top-6 md:right-6 text-gray-400 hover:text-white transition-colors z-20 bg-black/50 p-2 rounded-full hover:bg-white/10 cursor-pointer pointer-events-auto"
-            title="Cerrar ventana"
-          >
-            <X size={22} />
-          </button>
-          
-          <h2 className="text-2xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-300 to-emerald-300 mb-3 relative z-10 tracking-tight">
-            Desbloquea el Universo Sinestésico
-          </h2>
-          <p className="text-gray-300 max-w-3xl mx-auto text-xs sm:text-sm relative z-10 mb-4 leading-relaxed">
-            Experimenta la sinestesia completa con acceso a todas las geometrías sagradas, modos de realidad virtual y aumentada, y control total sobre la experiencia visual. <strong>100% Gratuito y Soberano.</strong>
-          </p>
+        {/* SLIM UNIFIED APP BAR (Never obstructs content on smartphones or landscape) */}
+        <div className="px-3 sm:px-6 py-2.5 sm:py-3.5 border-b border-white/10 flex justify-between items-center bg-black/60 backdrop-blur-md shrink-0 z-20">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-500 to-purple-600 flex items-center justify-center p-0.5 shrink-0 shadow-[0_0_12px_rgba(6,182,212,0.4)]">
+              <Sparkles size={16} className="text-white animate-pulse" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-sm sm:text-base font-extrabold text-white tracking-wide truncate flex items-center gap-1.5">
+                <span>Audiomorphic Hub</span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 hidden sm:inline-block">v{updateSystem.currentVersion}</span>
+              </h2>
+              <p className="text-[10px] text-gray-400 truncate hidden sm:block">Centro de Información, Ciencia, Descargas y Donaciones</p>
+            </div>
+          </div>
 
-          {/* User status & Quick buttons */}
-          <div className="flex flex-wrap items-center justify-center gap-3 relative z-10">
+          <div className="flex items-center gap-2 shrink-0">
             {identity.isLoggedIn ? (
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-mono">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>Conectado como {identity.displayName || identity.user?.email} (Soberano Universal)</span>
+              <div className="hidden md:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[11px] font-mono">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span className="max-w-[120px] truncate">{identity.displayName || identity.user?.email}</span>
               </div>
             ) : (
               <button 
                 onClick={() => setActiveTab('account')}
-                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-medium transition-colors cursor-pointer"
+                className="hidden md:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white text-[11px] font-medium transition-colors cursor-pointer"
               >
-                <User size={14} />
-                <span>Cuenta Opcional: Entrar o Crear Gratis</span>
+                <User size={12} />
+                <span>Cuenta</span>
               </button>
             )}
 
             <button 
-              onClick={() => setActiveTab('updates')}
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/40 text-cyan-200 text-xs font-bold transition-all cursor-pointer"
+              onClick={onClose}
+              className="text-gray-300 hover:text-white transition-colors bg-white/10 hover:bg-white/20 p-2 sm:p-2.5 rounded-full cursor-pointer pointer-events-auto border border-white/15 shadow-sm"
+              title="Cerrar ventana"
+              aria-label="Cerrar ventana"
             >
-              <Download size={14} className="text-cyan-400" />
-              <span>Descargas & Versión {updateSystem.currentVersion}</span>
-            </button>
-
-            <button 
-              onClick={() => setActiveTab('guide')}
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-pink-500/20 to-orange-500/20 border border-pink-500/40 hover:border-pink-500/70 text-pink-200 text-xs font-bold transition-all group cursor-pointer"
-            >
-              <Heart className="w-3.5 h-3.5 text-pink-400 group-hover:scale-125 transition-transform" fill="currentColor" />
-              <span>¿Cómo ayuda tu contribución? Fundación Starseed</span>
+              <X size={18} />
             </button>
           </div>
         </div>
 
-        {/* NAVIGATION TABS */}
-        <div className="px-4 sm:px-8 py-2.5 bg-black/50 border-b border-white/10 flex gap-2 sm:gap-3 overflow-x-auto no-scrollbar shrink-0">
+        {/* NAVIGATION TABS (Fluid horizontal scrolling, compact tap targets) */}
+        <div className="px-3 sm:px-6 py-2 bg-black/50 border-b border-white/10 flex gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar whitespace-nowrap shrink-0 z-10">
           {[
-            { id: 'donations', label: 'Donaciones & Aportes', icon: <Heart size={15} /> },
-            { id: 'guide', label: 'Sobre el Proyecto & Ciencia', icon: <BrainCircuit size={15} /> },
-            { id: 'updates', label: 'Actualizaciones & Descargas', icon: <Download size={15} /> },
-            { id: 'ecosystem', label: 'Ecosistema StarSeed', icon: <Globe size={15} /> },
-            { id: 'account', label: 'Mi Cuenta Soberana', icon: <User size={15} /> },
-            { id: 'presets', label: 'Biblioteca de Presets', icon: <Bookmark size={15} /> },
+            { id: 'donations', label: 'Donaciones & Aportes', icon: <Heart size={14} /> },
+            { id: 'guide', label: 'Sobre el Proyecto & Ciencia', icon: <BrainCircuit size={14} /> },
+            { id: 'updates', label: 'Actualizaciones & Descargas', icon: <Download size={14} /> },
+            { id: 'ecosystem', label: 'Ecosistema StarSeed', icon: <Globe size={14} /> },
+            { id: 'account', label: 'Mi Cuenta Soberana', icon: <User size={14} /> },
+            { id: 'presets', label: 'Biblioteca de Presets', icon: <Bookmark size={14} /> },
           ].map((tab) => {
             const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as InfoHubTab)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[11px] sm:text-xs font-bold whitespace-nowrap transition-all shrink-0 cursor-pointer ${
                   isActive
-                    ? 'bg-gradient-to-r from-cyan-500/25 via-purple-500/25 to-emerald-500/25 text-white border border-cyan-400/50 shadow-[0_0_20px_rgba(0,242,254,0.25)]'
+                    ? 'bg-gradient-to-r from-cyan-500/25 via-purple-500/25 to-emerald-500/25 text-white border border-cyan-400/50 shadow-[0_0_15px_rgba(0,242,254,0.2)]'
                     : 'text-gray-400 hover:text-gray-200 hover:bg-white/5 border border-transparent'
                 }`}
               >
@@ -337,11 +325,38 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
           })}
         </div>
 
-        {/* TAB BODY */}
-        <div className="p-6 sm:p-8 overflow-y-auto flex-1 hub-scroll">
+        {/* TAB BODY (Expansive 85-90% vertical space for content) */}
+        <div className="p-3 sm:p-6 md:p-8 overflow-y-auto flex-1 hub-scroll">
           {/* TAB 1: DONACIONES VOLUNTARIAS & TARJETA 3D */}
           {activeTab === 'donations' && (
-            <div className="space-y-10 animate-in fade-in duration-300">
+            <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
+              
+              {/* HERO BANNER (Scrolls naturally inside overview, never covers other tabs) */}
+              <div className="relative p-5 sm:p-7 rounded-2xl sm:rounded-3xl border border-white/15 text-center overflow-hidden bg-gradient-to-r from-cyan-950/40 via-purple-950/40 to-emerald-950/40 shadow-xl">
+                <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 via-purple-500/10 to-emerald-500/10 opacity-60 pointer-events-none"></div>
+                <h2 className="text-xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-300 to-emerald-300 mb-2 relative z-10 tracking-tight">
+                  Desbloquea el Universo Sinestésico
+                </h2>
+                <p className="text-gray-300 max-w-2xl mx-auto text-xs sm:text-sm relative z-10 mb-3 sm:mb-4 leading-relaxed">
+                  Experimenta la sinestesia completa con acceso a todas las geometrías sagradas, modos de realidad virtual y aumentada, y control total sobre la experiencia visual. <strong>100% Gratuito y Soberano.</strong>
+                </p>
+                <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 relative z-10">
+                  <button 
+                    onClick={() => setActiveTab('updates')}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/40 text-cyan-200 text-xs font-bold transition-all cursor-pointer"
+                  >
+                    <Download size={13} className="text-cyan-400" />
+                    <span>Descargas & Versión {updateSystem.currentVersion}</span>
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('guide')}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-pink-500/20 to-orange-500/20 border border-pink-500/40 hover:border-pink-500/70 text-pink-200 text-xs font-bold transition-all group cursor-pointer"
+                  >
+                    <Heart className="w-3.5 h-3.5 text-pink-400 group-hover:scale-125 transition-transform" fill="currentColor" />
+                    <span>¿Cómo ayuda tu contribución? Fundación Starseed</span>
+                  </button>
+                </div>
+              </div>
               
               {/* Banner Fundación StarSeed & Aclaración 0% Paywalls */}
               <div className="p-6 sm:p-7 rounded-3xl bg-gradient-to-r from-pink-950/40 via-purple-950/30 to-black/50 border border-pink-500/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">

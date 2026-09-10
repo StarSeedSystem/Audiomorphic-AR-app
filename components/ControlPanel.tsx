@@ -2083,36 +2083,160 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         }
       `}</style>
 
-      <div className="liquid-panel w-full h-full flex-1 flex flex-col relative z-10">
-        <div className="px-4 md:px-6 py-3 md:py-4 border-b border-white/10 flex flex-col md:flex-row justify-between items-center bg-white/5 gap-3 md:gap-0 shrink-0">
-          <div className="text-center md:text-left flex flex-col items-center md:items-start w-full md:w-auto">
-            <h1 className="text-2xl md:text-3xl font-bold neon-metal-text flex items-center justify-center md:justify-start gap-2 tracking-wider">
-              <Activity className="w-6 h-6 md:w-8 md:h-8 icon-neon" />
-              Audiomorphic
-            </h1>
-            <p className="text-[10px] md:text-xs text-cyan-100/70 mt-1 font-medium tracking-wide">Recurrencia Compleja Sonora</p>
+      <div className="liquid-panel w-full h-full flex-1 flex flex-col relative z-10 overflow-hidden">
+        {/* ROW 1: PRIMARY TITLE & CORE ACTIONS (Sleek, compact, never wraps into 5 lines) */}
+        <div className="px-3 sm:px-6 py-2 sm:py-3 border-b border-white/10 flex justify-between items-center bg-white/5 gap-2 shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <Activity className="w-5 h-5 sm:w-7 sm:h-7 icon-neon text-cyan-400 shrink-0" />
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-2xl font-bold neon-metal-text tracking-wider truncate">
+                Audiomorphic
+              </h1>
+              <p className="text-[9px] sm:text-[11px] text-cyan-100/70 font-medium tracking-wide truncate hidden xs:block">
+                Recurrencia Compleja Sonora
+              </p>
+            </div>
           </div>
-          <div className="flex flex-wrap justify-center items-center gap-2 md:gap-3 w-full md:w-auto">
+
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <button
+              onClick={toggleAudio}
+              className={`liquid-bubble px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                audioActive 
+                  ? 'text-red-300 shadow-[0_0_15px_rgba(239,68,68,0.4)] border-red-500/40 bg-red-950/30' 
+                  : 'text-cyan-300 hover:text-cyan-200'
+              }`}
+              title={audioActive ? 'Detener captura de audio' : 'Iniciar captura de audio'}
+            >
+              <span className={`w-2 h-2 rounded-full shrink-0 ${audioActive ? 'bg-red-400 animate-pulse' : 'bg-cyan-400'}`} />
+              <span className="hidden xs:inline">{audioActive ? 'Detener Audio' : 'Iniciar Audio'}</span>
+              <span className="xs:hidden">{audioActive ? 'Detener' : 'Audio'}</span>
+            </button>
+
+            <button
+              onClick={toggleFullScreen}
+              className="liquid-bubble p-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm font-bold flex items-center gap-1 text-purple-300 hover:text-purple-200 transition-all cursor-pointer"
+              title="Alternar Pantalla Completa (F11)"
+            >
+              {isFullscreen ? <Minimize className="w-4 h-4 sm:w-5 sm:h-5 icon-neon" /> : <Maximize className="w-4 h-4 sm:w-5 sm:h-5 icon-neon" />}
+              <span className="hidden md:inline">Pantalla Completa</span>
+            </button>
+
+            {onClose && (
+              <button
+                onClick={onClose}
+                className="liquid-bubble p-1.5 sm:px-2.5 sm:py-2 text-red-400 hover:text-red-300 border-red-500/30 transition-all cursor-pointer"
+                title="Cerrar Menú"
+                aria-label="Cerrar Menú"
+              >
+                <X className="w-4 h-4 sm:w-5 sm:h-5 icon-neon" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* ROW 2: SECONDARY TOOLS & AUDIO ROUTING (Fluid responsive toolbar) */}
+        <div className="px-3 sm:px-6 py-1.5 sm:py-2 border-b border-white/10 bg-black/40 flex flex-wrap items-center justify-between gap-2 shrink-0">
+          {/* Quick Hub & Presets Buttons */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
             {onOpenInfo && (
               <>
                 <button
                   onClick={() => onOpenInfo('guide')}
-                  className="liquid-bubble px-3 py-2 text-cyan-300 hover:text-cyan-200 flex items-center gap-1.5 text-xs font-semibold"
-                  title="Información & Guía"
+                  className="liquid-bubble px-2.5 py-1 text-cyan-300 hover:text-cyan-200 flex items-center gap-1 text-[11px] font-semibold shrink-0 cursor-pointer"
+                  title="Información & Ciencia"
                 >
-                  <Info size={16} className="text-cyan-400" />
-                  <span className="hidden sm:inline">Información</span>
+                  <Info size={13} className="text-cyan-400" />
+                  <span>Info</span>
                 </button>
                 <button
                   onClick={() => onOpenInfo('donations')}
-                  className="liquid-bubble px-3 py-2 text-amber-300 hover:text-amber-200 flex items-center gap-1.5 text-xs font-semibold"
+                  className="liquid-bubble px-2.5 py-1 text-amber-300 hover:text-amber-200 flex items-center gap-1 text-[11px] font-semibold shrink-0 cursor-pointer"
                   title="Donaciones Opcionales & Tarjeta 3D"
                 >
-                  <Heart size={16} className="text-amber-400" fill="currentColor" />
-                  <span className="hidden sm:inline">Donaciones</span>
+                  <Heart size={13} className="text-amber-400" fill="currentColor" />
+                  <span>Donar</span>
+                </button>
+                <button
+                  onClick={() => onOpenInfo('updates')}
+                  className="liquid-bubble px-2.5 py-1 text-emerald-300 hover:text-emerald-200 flex items-center gap-1 text-[11px] font-semibold shrink-0 cursor-pointer"
+                  title="Instaladores para Android, Windows, Mac y Linux"
+                >
+                  <Download size={13} className="text-emerald-400" />
+                  <span>Apps</span>
                 </button>
               </>
             )}
+
+            <button
+              onClick={() => setShowPresetModal(true)}
+              className="liquid-bubble px-2.5 py-1 text-yellow-300 hover:text-yellow-200 flex items-center gap-1 text-[11px] font-semibold shrink-0 cursor-pointer"
+              title="Guardar / Cargar Ajustes y Presets"
+            >
+              <Save size={13} className="icon-neon" />
+              <span>Presets</span>
+            </button>
+
+            <button
+              onClick={() => setParams(DEFAULT_PARAMS)}
+              className="liquid-bubble p-1 text-red-400 hover:text-red-300 shrink-0 cursor-pointer"
+              title="Restaurar Valores por Defecto"
+            >
+              <RotateCcw size={13} className="icon-neon" />
+            </button>
+          </div>
+
+          {/* Audio Inputs, Outputs & Profile */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex bg-black/60 rounded-full p-0.5 border border-white/10 shrink-0">
+              <button
+                onClick={() => handleChange('audioSource', 'microphone')}
+                className={`px-2.5 py-1 text-[11px] font-bold rounded-full transition-all cursor-pointer ${
+                  params.audioSource === 'microphone' 
+                    ? 'bg-cyan-500/30 text-cyan-300 shadow-[0_0_8px_rgba(6,182,212,0.4)]' 
+                    : 'text-gray-400 hover:text-gray-200'
+                }`}
+              >
+                Mic
+              </button>
+              <button
+                onClick={() => handleChange('audioSource', 'system')}
+                className={`px-2.5 py-1 text-[11px] font-bold rounded-full transition-all cursor-pointer ${
+                  params.audioSource === 'system' 
+                    ? 'bg-cyan-500/30 text-cyan-300 shadow-[0_0_8px_rgba(6,182,212,0.4)]' 
+                    : 'text-gray-400 hover:text-gray-200'
+                }`}
+              >
+                Dispositivo
+              </button>
+            </div>
+
+            {params.audioSource === 'microphone' && audioDevices.length > 0 && (
+              <div className="w-[120px] sm:w-[140px]" title="Dispositivo de Entrada (Micrófono)">
+                <LiquidSelect
+                  value={selectedAudioDeviceId}
+                  onChange={(val) => onAudioDeviceChange?.(val)}
+                  options={audioDevices.map(device => ({
+                    value: device.deviceId,
+                    label: device.label || `Mic ${device.deviceId.slice(0, 5)}`
+                  }))}
+                />
+              </div>
+            )}
+
+            {outputAudioDevices.length > 0 && (
+              <div className="w-[120px] sm:w-[140px]" title="Salida de Audio (Altavoces / Auriculares / Bluetooth)">
+                <LiquidSelect
+                  value={selectedOutputAudioDeviceId}
+                  onChange={(val) => onOutputAudioDeviceChange?.(val)}
+                  options={outputAudioDevices.map(device => ({
+                    value: device.deviceId,
+                    label: `🔊 ${device.label || `Salida ${device.deviceId.slice(0, 5)}`}`
+                  }))}
+                />
+              </div>
+            )}
+
             <ProfileMenu 
               subscriptionTier={subscriptionTier}
               trialEndTime={trialEndTime}
@@ -2127,97 +2251,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 }
               }}
             />
-            <button
-              onClick={() => setParams(DEFAULT_PARAMS)}
-              className="liquid-bubble p-2 md:p-3 text-red-400 hover:text-red-300"
-              title="Restaurar Valores por Defecto"
-            >
-              <RotateCcw size={20} className="icon-neon" />
-            </button>
-            <button
-              onClick={() => setShowPresetModal(true)}
-              className="liquid-bubble p-2 md:p-3 text-yellow-300 hover:text-yellow-200"
-              title="Guardar/Cargar Ajustes"
-            >
-              <Save size={20} className="icon-neon" />
-            </button>
-            <div className="flex items-center gap-2">
-              <div className="flex bg-black/40 rounded-full p-1 border border-white/10">
-                <button
-                  onClick={() => handleChange('audioSource', 'microphone')}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-full transition-all ${params.audioSource === 'microphone' ? 'bg-cyan-500/30 text-cyan-300' : 'text-gray-400'}`}
-                >
-                  Mic
-                </button>
-                <button
-                  onClick={() => handleChange('audioSource', 'system')}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-full transition-all ${params.audioSource === 'system' ? 'bg-cyan-500/30 text-cyan-300' : 'text-gray-400'}`}
-                >
-                  Dispositivo
-                </button>
-              </div>
-              
-              {params.audioSource === 'microphone' && audioDevices.length > 0 && (
-                <div className="max-w-[150px]" title="Dispositivo de Entrada (Micrófono)">
-                  <LiquidSelect
-                    value={selectedAudioDeviceId}
-                    onChange={(val) => onAudioDeviceChange?.(val)}
-                    options={audioDevices.map(device => ({
-                      value: device.deviceId,
-                      label: device.label || `Entrada ${device.deviceId.slice(0, 5)}`
-                    }))}
-                  />
-                </div>
-              )}
-
-              {outputAudioDevices.length > 0 && (
-                <div className="max-w-[150px]" title="Salida de Audio (Altavoces / Auriculares / Bluetooth)">
-                  <LiquidSelect
-                    value={selectedOutputAudioDeviceId}
-                    onChange={(val) => onOutputAudioDeviceChange?.(val)}
-                    options={outputAudioDevices.map(device => ({
-                      value: device.deviceId,
-                      label: `🔊 ${device.label || `Salida ${device.deviceId.slice(0, 5)}`}`
-                    }))}
-                  />
-                </div>
-              )}
-            </div>
-            <button
-              onClick={toggleAudio}
-              className={`liquid-bubble px-4 md:px-6 py-2 md:py-3 text-sm md:text-base font-bold flex items-center gap-2 ${
-                audioActive ? 'text-red-300 shadow-[0_0_20px_rgba(239,68,68,0.4)]' : 'text-cyan-300'
-              }`}
-            >
-              <span className="hidden sm:inline">{audioActive ? 'Detener Audio' : 'Iniciar Audio'}</span>
-              <span className="sm:hidden">{audioActive ? 'Detener' : 'Iniciar'}</span>
-            </button>
-            <button
-              onClick={toggleFullScreen}
-              className="liquid-bubble px-3 py-2 md:py-3 text-sm md:text-base font-bold flex items-center gap-2 text-purple-300"
-              title="Pantalla Completa"
-            >
-              {isFullscreen ? <Minimize className="w-5 h-5 icon-neon" /> : <Maximize className="w-5 h-5 icon-neon" />}
-              <span className="hidden sm:inline">Pantalla Completa</span>
-            </button>
-            <button
-              onClick={handleInstallClick}
-              className="liquid-bubble px-3 py-2 md:py-3 text-sm md:text-base font-bold flex items-center gap-2 text-emerald-300"
-              title="Instalar"
-            >
-              <Download className="w-5 h-5 icon-neon" />
-              <span className="hidden sm:inline">Descargar App</span>
-            </button>
-            
-            {onClose && (
-              <button
-                onClick={onClose}
-                className="liquid-bubble px-3 py-2 md:py-3 text-sm md:text-base font-bold flex items-center gap-2 text-red-400 ml-auto"
-                title="Cerrar Menú"
-              >
-                <X className="w-5 h-5 icon-neon" />
-              </button>
-            )}
           </div>
         </div>
 
