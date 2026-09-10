@@ -1,7 +1,7 @@
 {
   "name": "audiomorphic-ar",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "main": "electron-main.cjs",
   "author": "Audiomorphic",
@@ -14,6 +14,9 @@
     "mac": {
       "target": "dmg",
       "icon": "build/icon.icns",
+      "identity": null,
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
       "entitlements": "build/entitlements.mac.plist",
       "entitlementsInherit": "build/entitlements.mac.plist",
       "extendInfo": {
@@ -24,7 +27,6 @@
       }
     },
     "dmg": {
-      "background": "build/background.png",
       "iconSize": 128,
       "contents": [
         {

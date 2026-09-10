@@ -38,14 +38,13 @@
 
 | Sistema Operativo | Formato / Tipo | Arquitectura | Tamaño | Enlace de Descarga Directa |
 | :--- | :--- | :--- | :--- | :--- |
-| **🪟 Windows 10 / 11** | Instalador GUI (`.exe`) | x64 & ARM64 Universal | `~130 MB` | [⬇️ Descargar Instalador (.exe)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.1.0/Audiomorphic-VR-Setup-1.1.0.exe) |
-| **🪟 Windows Portable** | Archivo `.zip` (Sin instalación) | x64 & ARM64 | `~125 MB` | [⬇️ Descargar Portable (.zip)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.1.0/Audiomorphic-VR-Portable-1.1.0.zip) |
-| **🍎 macOS (Apple Silicon)** | Imagen de Disco (`.dmg`) | Apple Silicon (M1 / M2 / M3 / M4) | `~143 MB` | [⬇️ Descargar Apple Silicon (.dmg)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.1.0/Audiomorphic-VR-1.1.0-arm64.dmg) |
-| **🍎 macOS (Intel)** | Imagen de Disco (`.dmg`) | Intel 64-bit | `~148 MB` | [⬇️ Descargar Intel Mac (.dmg)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.1.0/Audiomorphic-VR-1.1.0-x64.dmg) |
-| **🐧 Linux Universal** | Binario Universal (`.AppImage`) | x86_64 & arm64 | `~115 MB` | [⬇️ Descargar .AppImage](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.1.0/Audiomorphic-VR-1.1.0.AppImage) |
-| **🐧 Linux Debian / Ubuntu** | Paquete Debian (`.deb`) | amd64 | `~110 MB` | [⬇️ Descargar Paquete (.deb)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.1.0/audiomorphic-vr_1.1.0_amd64.deb) |
-| **🤖 Android** | Paquete APK Nativo (`.apk`) | Android 8.0+ (Oreo o sup.) | `~5.4 MB` | [⬇️ Descargar APK Oficial (.apk)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.1.0/audiomorphic.apk) |
-| **🌐 Web App / PWA** | Web Progresiva Instalable | Chrome, Edge, Safari, Firefox | En vivo | [🚀 Abrir Web App Soberana](https://audiomorphic-ar.vercel.app) |
+| **🪟 Windows 10 / 11** | Paquete Portable (`.zip`) | ARM64 & x64 Universal | `~457 MB` | [⬇️ Descargar Windows (.zip)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.1.0/Audiomorphic_AR_v1.1.0_Windows.zip) |
+| **🍎 macOS (Apple Silicon)** | Imagen de Disco (`.dmg`) | Apple Silicon (M1 / M2 / M3 / M4) | `~213 MB` | [⬇️ Descargar Apple Silicon (.dmg)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.1.0/Audiomorphic_AR_v1.1.0_macOS_arm64.dmg) |
+| **🍎 macOS Universal** | Archivo `.zip` con DMG | Intel & Apple Silicon | `~213 MB` | [⬇️ Descargar Mac Universal (.zip)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.1.0/audiomorphic-mac.zip) |
+| **🤖 Android** | Paquete APK Nativo (`.apk`) | Android 8.0+ (Oreo o sup.) | `~6.9 MB` | [⬇️ Descargar APK Oficial (.apk)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.1.0/audiomorphic.apk) |
+| **🤖 Android (ZIP)** | Archivo Comprimido (`.zip`) | Android 8.0+ | `~6.4 MB` | [⬇️ Descargar Android ZIP (.zip)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.1.0/audiomorphic-android.zip) |
+| **🌐 Web App / PWA** | Web Progresiva Instalable | Chrome, Edge, Safari, Firefox | En vivo | [🚀 Abrir Web App Soberana](https://audiomorphic.vercel.app) |
+| **🐧 Linux & Mirror** | Espejo Oficial en Google Drive | Todos los Sistemas | Universal | [☁️ Carpeta de Instaladores Mirror](https://drive.google.com/drive/folders/1bZ8yvbWr7r3eJUdKIQCSSuu-p398mAkn?usp=sharing) |
 
 ### ☁️ Mirror Oficial en Google Drive
 Si experimentas límites de ancho de banda o requieres descargas de alta velocidad en cualquier parte del mundo, accede a la carpeta espejo oficial:
