@@ -7,7 +7,7 @@
   "author": "Audiomorphic",
   "build": {
     "appId": "com.audiomorphic.app",
-    "productName": "Audiomorphic AR",
+    "productName": "Audiomorphic",
     "directories": {
       "output": "dist-electron"
     },

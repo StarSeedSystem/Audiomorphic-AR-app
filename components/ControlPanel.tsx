@@ -2082,7 +2082,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           <div className="text-center md:text-left flex flex-col items-center md:items-start w-full md:w-auto">
             <h1 className="text-2xl md:text-3xl font-bold neon-metal-text flex items-center justify-center md:justify-start gap-2 tracking-wider">
               <Activity className="w-6 h-6 md:w-8 md:h-8 icon-neon" />
-              Audiomorphic AR
+              Audiomorphic
             </h1>
             <p className="text-[10px] md:text-xs text-cyan-100/70 mt-1 font-medium tracking-wide">Recurrencia Compleja Sonora</p>
           </div>

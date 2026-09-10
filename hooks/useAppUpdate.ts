@@ -142,7 +142,7 @@ export const CHANGELOG_HISTORY: VersionChangelog[] = [
     version: '1.0.0',
     date: '2026-03-31',
     type: 'native_required',
-    title: 'Lanzamiento Oficial Audiomorphic AR v1.0',
+    title: 'Lanzamiento Oficial Audiomorphic v1.0',
     notes: [
       'Primeros instaladores de escritorio (Windows .exe y macOS .dmg) y binario Android .apk.',
       'Motor fractal de recurrencia compleja sonora y cálculo de geometría armónica.',

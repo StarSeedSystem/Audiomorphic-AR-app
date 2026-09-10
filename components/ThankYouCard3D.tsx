@@ -123,7 +123,7 @@ export const ThankYouCard3D: React.FC<ThankYouCard3DProps> = ({
                 <div>
                   <span className="text-[10px] font-mono tracking-widest uppercase text-white/70 block">StarSeed OS</span>
                   <span className="text-xs font-bold tracking-wider text-white flex items-center gap-1">
-                    Audiomorphic AR <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                    Audiomorphic <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
                   </span>
                 </div>
               </div>

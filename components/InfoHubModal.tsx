@@ -351,7 +351,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                     Fundación StarSeed & Arte Soberano Libre
                   </span>
                   <h3 className="text-lg sm:text-xl font-bold text-white">
-                    Audiomorphic AR es 100% Gratuito y Libre de Suscripciones
+                    Audiomorphic es 100% Gratuito y Libre de Suscripciones
                   </h3>
                   <p className="text-xs text-gray-300 leading-relaxed">
                     Todas las funciones, geometrías y modos AR/VR están desbloqueados para todo el mundo. No hay muros de pago ni compras obligatorias. Los siguientes enlaces son <strong>donaciones voluntarias y opcionales</strong> que financian directamente a la <strong>Fundación StarSeed</strong> en educación, investigación de frecuencias sagradas y arte libre.
@@ -985,7 +985,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                 <div className="mb-4">
                   <h4 className="text-lg font-bold text-white flex items-center gap-2">
                     <Download className="text-cyan-400" />
-                    Descargar Audiomorphic AR para tu Dispositivo
+                    Descargar Audiomorphic para tu Dispositivo
                   </h4>
                   <p className="text-xs text-gray-400">
                     Binarios optimizados y adaptados para cada sistema operativo con soporte de aceleración gráfica por hardware.

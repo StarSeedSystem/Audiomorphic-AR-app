@@ -208,10 +208,10 @@ export const useSubscription = (
           plan === 'master'
             ? 'Gracias infinitas por tu donación de Maestro a la Fundación StarSeed. Tu aporte hace posible la investigación y el arte libre.'
             : plan === 'creator'
-            ? 'Gracias infinitas por tu aporte de Creador. Tu apoyo nutre la evolución constante de Audiomorphic AR.'
+            ? 'Gracias infinitas por tu aporte de Creador. Tu apoyo nutre la evolución constante de Audiomorphic.'
             : plan === 'starseed'
             ? 'Gracias por conectar tu esencia al ecosistema StarSeed. Juntos expandimos la geometría armónica.'
-            : 'Bienvenido a Audiomorphic AR. Tu resonancia comunitaria expande la red consciente.',
+            : 'Bienvenido a Audiomorphic. Tu resonancia comunitaria expande la red consciente.',
       };
 
       if (onCardIssued) {

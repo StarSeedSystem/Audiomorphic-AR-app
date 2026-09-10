@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🌌 Audiomorphic AR
+# 🌌 Audiomorphic
 ### Motor Audiovisual Sinestésico · Recurrencia Compleja & Realidad Virtual / Aumentada
 
 [![Version](https://img.shields.io/badge/Versi%C3%B3n-v1.1.0--soberana-00f2fe?style=for-the-badge&logo=rocket)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases)
@@ -54,10 +54,10 @@ Si experimentas límites de ancho de banda o requieres descargas de alta velocid
 
 ## 🔒 Guía de Permisos Nativos por Sistema Operativo
 
-Audiomorphic AR requiere acceso a interfaces de hardware específicas para generar la sinestesia en tiempo real:
+Audiomorphic requiere acceso a interfaces de hardware específicas para generar la sinestesia en tiempo real:
 
 ### 🍎 macOS
-1. **Micrófono:** Al abrir la app por primera vez, pulsa **"Permitir"** en el cuadro de diálogo de macOS. Si lo denegaste por error, ve a *Ajustes del Sistema → Privacidad y Seguridad → Micrófono* y activa la casilla de **Audiomorphic AR**.
+1. **Micrófono:** Al abrir la app por primera vez, pulsa **"Permitir"** en el cuadro de diálogo de macOS. Si lo denegaste por error, ve a *Ajustes del Sistema → Privacidad y Seguridad → Micrófono* y activa la casilla de **Audiomorphic**.
 2. **Cámara (Modos AR):** Requerida únicamente si activas la Realidad Aumentada para superponer la espiral sobre tu entorno. Se gestiona en *Ajustes del Sistema → Privacidad y Seguridad → Cámara*.
 3. **Pantalla Completa:** Pulsa el botón verde de la ventana o el botón *Pantalla Completa* en el menú de control para una inmersión sin distracciones.
 
@@ -84,7 +84,7 @@ Dentro del **Centro de Información (`Info`)** o haciendo clic en el botón **De
 
 ## 📐 Principios Matemáticos & Geometría Sagrada
 
-El motor visual de Audiomorphic AR implementa el **Tratado de Unificación Armónica**:
+El motor visual de Audiomorphic implementa el **Tratado de Unificación Armónica**:
 
 $$\alpha = \frac{V}{2} \quad \text{(Variable Dual / Estructura)}$$
 $$\beta = \sqrt{E} \quad \text{(Variable Potencial / Tensión)}$$
@@ -98,7 +98,7 @@ $$\beta = \sqrt{E} \quad \text{(Variable Potencial / Tensión)}$$
 
 ## 💖 Donaciones Opcionales & Fundación StarSeed
 
-Audiomorphic AR es un proyecto de código soberano libre. No contiene anuncios ni funciones bloqueadas.
+Audiomorphic es un proyecto de código soberano libre. No contiene anuncios ni funciones bloqueadas.
 
 Si deseas apoyar el desarrollo continuo de herramientas abiertas y proyectos de educación y conciencia, puedes realizar una **donación voluntaria**:
 
@@ -137,5 +137,5 @@ npm run build:desktop
 
 <div align="center">
   <sub>Desarrollado con devoción armónica por <strong>Alex Bordón Garrigós</strong> y la red comunitaria <strong>StarSeed OS</strong>.</sub><br>
-  <sub>© 2026 Audiomorphic AR · Todos los derechos soberanos reservados.</sub>
+  <sub>© 2026 Audiomorphic · Todos los derechos soberanos reservados.</sub>
 </div>
