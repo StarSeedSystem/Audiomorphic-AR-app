@@ -3,7 +3,7 @@
 # 🌌 Audiomorphic
 ### Motor Audiovisual Sinestésico · Recurrencia Compleja & Realidad Virtual / Aumentada
 
-[![Version](https://img.shields.io/badge/Versi%C3%B3n-v1.1.0--soberana-00f2fe?style=for-the-badge&logo=rocket)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases)
+[![Version](https://img.shields.io/badge/Versi%C3%B3n-v1.2.0--soberana-00f2fe?style=for-the-badge&logo=rocket)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases)
 [![Plataformas](https://img.shields.io/badge/Plataformas-Windows%20%7C%20macOS%20%7C%20Linux%20%7C%20Android%20%7C%20Web-a855f7?style=for-the-badge)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases)
 [![Licencia](https://img.shields.io/badge/Acceso-100%25%20Gratuito%20%26%20Libre-10b981?style=for-the-badge)](https://github.com/StarSeedSystem/Audiomorphic-AR-app)
 [![Ecosistema](https://img.shields.io/badge/StarSeed-OS%20Conectado-f59e0b?style=for-the-badge&logo=buffer)](https://starseed-os.vercel.app)
@@ -34,16 +34,16 @@
 ## 📥 Descargas Oficiales por Sistema Operativo
 
 > [!TIP]
-> **Última Versión Oficial:** `v1.1.0` (Compilación 2026.09) · Todas las descargas son nativas y cuentan con soporte de aceleración por GPU.
+> **Última Versión Oficial:** `v1.2.0` (Compilación 2026.09) · Todas las descargas son nativas y cuentan con soporte de aceleración por GPU.
 
 | Sistema Operativo | Formato / Tipo | Arquitectura | Tamaño | Enlace de Descarga Directa |
 | :--- | :--- | :--- | :--- | :--- |
-| **🪟 Windows 10 / 11** | Paquete Portable (`.zip`) | ARM64 & x64 Universal | `~247 MB` | [⬇️ Descargar Windows (.zip)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.1.0/Audiomorphic_v1.1.0_Windows.zip) |
-| **🍎 macOS (Apple Silicon)** | Imagen de Disco (`.dmg`) | Apple Silicon (M1 / M2 / M3 / M4) | `~232 MB` | [⬇️ Descargar Apple Silicon (.dmg)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.1.0/Audiomorphic_v1.1.0_macOS_arm64.dmg) |
-| **🍎 macOS Universal** | Archivo `.zip` con DMG | Intel & Apple Silicon | `~232 MB` | [⬇️ Descargar Mac Universal (.zip)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.1.0/audiomorphic-mac.zip) |
-| **🐧 Linux (x64)** | Paquete Portable (`.tar.gz`) | PC / Laptop x86_64 | `~774 MB` | [⬇️ Descargar Linux x64 (.tar.gz)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.1.0/Audiomorphic_v1.1.0_Linux_x64.tar.gz) |
-| **🐧 Linux (ARM64)** | Paquete Portable (`.tar.gz`) | ARM64 (Raspberry Pi / Asahi) | `~694 MB` | [⬇️ Descargar Linux ARM64 (.tar.gz)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.1.0/Audiomorphic_v1.1.0_Linux_arm64.tar.gz) |
-| **🤖 Android** | Paquete APK Nativo (`.apk`) | Android 8.0+ (Oreo o sup.) | `~5.4 MB` | [⬇️ Descargar APK Oficial (.apk)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.1.0/Audiomorphic_v1.1.0.apk) |
+| **🪟 Windows 10 / 11** | Paquete Portable (`.zip`) | ARM64 & x64 Universal | `~247 MB` | [⬇️ Descargar Windows (.zip)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.2.0/Audiomorphic_v1.2.0_Windows.zip) |
+| **🍎 macOS (Apple Silicon)** | Imagen de Disco (`.dmg`) | Apple Silicon (M1 / M2 / M3 / M4) | `~232 MB` | [⬇️ Descargar Apple Silicon (.dmg)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.2.0/Audiomorphic_v1.2.0_macOS_arm64.dmg) |
+| **🍎 macOS Universal** | Archivo `.zip` con DMG | Intel & Apple Silicon | `~232 MB` | [⬇️ Descargar Mac Universal (.zip)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.2.0/audiomorphic-mac.zip) |
+| **🐧 Linux (x64)** | Paquete Portable (`.tar.gz`) | PC / Laptop x86_64 | `~774 MB` | [⬇️ Descargar Linux x64 (.tar.gz)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.2.0/Audiomorphic_v1.2.0_Linux_x64.tar.gz) |
+| **🐧 Linux (ARM64)** | Paquete Portable (`.tar.gz`) | ARM64 (Raspberry Pi / Asahi) | `~694 MB` | [⬇️ Descargar Linux ARM64 (.tar.gz)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.2.0/Audiomorphic_v1.2.0_Linux_arm64.tar.gz) |
+| **🤖 Android** | Paquete APK Nativo (`.apk`) | Android 8.0+ (Oreo o sup.) | `~5.4 MB` | [⬇️ Descargar APK Oficial (.apk)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.2.0/Audiomorphic_v1.2.0.apk) |
 | **🌐 Web App / PWA** | Web Progresiva Instalable | Chrome, Edge, Safari, Firefox | En vivo | [🚀 Abrir Web App Soberana](https://audiomorphic.vercel.app) |
 | **☁️ Espejo Drive** | Espejo Oficial en Google Drive | Todos los Sistemas | Universal | [☁️ Carpeta de Instaladores Mirror](https://drive.google.com/drive/folders/1bZ8yvbWr7r3eJUdKIQCSSuu-p398mAkn?usp=sharing) |
 
@@ -58,7 +58,7 @@ Si experimentas límites de ancho de banda o requieres descargas de alta velocid
 Audiomorphic requiere acceso a interfaces de hardware específicas para generar la sinestesia en tiempo real:
 
 ### 🐧 Linux (Ubuntu, Debian, Fedora, Arch, SteamOS)
-1. **Ejecución Portable:** Descomprime con `tar -xzf Audiomorphic_v1.1.0_Linux_x64.tar.gz` y ejecuta `./audiomorphic.sh` o `./audiomorphic`.
+1. **Ejecución Portable:** Descomprime con `tar -xzf Audiomorphic_v1.2.0_Linux_x64.tar.gz` y ejecuta `./audiomorphic.sh` o `./audiomorphic`.
 2. **Pantalla Completa Inmersiva:** La aplicación se abre por defecto en modo pantalla completa cubriendo la barra superior del entorno (GNOME, KDE Plasma, XFCE). Puedes alternar con `F11` o la tecla `Escape`.
 3. **Audio (ALSA, PulseAudio y PipeWire):** Soporta enrutamiento dinámico de salidas de audio a través de `select-audio-output` y captura de audio de escritorio mediante `WebRTCPipeWireCapturer` en sesiones Wayland y X11.
 4. **Cámara y AR:** Compatible con dispositivos V4L2 (`/dev/video*`) para tracking de realidad aumentada.

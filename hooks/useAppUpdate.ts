@@ -69,9 +69,9 @@ export interface HardwarePermissionsState {
   fullscreen: boolean;  // Fullscreen API available
 }
 
-export const CURRENT_APP_VERSION = '1.1.0';
-export const CURRENT_BUILD_DATE = '2026-09-09';
-export const CURRENT_NATIVE_CONTAINER = '1.1.0';
+export const CURRENT_APP_VERSION = '1.2.0';
+export const CURRENT_BUILD_DATE = '2026-09-14';
+export const CURRENT_NATIVE_CONTAINER = '1.2.0';
 
 const GITHUB_REPO_URL = 'https://github.com/StarSeedSystem/Audiomorphic-AR-app';
 const GOOGLE_DRIVE_MIRROR = 'https://drive.google.com/drive/folders/1bZ8yvbWr7r3eJUdKIQCSSuu-p398mAkn?usp=sharing';
@@ -120,6 +120,20 @@ export const OFFICIAL_DOWNLOADS: PlatformDownloads = {
 };
 
 export const CHANGELOG_HISTORY: VersionChangelog[] = [
+  {
+    version: '1.2.0',
+    date: '2026-09-14',
+    type: 'major',
+    title: 'Actualización Soberana: Presets Essentials, Hub Comunitario y Login Universal',
+    notes: [
+      'Restauración y ordenamiento canónico de los 7 presets de Audiomorphic Essentials.',
+      'Nuevo Modal de Detalle de Preset con 3 pestañas: Ajustes & Info, Música Recomendada y Comentarios de la comunidad.',
+      'Nuevo switch de encendido/apagado para el Modo Automático con indicador de estado.',
+      'Soporte y diseño mejorado para la biblioteca y catálogo público de presets.',
+      'Inicio de sesión a StarSeed OS robustecido desde cualquier medio (Web, PWA, Electron, Android APK, iOS) con autenticación resiliente y fallback soberano automático.',
+      'Apertura segura de enlaces externos y puente de sesión StarSeed OS unificado.',
+    ],
+  },
   {
     version: '1.1.0',
     date: '2026-09-09',
@@ -297,7 +311,7 @@ export const useAppUpdate = () => {
       await new Promise((resolve) => setTimeout(resolve, 800));
 
       // Verificamos si hay una versión superior a la instalada
-      // Para esta versión, estamos en 1.1.0 (Al día)
+      // Para esta versión, estamos en 1.2.0 (Al día)
       const latest = CHANGELOG_HISTORY[0];
       if (latest && latest.version !== CURRENT_APP_VERSION) {
         setUpdateAvailable(latest);
