@@ -45,7 +45,8 @@ import {
   Plus,
   FolderPlus,
   Play,
-  CheckCircle2
+  CheckCircle2,
+  Terminal
 } from 'lucide-react';
 import { StarSeedIdentity } from '../hooks/useStarSeedIdentity';
 import { UseSubscriptionResult, PlanId } from '../hooks/useSubscription';
