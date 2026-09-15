@@ -177,6 +177,8 @@ const App: React.FC = () => {
     return 'donations';
   });
 
+  const [selectedLibraryPresetForFolder, setSelectedLibraryPresetForFolder] = useState<any | null>(null);
+
   const handleOpenInfo = useCallback((tab: InfoHubTab = 'donations') => {
     setInfoHubTab(tab);
     setInfoHubOpen(true);
@@ -304,6 +306,7 @@ const App: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const [controlsVisible, setControlsVisible] = useState(false);
+  const [showTouchHint, setShowTouchHint] = useState(true);
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const resetHideTimer = useCallback(() => {
@@ -315,6 +318,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (controlsVisible) {
+      if (showTouchHint) setShowTouchHint(false);
       resetHideTimer();
     } else {
       if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
@@ -322,7 +326,7 @@ const App: React.FC = () => {
     return () => {
       if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
     };
-  }, [controlsVisible, resetHideTimer]);
+  }, [controlsVisible, showTouchHint, resetHideTimer]);
 
   // Logic Refs
   const animationFrameRef = useRef<number>(0);
@@ -368,10 +372,44 @@ const App: React.FC = () => {
     }
   };
 
-  // Handle Load Preset from Profile Menu
-  const handleLoadPreset = (preset: any) => {
-    setParams(prev => ({ ...prev, ...preset.params }));
-    // If the menu is open, it will close itself via its internal state
+  // Handle Apply Preset (Robust Normalization & Instant Pilot Sync)
+  const handleApplyPreset = (preset: any) => {
+    try {
+      const raw = preset?.params || preset?.params_json || preset;
+      const parsed = typeof raw === 'string' ? JSON.parse(raw) : { ...raw };
+      if (parsed && typeof parsed === 'object') {
+        // Normalizar compatibilidad con modos de geometría sagrada
+        if ((parsed as any).sgResonanceModes && !parsed.sacredGeometryModes) {
+          parsed.sacredGeometryModes = (parsed as any).sgResonanceModes;
+        }
+        if (parsed.sacredGeometryModes && parsed.sacredGeometryModes.length > 0) {
+          parsed.sacredGeometryEnabled = true;
+        }
+        if (parsed.autoPilotMode === 'genesis') {
+          parsed.sacredGeometryEnabled = true;
+        }
+
+        // Sincronizar inmediatamente los objetivos del piloto automático para evitar desfase o retención
+        if (pilotRef.current) {
+          const p = pilotRef.current;
+          if (parsed.k !== undefined) { p.targetK = parsed.k; p.currentParams.k = parsed.k; p.lastEmittedK = parsed.k; p.lastSetK = parsed.k; }
+          if (parsed.psi !== undefined) { p.targetPsi = parsed.psi; p.currentParams.psi = parsed.psi; p.lastEmittedPsi = parsed.psi; p.lastSetPsi = parsed.psi; }
+          if (parsed.zoom !== undefined) { p.targetZoom = parsed.zoom; p.currentParams.zoom = parsed.zoom; p.lastEmittedZoom = parsed.zoom; p.lastSetZoom = parsed.zoom; }
+          if (parsed.distanceZoom !== undefined) { p.targetDistanceZoom = parsed.distanceZoom; p.currentParams.distanceZoom = parsed.distanceZoom; p.lastEmittedDistanceZoom = parsed.distanceZoom; p.lastSetDistanceZoom = parsed.distanceZoom; }
+          if (parsed.baseHue !== undefined) { p.targetHue = parsed.baseHue; p.currentParams.baseHue = parsed.baseHue; p.lastEmittedBaseHue = parsed.baseHue; p.lastSetBaseHue = parsed.baseHue; }
+          if (parsed.z0_r !== undefined) { p.targetZ0_r = parsed.z0_r; p.currentParams.z0_r = parsed.z0_r; p.lastEmittedZ0_r = parsed.z0_r; p.lastSetZ0_r = parsed.z0_r; }
+          if (parsed.z0_i !== undefined) { p.targetZ0_i = parsed.z0_i; p.currentParams.z0_i = parsed.z0_i; p.lastEmittedZ0_i = parsed.z0_i; p.lastSetZ0_i = parsed.z0_i; }
+          if (parsed.spiralThickness !== undefined) { p.targetSpiralThickness = parsed.spiralThickness; p.currentParams.spiralThickness = parsed.spiralThickness; p.lastEmittedSpiralThickness = parsed.spiralThickness; p.lastSetSpiralThickness = parsed.spiralThickness; }
+        }
+
+        setParams(prev => ({
+          ...prev,
+          ...parsed
+        }));
+      }
+    } catch (e) {
+      console.error('Error al aplicar preset:', e);
+    }
   };
 
   // Restart audio if source changes while active
@@ -816,7 +854,10 @@ const App: React.FC = () => {
   return (
     <div 
       className={`flex h-screen w-screen overflow-hidden bg-black text-white relative ${EMBED.bg ? 'pointer-events-none select-none' : ''}`}
-      onPointerDown={EMBED.bg ? undefined : () => setControlsVisible(true)}
+      onPointerDown={EMBED.bg ? undefined : () => {
+        if (showTouchHint) setShowTouchHint(false);
+        setControlsVisible(true);
+      }}
       onPointerMove={EMBED.bg ? undefined : () => { if (controlsVisible) resetHideTimer(); }}
     >
       {EMBED.cam && (
@@ -893,14 +934,6 @@ const App: React.FC = () => {
              <Info size={12} className="text-cyan-400" />
              <span className="font-semibold tracking-wide">Info</span>
            </button>
-           <button
-             onClick={() => handleOpenInfo('donations')}
-             className="flex items-center gap-1 px-2.5 sm:px-3 py-1 rounded-full border border-amber-500/40 bg-amber-950/60 hover:bg-amber-900/80 text-amber-300 text-[11px] sm:text-xs font-mono backdrop-blur-md transition-all shadow-[0_0_12px_rgba(245,158,11,0.3)] pointer-events-auto cursor-pointer shrink-0"
-             title="Donaciones Opcionales & Tarjeta Virtual 3D"
-           >
-             <Heart size={12} className="text-amber-400" fill="currentColor" />
-             <span className="font-semibold tracking-wide">Donar</span>
-           </button>
       </div>
       )}
 
@@ -908,6 +941,21 @@ const App: React.FC = () => {
         <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-50 bg-red-900/80 border border-red-500 text-red-100 px-6 py-3 rounded-lg shadow-lg backdrop-blur-md text-sm font-mono flex items-center gap-3">
           <span className="text-xl">⚠️</span>
           {error}
+        </div>
+      )}
+
+      {/* Indicador parpadeante translúcido centrado al iniciar la app */}
+      {showTouchHint && !controlsVisible && !EMBED.bg && (
+        <div 
+          className="fixed inset-0 z-30 flex items-center justify-center pointer-events-none select-none px-4 animate-in fade-in duration-700"
+          aria-hidden="true"
+        >
+          <div className="px-6 py-3.5 sm:px-8 sm:py-4 rounded-full bg-black/45 backdrop-blur-md border border-white/20 shadow-[0_0_50px_rgba(0,0,0,0.8),0_0_25px_rgba(6,182,212,0.25)] animate-pulse flex items-center gap-3">
+            <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping shrink-0" />
+            <p className="text-white/80 text-sm sm:text-base md:text-lg font-semibold tracking-wider text-center drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]">
+              Toca la pantalla para abrir el menú
+            </p>
+          </div>
         </div>
       )}
 
@@ -952,6 +1000,10 @@ const App: React.FC = () => {
               outputAudioDevices={outputDevices}
               selectedOutputAudioDeviceId={selectedOutputDeviceId}
               onOutputAudioDeviceChange={setAudioOutputDevice}
+              onApplyPreset={handleApplyPreset}
+              selectedLibraryPreset={selectedLibraryPresetForFolder}
+              onSelectLibraryPreset={setSelectedLibraryPresetForFolder}
+              sync={sync}
             />
           </div>
         </>
@@ -966,16 +1018,10 @@ const App: React.FC = () => {
           subscription={subscription}
           sync={sync}
           currentParams={params}
-          onApplyPreset={(preset) => {
-            try {
-              const raw = preset.params || (preset as any).params_json;
-              const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
-              if (parsed && typeof parsed === 'object') {
-                setParams((prev) => ({ ...prev, ...parsed }));
-              }
-            } catch (e) {
-              console.error('Error al aplicar preset', e);
-            }
+          onApplyPreset={handleApplyPreset}
+          onSelectLibraryPreset={(preset) => {
+            setSelectedLibraryPresetForFolder(preset);
+            setInfoHubOpen(false);
           }}
         />
       )}

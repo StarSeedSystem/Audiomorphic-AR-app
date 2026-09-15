@@ -1,15 +1,31 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { VisualizerParams, SacredGeometryMode, SacredGeometrySettings, DEFAULT_PARAMS, AutoPilotMode, BackgroundMode, GeometryInfo, SubscriptionTier } from '../types';
-import { Activity, Zap, Maximize, Minimize, RotateCw, Palette, Target, Music, BrainCircuit, Wind, Droplets, Waves, Shuffle, Sprout, Glasses, Download, X, RotateCcw, Save, Upload, Heart, Lock, Unlock, LogIn, LogOut, User, Star, Cloud, Trash2, Info, ChevronUp, ChevronDown, Volume2 } from 'lucide-react';
+import { Activity, Zap, Maximize, Minimize, RotateCw, Palette, Target, Music, BrainCircuit, Wind, Droplets, Waves, Shuffle, Sprout, Glasses, Download, X, RotateCcw, Save, Upload, Heart, Lock, Unlock, LogIn, LogOut, User, Star, Cloud, Trash2, Info, ChevronUp, ChevronDown, Volume2, Folder, FolderPlus, FolderOpen, Filter, ArrowUpDown, Plus, Bookmark, ExternalLink, Search, Sparkles, Check, Play } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
 import { collection, addDoc, getDocs, query, where, deleteDoc, doc } from 'firebase/firestore';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
+import { isInstalledApp } from '../utils/platform';
+import { DEFAULT_PRESETS } from '../lib/defaultPresets';
 
-import { usePresets, Preset } from '../hooks/usePresets';
+import { usePresets, Preset, ESSENTIALS_FOLDER_NAME } from '../hooks/usePresets';
+import { UseStarSeedSyncResult } from '../hooks/useStarSeedSync';
+import PresetsHubModal from './PresetsHubModal';
+import PresetDetailModal from './PresetDetailModal';
 import ProfileMenu from './ProfileMenu';
 import LiquidSelect from './LiquidSelect';
 import LiquidSlider from './LiquidSlider';
+
+export const AUTO_MODE_LABELS: Record<string, string> = {
+  rhythmic: 'Ritmos Musicales',
+  dj: 'Modo DJ',
+  sacred: 'Resonancias Sagradas',
+  rainbow: 'Sinfonía Arcoíris',
+  astral: 'Astromorphociberpsicodélico',
+  smart: 'Modo Inteligente',
+  random: 'Aleatorio Total',
+  none: 'Apagado'
+};
 
 interface ControlPanelProps {
   params: VisualizerParams;
@@ -28,6 +44,10 @@ interface ControlPanelProps {
   selectedOutputAudioDeviceId?: string;
   onOutputAudioDeviceChange?: (deviceId: string) => void;
   onOpenInfo?: (tab?: 'guide' | 'ecosystem' | 'account' | 'donations' | 'presets' | 'updates') => void;
+  onApplyPreset?: (preset: any) => void;
+  selectedLibraryPreset?: any;
+  onSelectLibraryPreset?: (preset: any) => void;
+  sync?: UseStarSeedSyncResult;
 }
 
 const SACRED_GEOMETRY_OPTIONS = [
@@ -69,7 +89,11 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   outputAudioDevices = [],
   selectedOutputAudioDeviceId = '',
   onOutputAudioDeviceChange,
-  onOpenInfo
+  onOpenInfo,
+  onApplyPreset,
+  selectedLibraryPreset,
+  onSelectLibraryPreset,
+  sync
 }) => {
   const { user, login, setAuthModalOpen, logout, createStripeCheckout } = useAuth();
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -155,6 +179,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       setParams(prev => ({
         ...prev,
         autoRandomMode: mode,
+        autoRandomOnBeat: true, // Detección de Ritmos seleccionada por predeterminado en modos inteligentes
         autoTimeDelayMode: (mode === 'rhythmic' || mode === 'astral') ? 'smart' : (Math.random() > 0.5 ? 'smart' : 'custom'),
         autoTimeDelay: 1 + Math.random() * 4, // 1-5 seconds
         autoParamRegenMode: 'smooth', // Always smooth by default so viscosity works
@@ -1385,7 +1410,270 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
     vrAr: true,
     reactivity: true
   });
-  const { cloudPresets, savePreset, deletePreset: deleteCloudPresetFromServer, reorderPresets } = usePresets();
+  const { 
+    cloudPresets, 
+    folders,
+    createFolder,
+    deleteFolder,
+    renameFolder,
+    movePresetToFolder,
+    savePreset, 
+    addPresetFromLibrary,
+    deletePreset: deleteCloudPresetFromServer, 
+    exportPresets,
+    importPresets,
+    reorderPresets 
+  } = usePresets();
+
+  const [isInstalled, setIsInstalled] = useState(false);
+  useEffect(() => {
+    setIsInstalled(isInstalledApp());
+  }, []);
+
+  // Presets & Folders inside Ajustes Automáticos
+  const [selectedFolder, setSelectedFolder] = useState<string>(ESSENTIALS_FOLDER_NAME);
+  const [folderSearch, setFolderSearch] = useState('');
+  const [presetSearch, setPresetSearch] = useState('');
+  const [presetCategoryFilter, setPresetCategoryFilter] = useState('all');
+  const [presetSortMode, setPresetSortMode] = useState<'custom' | 'name-asc' | 'name-desc' | 'newest' | 'oldest'>('custom');
+
+  const filteredFolders = useMemo(() => {
+    if (!folderSearch.trim()) return folders;
+    const q = folderSearch.toLowerCase().trim();
+    return folders.filter(f => f.toLowerCase().includes(q));
+  }, [folders, folderSearch]);
+
+  const [showCreateFolderInput, setShowCreateFolderInput] = useState(false);
+  const [newFolderNameInput, setNewFolderNameInput] = useState('');
+
+  const [showSavePresetInput, setShowSavePresetInput] = useState(false);
+  const [quickPresetName, setQuickPresetName] = useState('');
+  const [quickPresetFolder, setQuickPresetFolder] = useState('');
+
+  const [showLibraryPicker, setShowLibraryPicker] = useState(false);
+  const [librarySearch, setLibrarySearch] = useState('');
+  const [libraryCategory, setLibraryCategory] = useState('all');
+
+  // Selected preset from library to display above the folders bar
+  const [internalSelectedLibraryPreset, setInternalSelectedLibraryPreset] = useState<any | null>(null);
+  const activeSelectedLibraryPreset = selectedLibraryPreset !== undefined ? selectedLibraryPreset : internalSelectedLibraryPreset;
+  const setActiveSelectedLibraryPreset = (preset: any) => {
+    setInternalSelectedLibraryPreset(preset);
+    if (onSelectLibraryPreset) onSelectLibraryPreset(preset);
+  };
+  const [targetFolderForSelectedLibraryPreset, setTargetFolderForSelectedLibraryPreset] = useState<string>('');
+  const [libraryAddSuccessMessage, setLibraryAddSuccessMessage] = useState<string | null>(null);
+
+  // Modal para inspeccionar detalle de preset (comentarios, música recomendada, ajustes e info)
+  const [inspectingPreset, setInspectingPreset] = useState<Preset | any | null>(null);
+
+  const [selectedPresetInfo, setSelectedPresetInfo] = useState<{
+    id?: string;
+    name: string;
+    isFromLibrary?: boolean;
+    isEssential?: boolean;
+    folder?: string;
+    raw?: any;
+  } | null>(() => ({
+    id: 'essential_rhythmic',
+    name: 'Ritmos Musicales',
+    isFromLibrary: false,
+    isEssential: true,
+    folder: ESSENTIALS_FOLDER_NAME
+  }));
+
+  useEffect(() => {
+    if (selectedLibraryPreset) {
+      setSelectedPresetInfo({
+        id: selectedLibraryPreset.id,
+        name: selectedLibraryPreset.title || selectedLibraryPreset.name,
+        isFromLibrary: true,
+        isEssential: selectedLibraryPreset.category === 'essentials',
+        folder: selectedLibraryPreset.folderPath,
+        raw: selectedLibraryPreset
+      });
+    }
+  }, [selectedLibraryPreset]);
+
+  const autoFileImportRef = useRef<HTMLInputElement>(null);
+
+  const filteredAndSortedPresets = useMemo(() => {
+    let list = [...cloudPresets];
+
+    // Filter by folder
+    if (selectedFolder === 'none') {
+      list = list.filter(p => !p.folder);
+    } else if (selectedFolder !== 'all') {
+      list = list.filter(p => p.folder === selectedFolder);
+    }
+
+    // Filter by category
+    if (presetCategoryFilter !== 'all') {
+      list = list.filter(p => (p.category || 'custom') === presetCategoryFilter);
+    }
+
+    // Filter by search query
+    if (presetSearch.trim()) {
+      const q = presetSearch.toLowerCase();
+      list = list.filter(p => 
+        p.name.toLowerCase().includes(q) || 
+        (p.folder && p.folder.toLowerCase().includes(q)) ||
+        (p.category && p.category.toLowerCase().includes(q))
+      );
+    }
+
+    // Sorting
+    if (presetSortMode === 'name-asc') {
+      list.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (presetSortMode === 'name-desc') {
+      list.sort((a, b) => b.name.localeCompare(a.name));
+    } else if (presetSortMode === 'newest') {
+      list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    } else if (presetSortMode === 'oldest') {
+      list.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+    }
+
+    return list;
+  }, [cloudPresets, selectedFolder, presetCategoryFilter, presetSearch, presetSortMode]);
+
+  const handleMoveFilteredPriority = (presetId: string, direction: 'up' | 'down') => {
+    const currentIndex = cloudPresets.findIndex(p => p.id === presetId);
+    if (currentIndex === -1) return;
+    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    if (targetIndex < 0 || targetIndex >= cloudPresets.length) return;
+    const copy = [...cloudPresets];
+    const item = copy[currentIndex];
+    copy[currentIndex] = copy[targetIndex];
+    copy[targetIndex] = item;
+    reorderPresets(copy);
+  };
+
+  const handleApplyPresetItem = (preset: Preset) => {
+    setSelectedPresetInfo({
+      id: preset.id,
+      name: preset.name,
+      isFromLibrary: preset.id?.startsWith('lib-') || false,
+      isEssential: preset.id?.startsWith('essential_') || preset.folder === ESSENTIALS_FOLDER_NAME,
+      folder: preset.folder,
+      raw: preset
+    });
+    if (onApplyPreset) {
+      onApplyPreset(preset);
+    }
+    try {
+      const raw = typeof preset.params === 'string' ? JSON.parse(preset.params) : preset.params;
+      if (raw && typeof raw === 'object') {
+        if ((raw as any).sgResonanceModes && !raw.sacredGeometryModes) {
+          raw.sacredGeometryModes = (raw as any).sgResonanceModes;
+        }
+        if (raw.sacredGeometryModes && raw.sacredGeometryModes.length > 0) {
+          raw.sacredGeometryEnabled = true;
+        }
+        setParams(prev => ({
+          ...prev,
+          ...raw
+        }));
+
+        // Si el preset incluye un modo de regeneración automática, generar valores de inmediato
+        if (raw.autoRandomMode && raw.autoRandomMode !== 'none') {
+          setTimeout(() => {
+            generateRandomParams(raw.autoRandomMode as any, false);
+          }, 50);
+        }
+      }
+    } catch (e) {
+      console.error("Error parsing preset params", e);
+    }
+  };
+
+  const handleApplyLibraryPreset = (libPreset: any) => {
+    if (!libPreset) return;
+    setSelectedPresetInfo({
+      id: libPreset.id,
+      name: libPreset.title || libPreset.name || 'Preset de Librería',
+      isFromLibrary: true,
+      isEssential: libPreset.category === 'essentials',
+      folder: libPreset.folderPath,
+      raw: libPreset
+    });
+    const presetItem: Preset = {
+      id: libPreset.id || 'lib-' + Date.now(),
+      name: libPreset.title || libPreset.name || 'Preset de Librería',
+      params: typeof libPreset.params === 'string' ? libPreset.params : JSON.stringify(libPreset.params),
+      createdAt: Date.now(),
+      category: libPreset.category,
+    };
+    handleApplyPresetItem(presetItem);
+  };
+
+  const handleSaveSelectedLibraryPresetToFolder = async () => {
+    const libTarget = activeSelectedLibraryPreset || selectedPresetInfo?.raw;
+    if (!libTarget) return;
+    const folderToSave = targetFolderForSelectedLibraryPreset || (selectedFolder === 'all' || selectedFolder === 'none' ? '' : selectedFolder);
+    const title = libTarget.title || libTarget.name;
+    const paramsToSave = libTarget.params;
+    const categoryToSave = libTarget.category || 'custom';
+
+    await addPresetFromLibrary(title, paramsToSave as any, folderToSave, categoryToSave);
+    setSelectedFolder(folderToSave || 'none');
+    setLibraryAddSuccessMessage(`¡Preset "${title}" guardado con éxito${folderToSave ? ` en la carpeta "${folderToSave}"` : ' en tu biblioteca'}!`);
+    setTimeout(() => {
+      setLibraryAddSuccessMessage(null);
+      setActiveSelectedLibraryPreset(null);
+      setSelectedPresetInfo(prev => prev ? { ...prev, isFromLibrary: false, folder: folderToSave } : null);
+    }, 2500);
+  };
+
+  const lastActiveAutoModeRef = useRef<VisualizerParams['autoRandomMode']>('rhythmic');
+  useEffect(() => {
+    if (params.autoRandomMode && params.autoRandomMode !== 'none') {
+      lastActiveAutoModeRef.current = params.autoRandomMode;
+    }
+  }, [params.autoRandomMode]);
+
+  const isAutoModeActive = !!(params.autoRandomMode && params.autoRandomMode !== 'none');
+
+  const handleToggleAutoMode = () => {
+    if (isAutoModeActive) {
+      handleAutoRandomModeChange('none');
+    } else {
+      if (selectedPresetInfo?.raw) {
+        if (selectedPresetInfo.isFromLibrary) {
+          handleApplyLibraryPreset(selectedPresetInfo.raw);
+        } else {
+          handleApplyPresetItem(selectedPresetInfo.raw);
+        }
+      } else {
+        const presetId = selectedPresetInfo?.id || '';
+        let targetMode: VisualizerParams['autoRandomMode'] = lastActiveAutoModeRef.current || 'rhythmic';
+        if (presetId === 'essential_dj') targetMode = 'dj';
+        else if (presetId === 'essential_sacred') targetMode = 'sacred';
+        else if (presetId === 'essential_rainbow') targetMode = 'rainbow';
+        else if (presetId === 'essential_astral') targetMode = 'astral';
+        else if (presetId === 'essential_smart') targetMode = 'smart';
+        else if (presetId === 'essential_random') targetMode = 'random';
+        handleAutoRandomModeChange(targetMode);
+      }
+    }
+  };
+
+  const handleQuickSavePreset = async () => {
+    if (!quickPresetName.trim()) return;
+    setIsSavingPreset(true);
+    try {
+      await savePreset(
+        quickPresetName.trim(), 
+        params, 
+        quickPresetFolder === 'none' ? '' : quickPresetFolder,
+        params.autoRandomMode === 'rhythmic' ? 'rhythmic' : 'custom'
+      );
+      setQuickPresetName('');
+      setShowSavePresetInput(false);
+    } finally {
+      setIsSavingPreset(false);
+    }
+  };
+
   const [presetName, setPresetName] = useState('');
   const [isSavingPreset, setIsSavingPreset] = useState(false);
 
@@ -1518,12 +1806,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   };
 
   const handleLoadCloudPreset = (preset: Preset) => {
-    try {
-      const json = JSON.parse(preset.params) as Partial<VisualizerParams>;
-      applyPresetData(json);
-    } catch (err) {
-      console.error("Error loading cloud preset", err);
-    }
+    handleApplyPresetItem(preset);
+    setShowPresetModal(false);
   };
 
   const handleExportPreset = () => {
@@ -2098,100 +2382,102 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <button
               onClick={toggleAudio}
-              className={`liquid-bubble px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+              className={`liquid-bubble px-3.5 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-base font-bold flex items-center gap-2 transition-all cursor-pointer ${
                 audioActive 
                   ? 'text-red-300 shadow-[0_0_15px_rgba(239,68,68,0.4)] border-red-500/40 bg-red-950/30' 
                   : 'text-cyan-300 hover:text-cyan-200'
               }`}
               title={audioActive ? 'Detener captura de audio' : 'Iniciar captura de audio'}
             >
-              <span className={`w-2 h-2 rounded-full shrink-0 ${audioActive ? 'bg-red-400 animate-pulse' : 'bg-cyan-400'}`} />
+              <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${audioActive ? 'bg-red-400 animate-pulse' : 'bg-cyan-400'}`} />
               <span className="hidden xs:inline">{audioActive ? 'Detener Audio' : 'Iniciar Audio'}</span>
               <span className="xs:hidden">{audioActive ? 'Detener' : 'Audio'}</span>
             </button>
 
             <button
               onClick={toggleFullScreen}
-              className="liquid-bubble p-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm font-bold flex items-center gap-1 text-purple-300 hover:text-purple-200 transition-all cursor-pointer"
+              className="liquid-bubble p-2 sm:px-4 sm:py-2.5 text-xs sm:text-base font-bold flex items-center gap-1.5 text-purple-300 hover:text-purple-200 transition-all cursor-pointer"
               title="Alternar Pantalla Completa (F11)"
             >
-              {isFullscreen ? <Minimize className="w-4 h-4 sm:w-5 sm:h-5 icon-neon" /> : <Maximize className="w-4 h-4 sm:w-5 sm:h-5 icon-neon" />}
+              {isFullscreen ? <Minimize className="w-5 h-5 sm:w-6 sm:h-6 icon-neon" /> : <Maximize className="w-5 h-5 sm:w-6 sm:h-6 icon-neon" />}
               <span className="hidden md:inline">Pantalla Completa</span>
             </button>
 
             {onClose && (
               <button
                 onClick={onClose}
-                className="liquid-bubble p-1.5 sm:px-2.5 sm:py-2 text-red-400 hover:text-red-300 border-red-500/30 transition-all cursor-pointer"
+                className="liquid-bubble p-2 sm:px-3.5 sm:py-2.5 text-red-400 hover:text-red-300 border-red-500/30 transition-all cursor-pointer"
                 title="Cerrar Menú"
                 aria-label="Cerrar Menú"
               >
-                <X className="w-4 h-4 sm:w-5 sm:h-5 icon-neon" />
+                <X className="w-5 h-5 sm:w-6 sm:h-6 icon-neon" />
               </button>
             )}
           </div>
         </div>
 
         {/* ROW 2: SECONDARY TOOLS & AUDIO ROUTING (Fluid responsive toolbar) */}
-        <div className="px-3 sm:px-6 py-1.5 sm:py-2 border-b border-white/10 bg-black/40 flex flex-wrap items-center justify-between gap-2 shrink-0">
+        <div className="px-3 sm:px-6 py-2 sm:py-2.5 border-b border-white/10 bg-black/40 flex flex-wrap items-center justify-between gap-2.5 shrink-0">
           {/* Quick Hub & Presets Buttons */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
             {onOpenInfo && (
               <>
                 <button
                   onClick={() => onOpenInfo('guide')}
-                  className="liquid-bubble px-2.5 py-1 text-cyan-300 hover:text-cyan-200 flex items-center gap-1 text-[11px] font-semibold shrink-0 cursor-pointer"
+                  className="liquid-bubble px-3.5 sm:px-4 py-1.5 sm:py-2 text-cyan-300 hover:text-cyan-200 flex items-center gap-1.5 text-xs sm:text-sm font-semibold shrink-0 cursor-pointer"
                   title="Información & Ciencia"
                 >
-                  <Info size={13} className="text-cyan-400" />
+                  <Info size={15} className="text-cyan-400" />
                   <span>Info</span>
                 </button>
                 <button
                   onClick={() => onOpenInfo('donations')}
-                  className="liquid-bubble px-2.5 py-1 text-amber-300 hover:text-amber-200 flex items-center gap-1 text-[11px] font-semibold shrink-0 cursor-pointer"
+                  className="liquid-bubble px-3.5 sm:px-4 py-1.5 sm:py-2 text-amber-300 hover:text-amber-200 flex items-center gap-1.5 text-xs sm:text-sm font-semibold shrink-0 cursor-pointer"
                   title="Donaciones Opcionales & Tarjeta 3D"
                 >
-                  <Heart size={13} className="text-amber-400" fill="currentColor" />
+                  <Heart size={15} className="text-amber-400" fill="currentColor" />
                   <span>Donar</span>
                 </button>
-                <button
-                  onClick={() => onOpenInfo('updates')}
-                  className="liquid-bubble px-2.5 py-1 text-emerald-300 hover:text-emerald-200 flex items-center gap-1 text-[11px] font-semibold shrink-0 cursor-pointer"
-                  title="Instaladores para Android, Windows, Mac y Linux"
-                >
-                  <Download size={13} className="text-emerald-400" />
-                  <span>Apps</span>
-                </button>
+                {!isInstalled && (
+                  <button
+                    onClick={() => onOpenInfo('updates')}
+                    className="liquid-bubble px-3.5 sm:px-4 py-1.5 sm:py-2 text-emerald-300 hover:text-emerald-200 flex items-center gap-1.5 text-xs sm:text-sm font-semibold shrink-0 cursor-pointer"
+                    title="Instaladores para Android, Windows, Mac y Linux"
+                  >
+                    <Download size={15} className="text-emerald-400" />
+                    <span>Apps</span>
+                  </button>
+                )}
               </>
             )}
 
             <button
               onClick={() => setShowPresetModal(true)}
-              className="liquid-bubble px-2.5 py-1 text-yellow-300 hover:text-yellow-200 flex items-center gap-1 text-[11px] font-semibold shrink-0 cursor-pointer"
+              className="liquid-bubble px-3.5 sm:px-4 py-1.5 sm:py-2 text-yellow-300 hover:text-yellow-200 flex items-center gap-1.5 text-xs sm:text-sm font-semibold shrink-0 cursor-pointer"
               title="Guardar / Cargar Ajustes y Presets"
             >
-              <Save size={13} className="icon-neon" />
+              <Save size={15} className="icon-neon" />
               <span>Presets</span>
             </button>
 
             <button
               onClick={() => setParams(DEFAULT_PARAMS)}
-              className="liquid-bubble p-1 text-red-400 hover:text-red-300 shrink-0 cursor-pointer"
+              className="liquid-bubble p-2 text-red-400 hover:text-red-300 shrink-0 cursor-pointer"
               title="Restaurar Valores por Defecto"
             >
-              <RotateCcw size={13} className="icon-neon" />
+              <RotateCcw size={15} className="icon-neon" />
             </button>
           </div>
 
           {/* Audio Inputs, Outputs & Profile */}
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2.5 flex-wrap">
             <div className="flex bg-black/60 rounded-full p-0.5 border border-white/10 shrink-0">
               <button
                 onClick={() => handleChange('audioSource', 'microphone')}
-                className={`px-2.5 py-1 text-[11px] font-bold rounded-full transition-all cursor-pointer ${
+                className={`px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-bold rounded-full transition-all cursor-pointer ${
                   params.audioSource === 'microphone' 
                     ? 'bg-cyan-500/30 text-cyan-300 shadow-[0_0_8px_rgba(6,182,212,0.4)]' 
                     : 'text-gray-400 hover:text-gray-200'
@@ -2201,7 +2487,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               </button>
               <button
                 onClick={() => handleChange('audioSource', 'system')}
-                className={`px-2.5 py-1 text-[11px] font-bold rounded-full transition-all cursor-pointer ${
+                className={`px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-bold rounded-full transition-all cursor-pointer ${
                   params.audioSource === 'system' 
                     ? 'bg-cyan-500/30 text-cyan-300 shadow-[0_0_8px_rgba(6,182,212,0.4)]' 
                     : 'text-gray-400 hover:text-gray-200'
@@ -2212,7 +2498,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             </div>
 
             {params.audioSource === 'microphone' && audioDevices.length > 0 && (
-              <div className="w-[120px] sm:w-[140px]" title="Dispositivo de Entrada (Micrófono)">
+              <div className="w-[130px] sm:w-[160px]" title="Dispositivo de Entrada (Micrófono)">
                 <LiquidSelect
                   value={selectedAudioDeviceId}
                   onChange={(val) => onAudioDeviceChange?.(val)}
@@ -2224,8 +2510,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               </div>
             )}
 
-            {outputAudioDevices.length > 0 && (
-              <div className="w-[120px] sm:w-[140px]" title="Salida de Audio (Altavoces / Auriculares / Bluetooth)">
+            {params.audioSource === 'system' && outputAudioDevices.length > 0 && (
+              <div className="w-[130px] sm:w-[160px]" title="Salida de Audio (Altavoces / Auriculares / Bluetooth)">
                 <LiquidSelect
                   value={selectedOutputAudioDeviceId}
                   onChange={(val) => onOutputAudioDeviceChange?.(val)}
@@ -2242,14 +2528,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               trialEndTime={trialEndTime}
               onShowPresets={() => setShowPresetModal(true)}
               onShowSubscription={() => onOpenInfo ? onOpenInfo('donations') : onShowSubscription()}
-              onLoadPreset={(preset) => {
-                try {
-                  const parsedParams = JSON.parse(preset.params);
-                  setParams(prev => ({ ...prev, ...parsedParams }));
-                } catch (e) {
-                  console.error("Error parsing preset params", e);
-                }
-              }}
+              onLoadPreset={(preset) => handleApplyPresetItem(preset)}
             />
           </div>
         </div>
@@ -2267,48 +2546,725 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                </div>
                
                <div className="space-y-4">
-                 <div className="flex items-center gap-2 mb-4">
-                   <div className="flex-1 bg-black/40 border border-white/10 rounded-xl p-1 flex items-center">
-                     <BrainCircuit className="w-4 h-4 text-purple-400 ml-2 mr-1" />
-                     <LiquidSelect
-                        value={params.autoRandomMode}
-                        onChange={(val) => {
-                          if (isLocked && val !== 'none' && val !== 'random') {
-                            onShowSubscription();
-                            return;
-                          }
-                          handleAutoRandomModeChange(val as any);
-                        }}
-                        options={[
-                          { value: 'none', label: 'Apagado' },
-                          { value: 'random', label: 'Aleatorio Total' },
-                          { value: 'smart', label: 'Modo Inteligente', locked: isLocked },
-                          { value: 'dj', label: 'Modo DJ', locked: isLocked },
-                          { value: 'sacred', label: 'Resonancias Sagradas', locked: isLocked },
-                          { value: 'rhythmic', label: 'Ritmos Musicales', locked: isLocked },
-                          { value: 'rainbow', label: 'Sinfonía Arcoíris', locked: isLocked },
-                          { value: 'astral', label: 'Astromorphociberpsicodélico', locked: isLocked }
-                        ]}
-                      />
-                   </div>
-                   <button
-                     onClick={() => {
-                       if (params.autoRandomMode !== 'none') {
-                         generateRandomParams(params.autoRandomMode as any, false);
-                       }
-                     }}
-                     disabled={params.autoRandomMode === 'none'}
-                     className={`p-3 rounded-xl border transition-all flex items-center justify-center ${
-                       params.autoRandomMode !== 'none' 
-                         ? 'bg-purple-500/20 border-purple-500/50 text-purple-300 hover:bg-purple-500/40 shadow-[0_0_15px_rgba(168,85,247,0.3)]' 
-                         : 'bg-gray-800/50 border-gray-700 text-gray-500 cursor-not-allowed'
-                     }`}
-                     title="Regenerar Valores"
-                   >
-                     <RotateCw size={18} className={params.autoRandomMode !== 'none' ? 'animate-spin-slow' : ''} />
-                   </button>
-                 </div>
+                  {/* Estado y Control del Modo Automático Activo */}
+                  <div className="space-y-2 mb-4">
+                    <div className={`p-2.5 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 ${
+                      isAutoModeActive || selectedPresetInfo
+                        ? 'bg-gradient-to-r from-purple-950/60 via-slate-900/60 to-black/80 border-cyan-500/40 shadow-[0_0_15px_rgba(6,182,212,0.15)]'
+                        : 'bg-black/40 border-white/10'
+                    }`}>
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        {/* Switch con diseño idéntico al resto del menú */}
+                        <div 
+                          onClick={handleToggleAutoMode}
+                          className={`liquid-switch shrink-0 cursor-pointer ${isAutoModeActive ? 'active' : ''}`}
+                          title={isAutoModeActive ? "Apagar modo automático" : "Encender modo automático seleccionado"}
+                          role="switch"
+                          aria-checked={isAutoModeActive}
+                        >
+                          <div className="liquid-switch-thumb"></div>
+                        </div>
 
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">
+                              Modo Automático:
+                            </span>
+                            <span className={`text-xs font-bold ${isAutoModeActive ? 'text-cyan-300' : 'text-gray-400'}`}>
+                              {isAutoModeActive 
+                                ? (AUTO_MODE_LABELS[params.autoRandomMode || 'none'] || params.autoRandomMode) 
+                                : 'Apagado'}
+                            </span>
+                            {isAutoModeActive && (
+                              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
+                            )}
+                          </div>
+
+                          {/* Preset Seleccionado Activo */}
+                          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                            <span className="text-[11px] font-semibold text-white truncate max-w-[200px] sm:max-w-xs">
+                              {selectedPresetInfo ? selectedPresetInfo.name : 'Preset no seleccionado'}
+                            </span>
+                            {selectedPresetInfo?.isFromLibrary && (
+                              <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                                🌐 De Librería
+                              </span>
+                            )}
+                            {selectedPresetInfo?.isEssential && (
+                              <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                                ✨ Esencial
+                              </span>
+                            )}
+                            {!selectedPresetInfo?.isFromLibrary && selectedPresetInfo?.folder && (
+                              <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-white/10 text-gray-300">
+                                📁 {selectedPresetInfo.folder}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Botones de Acción Superior */}
+                      <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                        {/* Si es un preset de librería que aún no está guardado, botón directo de guardar */}
+                        {selectedPresetInfo?.isFromLibrary && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveSelectedLibraryPreset(selectedPresetInfo.raw);
+                              handleSaveSelectedLibraryPresetToFolder();
+                            }}
+                            className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-purple-600/40 to-cyan-600/40 hover:from-purple-600/60 hover:to-cyan-600/60 text-white border border-cyan-400/50 text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-[0_0_10px_rgba(6,182,212,0.2)]"
+                            title="Guardar este preset de la librería a tu biblioteca"
+                          >
+                            <Bookmark size={11} className="text-cyan-300" />
+                            <span>+ A mi Biblioteca</span>
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => setSelectedFolder(ESSENTIALS_FOLDER_NAME)}
+                          className="px-2.5 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 text-[10px] font-semibold transition-all cursor-pointer flex items-center gap-1"
+                          title="Abrir carpeta Audiomorphic Essentials"
+                        >
+                          <FolderOpen size={11} />
+                          <span>Ver Essentials</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (isAutoModeActive) {
+                              generateRandomParams(params.autoRandomMode as any, false);
+                            } else {
+                              handleToggleAutoMode();
+                            }
+                          }}
+                          className={`p-2 sm:p-2.5 rounded-xl border transition-all flex items-center justify-center cursor-pointer ${
+                            isAutoModeActive 
+                              ? 'bg-purple-500/20 border-purple-500/50 text-purple-300 hover:bg-purple-500/40 shadow-[0_0_15px_rgba(168,85,247,0.3)]' 
+                              : 'bg-cyan-500/20 border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/30'
+                          }`}
+                          title={isAutoModeActive ? 'Regenerar Valores Inmediatos' : 'Encender Modo Automático'}
+                        >
+                          <RotateCw size={16} className={isAutoModeActive ? 'animate-spin-slow' : ''} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Presets */}
+                  <div className="bg-black/30 p-3 rounded-xl border border-white/10">
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                      <div className="flex items-center gap-2">
+                        <FolderOpen className="w-4 h-4 text-cyan-400" />
+                        <div>
+                          <h4 className="text-xs font-bold text-white tracking-wide flex items-center gap-1.5">
+                            Presets
+                            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                              {filteredAndSortedPresets.length}
+                            </span>
+                          </h4>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={() => setShowLibraryPicker(!showLibraryPicker)}
+                          className="liquid-bubble px-2.5 py-1 text-[10px] font-semibold text-purple-300 hover:text-purple-200 flex items-center gap-1 cursor-pointer"
+                          title="Explorar la Librería de Presets para seleccionar y agregar a tus carpetas"
+                        >
+                          <Sparkles size={11} className="text-purple-400" />
+                          <span>De Librería</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => exportPresets(selectedFolder)}
+                          className="p-1 rounded bg-black/40 hover:bg-white/10 text-gray-300 hover:text-white transition-colors cursor-pointer"
+                          title="Exportar presets a JSON"
+                        >
+                          <Download size={12} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => autoFileImportRef.current?.click()}
+                          className="p-1 rounded bg-black/40 hover:bg-white/10 text-gray-300 hover:text-white transition-colors cursor-pointer"
+                          title="Importar presets desde JSON"
+                        >
+                          <Upload size={12} />
+                        </button>
+                        <input
+                          type="file"
+                          ref={autoFileImportRef}
+                          accept=".json"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              importPresets(file, selectedFolder === 'all' ? '' : selectedFolder);
+                              e.target.value = '';
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Selector / Picker de Presets de la Librería */}
+                    {showLibraryPicker && (
+                      <div className="mb-3 p-3 bg-black/90 border border-purple-500/40 rounded-xl space-y-2.5 animate-in fade-in duration-200 shadow-[0_0_25px_rgba(168,85,247,0.25)]">
+                        <div className="flex items-center justify-between pb-1 border-b border-white/10">
+                          <div className="flex items-center gap-1.5">
+                            <Sparkles size={13} className="text-purple-400" />
+                            <span className="text-xs font-bold text-white">Catálogo de Librería</span>
+                            <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                              {DEFAULT_PRESETS.length} presets
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {onOpenInfo && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setShowLibraryPicker(false);
+                                  onOpenInfo('presets');
+                                }}
+                                className="text-[10px] text-cyan-400 hover:text-cyan-300 flex items-center gap-1 cursor-pointer"
+                                title="Abrir Librería completa con comentarios y recomendaciones"
+                              >
+                                <span>Ver comunidad</span>
+                                <ExternalLink size={10} />
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => setShowLibraryPicker(false)}
+                              className="text-gray-400 hover:text-white text-xs px-1 cursor-pointer"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="relative flex-1">
+                            <Search size={11} className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-500" />
+                            <input
+                              type="text"
+                              value={librarySearch}
+                              onChange={(e) => setLibrarySearch(e.target.value)}
+                              placeholder="Buscar en la librería oficial..."
+                              className="w-full pl-7 pr-2 py-1 bg-black/50 border border-white/10 rounded text-[11px] text-white placeholder-gray-500 outline-none focus:border-purple-400"
+                            />
+                          </div>
+                          <select
+                            value={libraryCategory}
+                            onChange={(e) => setLibraryCategory(e.target.value)}
+                            className="bg-black/50 border border-white/10 rounded px-2 py-1 text-[11px] text-gray-300 outline-none cursor-pointer"
+                          >
+                            <option value="all">Todas</option>
+                            <option value="genesis">Génesis</option>
+                            <option value="harmonic">Armónicos</option>
+                            <option value="drift">Deriva</option>
+                            <option value="quantum">Cuántica</option>
+                          </select>
+                        </div>
+                        <div className="max-h-48 overflow-y-auto pr-1 space-y-1.5 custom-scrollbar">
+                          {DEFAULT_PRESETS
+                            .filter(p => {
+                              const matchesCat = libraryCategory === 'all' || p.category === libraryCategory;
+                              const matchesQ = !librarySearch.trim() || p.title.toLowerCase().includes(librarySearch.toLowerCase()) || p.description.toLowerCase().includes(librarySearch.toLowerCase());
+                              return matchesCat && matchesQ;
+                            })
+                            .map(item => (
+                              <div key={item.id} className="p-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 flex items-center justify-between gap-2">
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="text-[11px] font-bold text-gray-200 truncate">{item.title}</span>
+                                    <span className="text-[9px] uppercase font-mono px-1 rounded bg-white/10 text-cyan-300">
+                                      {item.category}
+                                    </span>
+                                  </div>
+                                  <p className="text-[10px] text-gray-400 truncate">{item.description}</p>
+                                </div>
+                                 <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+                                   <button
+                                     type="button"
+                                     onClick={() => {
+                                       setActiveSelectedLibraryPreset(item);
+                                       setTargetFolderForSelectedLibraryPreset(selectedFolder === 'all' || selectedFolder === 'none' ? '' : selectedFolder);
+                                       setShowLibraryPicker(false);
+                                     }}
+                                     className="px-2.5 py-1 rounded-lg bg-cyan-600/30 hover:bg-cyan-600/50 text-cyan-200 border border-cyan-400/30 text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer"
+                                     title="Seleccionar preset para colocar sobre la barra de folders"
+                                   >
+                                     <Check size={11} />
+                                     <span>Seleccionar</span>
+                                   </button>
+                                   <button
+                                     type="button"
+                                     onClick={async () => {
+                                       const target = selectedFolder === 'all' || selectedFolder === 'none' ? '' : selectedFolder;
+                                       await addPresetFromLibrary(item.title, item.params, target, item.category);
+                                       setLibraryAddSuccessMessage(`¡"${item.title}" agregado a tu biblioteca!`);
+                                       setTimeout(() => setLibraryAddSuccessMessage(null), 3000);
+                                       setShowLibraryPicker(false);
+                                     }}
+                                     className="px-2.5 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-[10px] font-bold transition-all shadow-[0_0_10px_rgba(168,85,247,0.4)] flex items-center gap-1 cursor-pointer"
+                                     title="Agregar este preset a tu carpeta"
+                                   >
+                                     <FolderPlus size={11} />
+                                     <span>Agregar a carpeta</span>
+                                   </button>
+                                 </div>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Preset Seleccionado de la Librería (SOBRE LA BARRA DE LOS FOLDERS) */}
+                    {activeSelectedLibraryPreset && (
+                      <div className="mb-3 p-3 rounded-xl bg-gradient-to-r from-purple-950/70 via-black/85 to-cyan-950/70 border border-purple-500/40 shadow-[0_0_20px_rgba(168,85,247,0.25)] animate-in fade-in slide-in-from-top-2 duration-300">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="flex items-center gap-1.5">
+                            <Sparkles size={13} className="text-purple-400 shrink-0" />
+                            <span className="text-[10px] font-bold text-purple-200 uppercase tracking-wider">
+                              Preset de Librería Seleccionado
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setActiveSelectedLibraryPreset(null)}
+                            className="text-gray-400 hover:text-white text-xs p-1 cursor-pointer"
+                            title="Deseleccionar"
+                          >
+                            ✕
+                          </button>
+                        </div>
+
+                        <div className="mb-2">
+                          <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                            <h5 className="text-xs font-bold text-white">
+                              {activeSelectedLibraryPreset.title || activeSelectedLibraryPreset.name}
+                            </h5>
+                            {activeSelectedLibraryPreset.category && (
+                              <span className="text-[9px] uppercase font-mono px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                                {activeSelectedLibraryPreset.category}
+                              </span>
+                            )}
+                          </div>
+                          {activeSelectedLibraryPreset.description && (
+                            <p className="text-[10px] text-gray-300 line-clamp-2">
+                              {activeSelectedLibraryPreset.description}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-2 border-t border-white/10">
+                          <div className="flex items-center gap-1.5 flex-1">
+                            <span className="text-[10px] text-gray-400 shrink-0">Guardar en:</span>
+                            <select
+                              value={targetFolderForSelectedLibraryPreset}
+                              onChange={(e) => setTargetFolderForSelectedLibraryPreset(e.target.value)}
+                              className="flex-1 bg-black/60 border border-white/20 rounded px-2 py-1 text-[11px] text-white outline-none focus:border-purple-400 cursor-pointer"
+                            >
+                              <option value="">📁 Sin Carpeta (Raíz)</option>
+                              {folders.map(f => (
+                                <option key={f} value={f}>📁 {f}</option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={handleSaveSelectedLibraryPresetToFolder}
+                              className="px-3.5 py-1.5 rounded bg-purple-600 hover:bg-purple-500 text-white text-[11px] font-bold transition-all shadow-[0_0_12px_rgba(168,85,247,0.4)] flex items-center gap-1.5 cursor-pointer"
+                            >
+                              <FolderPlus size={12} />
+                              <span>Agregar a carpeta</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        {libraryAddSuccessMessage && (
+                          <div className="mt-2 text-[10px] text-emerald-300 bg-emerald-500/20 border border-emerald-500/30 rounded px-2 py-1 flex items-center gap-1 animate-in fade-in">
+                            <Check size={11} />
+                            <span>{libraryAddSuccessMessage}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Formulario Crear Carpeta */}
+                    {showCreateFolderInput && (
+                      <div className="mb-3 p-2 bg-black/50 border border-purple-500/30 rounded-lg flex items-center gap-2 animate-in fade-in duration-200">
+                        <FolderPlus size={14} className="text-purple-400 shrink-0" />
+                        <input
+                          type="text"
+                          value={newFolderNameInput}
+                          onChange={(e) => setNewFolderNameInput(e.target.value)}
+                          placeholder="Nombre de la nueva carpeta..."
+                          className="flex-1 bg-transparent text-xs text-white placeholder-gray-500 outline-none border-b border-white/20 focus:border-purple-400 pb-0.5"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && newFolderNameInput.trim()) {
+                              createFolder(newFolderNameInput.trim());
+                              setSelectedFolder(newFolderNameInput.trim());
+                              setNewFolderNameInput('');
+                              setShowCreateFolderInput(false);
+                            }
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (newFolderNameInput.trim()) {
+                              createFolder(newFolderNameInput.trim());
+                              setSelectedFolder(newFolderNameInput.trim());
+                              setNewFolderNameInput('');
+                              setShowCreateFolderInput(false);
+                            }
+                          }}
+                          className="px-2 py-0.5 rounded bg-purple-500/40 hover:bg-purple-500/60 text-purple-200 text-[10px] font-bold cursor-pointer"
+                        >
+                          Crear
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowCreateFolderInput(false)}
+                          className="text-gray-400 hover:text-gray-200 text-xs px-1 cursor-pointer"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Cabecera de Carpetas con Buscador Dedicado */}
+                    <div className="flex items-center justify-between gap-2 mb-2 pt-1 border-t border-white/5">
+                      <div className="flex items-center gap-1.5">
+                        <Folder className="w-3.5 h-3.5 text-cyan-400" />
+                        <span className="text-[11px] font-bold text-gray-300 tracking-wide">
+                          Carpetas
+                        </span>
+                        <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/25">
+                          {folders.length + 2}
+                        </span>
+                      </div>
+
+                      {/* Buscador Dedicado de Carpetas */}
+                      <div className="relative w-36 sm:w-44">
+                        <Search size={10} className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                        <input
+                          type="text"
+                          value={folderSearch}
+                          onChange={(e) => setFolderSearch(e.target.value)}
+                          placeholder="Buscar carpeta..."
+                          className="w-full pl-6 pr-5 py-0.5 bg-black/50 border border-white/10 rounded-full text-[10px] text-white placeholder-gray-500 outline-none focus:border-cyan-400 transition-all"
+                        />
+                        {folderSearch && (
+                          <button
+                            type="button"
+                            onClick={() => setFolderSearch('')}
+                            className="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white text-[9px] p-0.5 cursor-pointer"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Barra de los Folders */}
+                    <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 mb-3">
+                      {(!folderSearch.trim() || 'todas'.includes(folderSearch.toLowerCase()) || 'all'.includes(folderSearch.toLowerCase())) && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedFolder('all')}
+                          className={`px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all shrink-0 cursor-pointer flex items-center gap-1 ${
+                            selectedFolder === 'all'
+                              ? 'bg-cyan-500/30 text-cyan-200 border border-cyan-400/60 shadow-[0_0_10px_rgba(6,182,212,0.25)]'
+                              : 'bg-black/40 text-gray-400 hover:text-white border border-white/10 hover:border-white/20'
+                          }`}
+                        >
+                          <Folder size={11} className={selectedFolder === 'all' ? 'text-cyan-300' : 'text-gray-400'} />
+                          <span>Todas ({cloudPresets.length})</span>
+                        </button>
+                      )}
+
+                      {(!folderSearch.trim() || 'sin carpeta'.includes(folderSearch.toLowerCase()) || 'raíz'.includes(folderSearch.toLowerCase())) && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedFolder('none')}
+                          className={`px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all shrink-0 cursor-pointer flex items-center gap-1 ${
+                            selectedFolder === 'none'
+                              ? 'bg-cyan-500/30 text-cyan-200 border border-cyan-400/60 shadow-[0_0_10px_rgba(6,182,212,0.25)]'
+                              : 'bg-black/40 text-gray-400 hover:text-white border border-white/10 hover:border-white/20'
+                          }`}
+                        >
+                          <span>📄 Sin Carpeta ({cloudPresets.filter(p => !p.folder).length})</span>
+                        </button>
+                      )}
+
+                      {filteredFolders.map(f => {
+                        const count = cloudPresets.filter(p => p.folder === f).length;
+                        const isActive = selectedFolder === f;
+                        const isEssentials = f === ESSENTIALS_FOLDER_NAME;
+                        return (
+                          <div key={f} className="flex items-center shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedFolder(f)}
+                              className={`px-2.5 py-1 ${isEssentials ? 'rounded-full' : 'rounded-l-full'} text-[10px] font-semibold transition-all cursor-pointer flex items-center gap-1 ${
+                                isActive
+                                  ? (isEssentials 
+                                      ? 'bg-gradient-to-r from-purple-500/40 to-cyan-500/40 text-cyan-200 border border-cyan-400/60 shadow-[0_0_12px_rgba(6,182,212,0.3)]' 
+                                      : 'bg-purple-500/35 text-purple-200 border-y border-l border-purple-400/60 shadow-[0_0_10px_rgba(168,85,247,0.3)]')
+                                  : (isEssentials
+                                      ? 'bg-purple-950/40 text-purple-300 hover:text-white border border-purple-500/30'
+                                      : 'bg-black/40 text-gray-400 hover:text-white border-y border-l border-white/10')
+                              }`}
+                            >
+                              <span>{isEssentials ? '✨ ' : '📁 '}</span>
+                              <span>{f}</span>
+                              <span className={`text-[9px] px-1 py-0.2 rounded-full ${isActive ? 'bg-white/20 text-white' : 'bg-white/5 text-gray-400'}`}>
+                                {count}
+                              </span>
+                            </button>
+                            {!isEssentials && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (confirm(`¿Eliminar la carpeta "${f}"? Los presets se conservarán en la raíz.`)) {
+                                    deleteFolder(f);
+                                    if (selectedFolder === f) setSelectedFolder(ESSENTIALS_FOLDER_NAME);
+                                  }
+                                }}
+                                className={`px-2 py-1 rounded-r-full text-[10px] text-gray-500 hover:text-red-400 transition-colors cursor-pointer border-y border-r ${
+                                  isActive ? 'bg-purple-500/35 border-purple-400/60' : 'bg-black/40 border-white/10'
+                                }`}
+                                title={`Eliminar carpeta "${f}"`}
+                              >
+                                ×
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
+
+                      {filteredFolders.length === 0 && folderSearch.trim() && (
+                        <span className="text-[10px] text-gray-500 italic px-2 py-1 shrink-0">
+                          Sin carpetas coincidentes
+                        </span>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => setShowCreateFolderInput(!showCreateFolderInput)}
+                        className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-gradient-to-r from-purple-500/10 to-cyan-500/10 hover:from-purple-500/20 hover:to-cyan-500/20 text-cyan-300 border border-cyan-500/40 shrink-0 flex items-center gap-1 cursor-pointer transition-all"
+                      >
+                        <FolderPlus size={11} />
+                        <span>+ Carpeta</span>
+                      </button>
+                    </div>
+
+                    {/* Filtros de Búsqueda de Presets, Categoría y Acomodo */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
+                      <div className="relative">
+                        <Search size={11} className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-500" />
+                        <input
+                          type="text"
+                          value={presetSearch}
+                          onChange={(e) => setPresetSearch(e.target.value)}
+                          placeholder="Buscar presets por nombre..."
+                          className="w-full pl-7 pr-6 py-1.5 bg-black/50 border border-white/10 rounded-lg text-[11px] text-white placeholder-gray-500 outline-none focus:border-cyan-400 transition-all"
+                        />
+                        {presetSearch && (
+                          <button
+                            type="button"
+                            onClick={() => setPresetSearch('')}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white text-[10px] cursor-pointer"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1.5 bg-black/50 border border-white/10 rounded-lg px-2.5 py-1">
+                        <Filter size={11} className="text-cyan-400 shrink-0" />
+                        <select
+                          value={presetCategoryFilter}
+                          onChange={(e) => setPresetCategoryFilter(e.target.value)}
+                          className="w-full bg-transparent text-[11px] text-gray-200 outline-none cursor-pointer"
+                        >
+                          <option value="all" className="bg-gray-900 text-white">Todas las Categorías</option>
+                          <option value="rhythmic" className="bg-gray-900 text-white">Ritmos Musicales</option>
+                          <option value="sacred" className="bg-gray-900 text-white">Resonancias Sagradas</option>
+                          <option value="harmonic" className="bg-gray-900 text-white">Armónicos</option>
+                          <option value="genesis" className="bg-gray-900 text-white">Génesis Sagrado</option>
+                          <option value="drift" className="bg-gray-900 text-white">Deriva & Fluidez</option>
+                          <option value="quantum" className="bg-gray-900 text-white">Cuántica & AR</option>
+                          <option value="community" className="bg-gray-900 text-white">Comunidad</option>
+                          <option value="custom" className="bg-gray-900 text-white">Personalizados</option>
+                        </select>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 bg-black/50 border border-white/10 rounded-lg px-2.5 py-1">
+                        <ArrowUpDown size={11} className="text-purple-400 shrink-0" />
+                        <select
+                          value={presetSortMode}
+                          onChange={(e) => setPresetSortMode(e.target.value as any)}
+                          className="w-full bg-transparent text-[11px] text-gray-200 outline-none cursor-pointer"
+                        >
+                          <option value="custom" className="bg-gray-900 text-white">Acomodo Manual (▲/▼)</option>
+                          <option value="name-asc" className="bg-gray-900 text-white">Nombre (A - Z)</option>
+                          <option value="name-desc" className="bg-gray-900 text-white">Nombre (Z - A)</option>
+                          <option value="newest" className="bg-gray-900 text-white">Más Recientes</option>
+                          <option value="oldest" className="bg-gray-900 text-white">Más Antiguos</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Lista de Presets */}
+                    <div className="space-y-2 max-h-64 overflow-y-auto pr-1 custom-scrollbar">
+                      {filteredAndSortedPresets.length === 0 ? (
+                        <div className="text-center py-6 text-gray-400 text-xs bg-black/20 rounded-xl border border-white/5 space-y-1">
+                          <p className="font-semibold text-gray-300">No hay presets en esta carpeta o con los filtros seleccionados.</p>
+                          <p className="text-[11px] text-gray-500">Puedes crear un nuevo preset desde el menú o explorar el catálogo de Librería.</p>
+                        </div>
+                      ) : (
+                        filteredAndSortedPresets.map((preset, index) => {
+                          const isSelected = selectedPresetInfo?.id === preset.id || (selectedPresetInfo?.name === preset.name && (!preset.folder || selectedPresetInfo?.folder === preset.folder));
+                          
+                          const defaultMatch = DEFAULT_PRESETS.find(dp => 
+                            dp.id === preset.id || 
+                            dp.title.toLowerCase() === preset.name.toLowerCase() ||
+                            dp.title.toLowerCase().startsWith(preset.name.toLowerCase()) ||
+                            preset.name.toLowerCase().startsWith(dp.title.toLowerCase())
+                          );
+                          const presetDesc = preset.description || defaultMatch?.description || 'Configuración armónica y visual del espectro sonoro.';
+                          const folderName = preset.folder || 'Audiomorphic Essentials';
+
+                          return (
+                            <div
+                              key={preset.id}
+                              className={`group relative rounded-xl p-2.5 sm:p-3 transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border ${
+                                isSelected
+                                  ? 'bg-gradient-to-r from-cyan-950/60 via-slate-900/70 to-purple-950/60 border-cyan-400/60 shadow-[0_0_18px_rgba(6,182,212,0.2)]'
+                                  : 'bg-black/45 hover:bg-white/[0.04] border-white/10 hover:border-white/20'
+                              }`}
+                            >
+                              <div className="flex items-start sm:items-center gap-2.5 min-w-0 flex-1">
+                                {presetSortMode === 'custom' && (
+                                  <div className="flex flex-col shrink-0 pt-0.5 sm:pt-0">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleMoveFilteredPriority(preset.id, 'up')}
+                                      disabled={index === 0}
+                                      className={`p-0.5 rounded ${index === 0 ? 'text-gray-700' : 'text-gray-400 hover:text-cyan-300'} cursor-pointer transition-colors`}
+                                      title="Subir prioridad"
+                                    >
+                                      <ChevronUp size={11} />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleMoveFilteredPriority(preset.id, 'down')}
+                                      disabled={index === filteredAndSortedPresets.length - 1}
+                                      className={`p-0.5 rounded ${index === filteredAndSortedPresets.length - 1 ? 'text-gray-700' : 'text-gray-400 hover:text-cyan-300'} cursor-pointer transition-colors`}
+                                      title="Bajar prioridad"
+                                    >
+                                      <ChevronDown size={11} />
+                                    </button>
+                                  </div>
+                                )}
+
+                                <div className="min-w-0 flex-1 space-y-1">
+                                  {/* Nombre, Estado Activo y Ubicación de Folder */}
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-xs sm:text-sm font-bold text-white tracking-wide truncate max-w-[200px] sm:max-w-xs">
+                                      {preset.name}
+                                    </span>
+                                    {isSelected && (
+                                      <span className="px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 text-[9px] font-bold flex items-center gap-1 shadow-[0_0_8px_rgba(6,182,212,0.3)] shrink-0">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                                        Activo
+                                      </span>
+                                    )}
+                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/30 font-medium flex items-center gap-1 shrink-0">
+                                      <Folder size={10} className="text-purple-400 shrink-0" />
+                                      <span className="truncate max-w-[150px]">{folderName}</span>
+                                    </span>
+                                  </div>
+
+                                  {/* Descripción del Preset */}
+                                  <p className="text-[11px] text-gray-400 leading-snug line-clamp-2">
+                                    {presetDesc}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Acciones del Preset: Información, Cargar y Eliminar */}
+                              <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
+                                {/* Botón de Información (Abre ventana con comentarios, recomendaciones y ajustes) */}
+                                <button
+                                  type="button"
+                                  onClick={() => setInspectingPreset(preset)}
+                                  className="p-1.5 rounded-lg bg-white/5 hover:bg-cyan-500/20 text-cyan-300 hover:text-cyan-200 border border-white/10 hover:border-cyan-400/40 transition-all cursor-pointer shadow-sm flex items-center justify-center shrink-0"
+                                  title="Ver comentarios, música recomendada, ajustes e información completa"
+                                >
+                                  <Info size={13} />
+                                </button>
+
+                                {/* Cargar Preset */}
+                                <button
+                                  type="button"
+                                  onClick={() => handleApplyPresetItem(preset)}
+                                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                                    isSelected
+                                      ? 'bg-cyan-500/25 hover:bg-cyan-500/35 text-cyan-200 border border-cyan-400/50 shadow-[0_0_12px_rgba(6,182,212,0.25)]'
+                                      : 'bg-gradient-to-r from-cyan-600/30 to-purple-600/30 hover:from-cyan-600/50 hover:to-purple-600/50 text-white border border-cyan-400/40 hover:border-cyan-400 shadow-[0_0_10px_rgba(6,182,212,0.15)]'
+                                  }`}
+                                  title={isSelected ? "Preset cargado actualmente (haz clic para re-aplicar)" : "Cargar y aplicar este preset al visualizador"}
+                                >
+                                  {isSelected ? (
+                                    <>
+                                      <Check size={11} className="text-cyan-300" />
+                                      <span>Cargado</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Play size={10} fill="currentColor" className="text-cyan-300" />
+                                      <span>Cargar</span>
+                                    </>
+                                  )}
+                                </button>
+
+                                {/* Eliminar (Protegiendo presets esenciales) */}
+                                {preset.id.startsWith('essential_') ? (
+                                  <span className="p-1.5 text-cyan-400/40" title="Preset esencial protegido del sistema">
+                                    <Sparkles size={12} />
+                                  </span>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (confirm(`¿Eliminar preset "${preset.name}"?`)) {
+                                        deleteCloudPresetFromServer(preset.id);
+                                      }
+                                    }}
+                                    className="p-1.5 rounded-lg bg-white/5 hover:bg-red-500/20 text-gray-400 hover:text-red-300 border border-white/5 hover:border-red-500/30 transition-all cursor-pointer"
+                                    title="Eliminar preset"
+                                  >
+                                    <Trash2 size={12} />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Ajustes de Auto-Regeneración */}
                  <div className="bg-black/30 p-3 rounded-xl border border-white/10">
                    <h4 className="text-xs font-bold text-white mb-3 flex items-center gap-2">
                      <Activity size={14} className="text-purple-400" />
@@ -2584,9 +3540,36 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                          Selecciona un modo para ver los ajustes.
                        </div>
                      )}
-                   </div>
-                 </div>
+                    </div>
+                  </div>
+                </div>
+             </div>
+
+            {/* Interface Section (Segunda sección después de Ajustes Automáticos) */}
+            <div className="liquid-section break-inside-avoid">
+              <h3 className="text-lg font-bold neon-text text-yellow-400 mb-6 flex items-center gap-2" style={{backgroundImage: 'linear-gradient(135deg, #fde047 0%, #eab308 100%)'}}>
+                <Zap className="w-5 h-5 icon-neon" /> Interfaz
+              </h3>
+              <div 
+                 className="flex justify-between items-center bg-black/20 p-3 rounded-2xl border border-white/5 gap-2 mb-4 cursor-pointer group"
+                 onClick={() => {
+                   if (isLocked) {
+                     onShowSubscription();
+                   } else {
+                     handleChange('showIndicators', !params.showIndicators);
+                   }
+                 }}
+               >
+                  <label className="text-[10px] sm:text-xs uppercase tracking-wider text-gray-300 font-semibold truncate flex-1 cursor-pointer flex items-center gap-2">
+                    Mostrar Indicadores
+                    {isLocked && <Lock size={12} className="text-yellow-500 group-hover:scale-110 transition-all font-bold" />}
+                  </label>
+                  <div className={`liquid-switch shrink-0 ${params.showIndicators ? 'active' : ''} ${isLocked ? 'opacity-50' : ''}`}>
+                    <div className="liquid-switch-thumb"></div>
+                  </div>
                </div>
+              {renderControl("Transparencia Menú", "menuTransparency", 0.0, 1.0, 0.05)}
+              {renderControl("Cierre Automático (s)", "menuAutoCloseTime", 1, 60, 1)}
             </div>
 
             {/* Auto Pilot Section */}
@@ -3118,200 +4101,12 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             )}
           </div>
 
-          {/* VR Section */}
-            <div className="liquid-section break-inside-avoid border-purple-500/30 shadow-[inset_0_0_30px_rgba(168,85,247,0.05)]">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold neon-text text-purple-400 flex items-center gap-2" style={{backgroundImage: 'linear-gradient(135deg, #c084fc 0%, #a855f7 100%)'}}>
-                  <Glasses className="w-5 h-5 icon-neon-pink" /> Realidad Virtual
-                  {isLocked && <Lock size={16} className="text-amber-400" />}
+            {/* Reactivity */}
+            <div className="liquid-section break-inside-avoid">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-bold neon-text text-yellow-400 flex items-center gap-2" style={{backgroundImage: 'linear-gradient(135deg, #fde047 0%, #eab308 100%)'}}>
+                  <Zap className="w-5 h-5 icon-neon" /> Reactividad
                 </h3>
-                <button onClick={() => randomizeSection('vrAr')} className={`text-purple-400 hover:text-purple-300 transition-colors ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}`} title="Armonía Aleatoria">
-                  <Shuffle size={18} className="icon-neon-pink" />
-                </button>
-              </div>
-              
-              <div className="mb-6 flex justify-between items-center bg-black/20 p-3 rounded-2xl border border-white/5 gap-2">
-                 <label className="text-[10px] sm:text-xs uppercase tracking-wider text-gray-300 font-semibold truncate flex-1 flex items-center gap-1">
-                    Modo VR 3D
-                    {isLocked && <Lock size={12} className="text-amber-400 cursor-pointer" onClick={onShowSubscription} />}
-                 </label>
-                 <div 
-                   onClick={() => {
-                     if (isLocked) {
-                       onShowSubscription();
-                       return;
-                     }
-                     const newVrMode = !params.vrMode;
-                     if (newVrMode) {
-                       setParams(prev => ({
-                         ...prev,
-                         vrMode: true,
-                         vrSplitScreen: false,
-                         vrSymmetric: true,
-                         vrDepth: 100,
-                         vrRadius: 0,
-                         vrThickness: 0.1,
-                         vrDistance: 0
-                       }));
-                     } else {
-                       handleChange('vrMode', false);
-                     }
-                   }}
-                   className={`liquid-switch shrink-0 ${params.vrMode ? 'active-purple' : ''} ${isLocked ? 'opacity-60' : ''}`}
-                 >
-                   <div className="liquid-switch-thumb"></div>
-                 </div>
-              </div>
-
-              {params.vrMode && (
-                <div className="animate-in fade-in slide-in-from-top-4 duration-700">
-                  <div className="mb-6 flex justify-between items-center bg-black/20 p-3 rounded-2xl border border-white/5 gap-2">
-                     <label className="text-[10px] sm:text-xs uppercase tracking-wider text-gray-300 font-semibold truncate flex-1 flex items-center gap-1">
-                        Modo AR (Cámara)
-                         {isLocked && <Lock size={12} className="text-amber-400 cursor-pointer" onClick={onShowSubscription} />}
-                     </label>
-                     <div 
-                       onClick={() => {
-                         if (isLocked) {
-                           onShowSubscription();
-                           return;
-                         }
-                         handleChange('arMode', !params.arMode);
-                       }}
-                       className={`liquid-switch shrink-0 ${params.arMode ? 'active-emerald' : ''} ${isLocked ? 'opacity-60' : ''}`}
-                     >
-                       <div className="liquid-switch-thumb"></div>
-                     </div>
-                  </div>
-
-                  {params.arMode && (
-                    <div className="mb-4 bg-black/20 p-4 rounded-2xl border border-white/5 relative">
-                      <label className="text-xs uppercase tracking-wider text-gray-300 flex items-center gap-2 mb-3 font-semibold">
-                        Filtro AR {isLocked && <Lock size={12} className="text-amber-400" />}
-                      </label>
-                      <LiquidSelect
-                        value={params.arFilter}
-                        onChange={(val) => {
-                          if (isLocked) {
-                            onShowSubscription();
-                            return;
-                          }
-                          handleChange('arFilter', val);
-                        }}
-                        options={[
-                          { value: "none", label: "Ninguno" },
-                          { value: "psychedelic", label: "Psicodélico", locked: isLocked },
-                          { value: "noir", label: "Noir (B&N)", locked: isLocked },
-                          { value: "neon", label: "Neón", locked: isLocked },
-                          { value: "glitch", label: "Glitch", locked: isLocked },
-                          { value: "dream", label: "Sueño", locked: isLocked },
-                          { value: "hypnotic", label: "Hipnótico", locked: isLocked }
-                        ]}
-                      />
-                      <div className="mt-5">
-                        {renderControl("Intensidad Filtro", "arIntensity", 0.0, 1.0, 0.05, undefined, false, true)}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="space-y-4 mb-4">
-                    <div className="flex justify-between items-center bg-black/20 p-3 rounded-2xl border border-white/5 gap-2">
-                       <label className="text-[10px] sm:text-xs uppercase tracking-wider text-gray-300 font-semibold truncate flex-1">Rotación Manual</label>
-                       <div onClick={() => handleChange('vrDragRotation', !params.vrDragRotation)} className={`liquid-switch shrink-0 ${params.vrDragRotation ? 'active-purple' : ''}`}><div className="liquid-switch-thumb"></div></div>
-                    </div>
-                    <div className="flex justify-between items-center bg-black/20 p-3 rounded-2xl border border-white/5 gap-2">
-                       <label className="text-[10px] sm:text-xs uppercase tracking-wider text-gray-300 font-semibold truncate flex-1">Pantalla Dividida</label>
-                       <div onClick={() => handleChange('vrSplitScreen', !params.vrSplitScreen)} className={`liquid-switch shrink-0 ${params.vrSplitScreen ? 'active-purple' : ''}`}><div className="liquid-switch-thumb"></div></div>
-                    </div>
-                    <div className="flex justify-between items-center bg-black/20 p-3 rounded-2xl border border-white/5 gap-2">
-                       <label className="text-[10px] sm:text-xs uppercase tracking-wider text-gray-300 font-semibold truncate flex-1">Portal Infinito</label>
-                       <div onClick={() => handleChange('vrSymmetric', !params.vrSymmetric)} className={`liquid-switch shrink-0 ${params.vrSymmetric ? 'active-purple' : ''}`}><div className="liquid-switch-thumb"></div></div>
-                    </div>
-                  </div>
-                  
-                  {renderControl("Profundidad Z", "vrDepth", 1, 100, 1, undefined, false, isVRARLocked)}
-                  {renderControl("Radio del Portal", "vrRadius", 0, 20, 0.5, undefined, false, isVRARLocked)}
-                  {renderControl("Grosor de Línea", "vrThickness", 0.1, 10, 0.1, undefined, false, isVRARLocked)}
-                  {renderControl("Desplazamiento Z", "vrDistance", -20, 20, 0.5, undefined, false, isVRARLocked)}
-                </div>
-              )}
-            </div>
-
-            {/* AR Portal Section */}
-            <div className="liquid-section break-inside-avoid border-emerald-500/30 shadow-[inset_0_0_30px_rgba(16,185,129,0.05)]">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold neon-text text-emerald-400 flex items-center gap-2" style={{backgroundImage: 'linear-gradient(135deg, #34d399 0%, #10b981 100%)'}}>
-                  <Glasses className="w-5 h-5 icon-neon-pink" /> Portal AR
-                  {isLocked && <Lock size={16} className="text-amber-400" />}
-                </h3>
-                <button onClick={() => randomizeSection('vrAr')} className={`text-emerald-400 hover:text-emerald-300 transition-colors ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}`} title="Armonía Aleatoria">
-                  <Shuffle size={18} className="icon-neon-emerald" />
-                </button>
-              </div>
-              
-              <div className="mb-6 flex justify-between items-center bg-black/20 p-3 rounded-2xl border border-white/5 gap-2">
-                 <label className="text-[10px] sm:text-xs uppercase tracking-wider text-gray-300 font-semibold truncate flex-1 flex items-center gap-1">
-                    Modo Portal Inteligente
-                    {isLocked && <Lock size={12} className="text-amber-400 cursor-pointer" onClick={onShowSubscription} />}
-                 </label>
-                 <div 
-                   onClick={() => {
-                     if (isLocked) {
-                       onShowSubscription();
-                       return;
-                     }
-                     handleChange('arPortalMode', !params.arPortalMode);
-                   }}
-                   className={`liquid-switch shrink-0 ${params.arPortalMode ? 'active-emerald' : ''} ${isLocked ? 'opacity-60' : ''}`}
-                 >
-                   <div className="liquid-switch-thumb"></div>
-                 </div>
-              </div>
-
-              {params.arPortalMode && (
-                <div className="animate-in fade-in slide-in-from-top-4 duration-700">
-                  {renderControl("Escala del Portal", "arPortalScale", 0.1, 20.0, 0.1, undefined, false, true)}
-                  {renderControl("Intensidad Perspectiva", "arPortalPerspectiveIntensity", 0.0, 5.0, 0.1, undefined, false, true)}
-                  {renderControl("Amplitud Punto de Fuga", "arPortalVanishingRadius", 0.0, 10.0, 0.1, undefined, false, true)}
-                  {renderControl("Difuminado de Profundidad", "arPortalFade", 0.0, 5.0, 0.01, undefined, false, true)}
-                  {renderControl("Doblado del Portal", "arPortalBending", 0.0, 1.0, 0.01, undefined, false, true)}
-                </div>
-              )}
-            </div>
-
-            {/* Interface & Reactivity */}
-            <div className="break-inside-avoid">
-              <div className="liquid-section">
-                <h3 className="text-lg font-bold neon-text text-yellow-400 mb-6 flex items-center gap-2" style={{backgroundImage: 'linear-gradient(135deg, #fde047 0%, #eab308 100%)'}}>
-                  <Zap className="w-5 h-5 icon-neon" /> Interfaz
-                </h3>
-                <div 
-                   className="flex justify-between items-center bg-black/20 p-3 rounded-2xl border border-white/5 gap-2 mb-4 cursor-pointer group"
-                   onClick={() => {
-                     if (isLocked) {
-                       onShowSubscription();
-                     } else {
-                       handleChange('showIndicators', !params.showIndicators);
-                     }
-                   }}
-                 >
-                    <label className="text-[10px] sm:text-xs uppercase tracking-wider text-gray-300 font-semibold truncate flex-1 cursor-pointer flex items-center gap-2">
-                      Mostrar Indicadores
-                      {isLocked && <Lock size={12} className="text-yellow-500 group-hover:scale-110 transition-all font-bold" />}
-                    </label>
-                    <div className={`liquid-switch shrink-0 ${params.showIndicators ? 'active' : ''} ${isLocked ? 'opacity-50' : ''}`}>
-                      <div className="liquid-switch-thumb"></div>
-                    </div>
-                 </div>
-                {renderControl("Transparencia Menú", "menuTransparency", 0.0, 1.0, 0.05)}
-                {renderControl("Cierre Automático (s)", "menuAutoCloseTime", 1, 60, 1)}
-              </div>
-
-              <div className="liquid-section">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-lg font-bold neon-text text-yellow-400 flex items-center gap-2" style={{backgroundImage: 'linear-gradient(135deg, #fde047 0%, #eab308 100%)'}}>
-                    <Zap className="w-5 h-5 icon-neon" /> Reactividad
-                  </h3>
                   <button onClick={() => randomizeSection('reactivity')} className={`text-yellow-400 hover:text-yellow-300 transition-colors ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}`} title="Armonía Aleatoria">
                     <Shuffle size={18} className="icon-neon" />
                   </button>
@@ -3319,7 +4114,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 {renderControl("Sensibilidad", "sensitivity", 0.1, 5.0, 0.1, undefined, false, true)}
                 {renderControl("Espectro Freq", "freqRange", 0.1, 1.0, 0.05, undefined, false, true)}
                 {renderControl("Persistencia", "trail", 0.01, 1.0, 0.01, undefined, false, true)}
-              </div>
             </div>
 
             {/* Colors */}
@@ -3524,152 +4318,213 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               {renderControl("Desplazamiento Y", "z0_i", -2, 2, 0.01, undefined, params.autoPilot, true)}
             </div>
 
+            {/* VR Section (Versión Alpha) */}
+            <div className="liquid-section break-inside-avoid border-purple-500/30 shadow-[inset_0_0_30px_rgba(168,85,247,0.05)]">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-bold neon-text text-purple-400 flex items-center gap-2" style={{backgroundImage: 'linear-gradient(135deg, #c084fc 0%, #a855f7 100%)'}}>
+                  <Glasses className="w-5 h-5 icon-neon-pink" /> 
+                  <span>Realidad Virtual</span>
+                  <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded-full bg-pink-500/20 text-pink-300 border border-pink-500/30">Versión Alpha</span>
+                  {isLocked && <Lock size={16} className="text-amber-400" />}
+                </h3>
+                <button onClick={() => randomizeSection('vrAr')} className={`text-purple-400 hover:text-purple-300 transition-colors ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}`} title="Armonía Aleatoria">
+                  <Shuffle size={18} className="icon-neon-pink" />
+                </button>
+              </div>
+              
+              <div className="mb-6 flex justify-between items-center bg-black/20 p-3 rounded-2xl border border-white/5 gap-2">
+                 <label className="text-[10px] sm:text-xs uppercase tracking-wider text-gray-300 font-semibold truncate flex-1 flex items-center gap-1">
+                    Modo VR 3D
+                    {isLocked && <Lock size={12} className="text-amber-400 cursor-pointer" onClick={onShowSubscription} />}
+                 </label>
+                 <div 
+                   onClick={() => {
+                     if (isLocked) {
+                       onShowSubscription();
+                       return;
+                     }
+                     const newVrMode = !params.vrMode;
+                     if (newVrMode) {
+                       setParams(prev => ({
+                         ...prev,
+                         vrMode: true,
+                         vrSplitScreen: false,
+                         vrSymmetric: true,
+                         vrDepth: 100,
+                         vrRadius: 0,
+                         vrThickness: 0.1,
+                         vrDistance: 0
+                       }));
+                     } else {
+                       handleChange('vrMode', false);
+                     }
+                   }}
+                   className={`liquid-switch shrink-0 ${params.vrMode ? 'active-purple' : ''} ${isLocked ? 'opacity-60' : ''}`}
+                 >
+                   <div className="liquid-switch-thumb"></div>
+                 </div>
+              </div>
+
+              {params.vrMode && (
+                <div className="animate-in fade-in slide-in-from-top-4 duration-700">
+                  <div className="mb-6 flex justify-between items-center bg-black/20 p-3 rounded-2xl border border-white/5 gap-2">
+                     <label className="text-[10px] sm:text-xs uppercase tracking-wider text-gray-300 font-semibold truncate flex-1 flex items-center gap-1">
+                        Modo AR (Cámara)
+                         {isLocked && <Lock size={12} className="text-amber-400 cursor-pointer" onClick={onShowSubscription} />}
+                     </label>
+                     <div 
+                       onClick={() => {
+                         if (isLocked) {
+                           onShowSubscription();
+                           return;
+                         }
+                         handleChange('arMode', !params.arMode);
+                       }}
+                       className={`liquid-switch shrink-0 ${params.arMode ? 'active-emerald' : ''} ${isLocked ? 'opacity-60' : ''}`}
+                     >
+                       <div className="liquid-switch-thumb"></div>
+                     </div>
+                  </div>
+
+                  {params.arMode && (
+                    <div className="mb-4 bg-black/20 p-4 rounded-2xl border border-white/5 relative">
+                      <label className="text-xs uppercase tracking-wider text-gray-300 flex items-center gap-2 mb-3 font-semibold">
+                        Filtro AR {isLocked && <Lock size={12} className="text-amber-400" />}
+                      </label>
+                      <LiquidSelect
+                        value={params.arFilter}
+                        onChange={(val) => {
+                          if (isLocked) {
+                            onShowSubscription();
+                            return;
+                          }
+                          handleChange('arFilter', val);
+                        }}
+                        options={[
+                          { value: "none", label: "Ninguno" },
+                          { value: "psychedelic", label: "Psicodélico", locked: isLocked },
+                          { value: "noir", label: "Noir (B&N)", locked: isLocked },
+                          { value: "neon", label: "Neón", locked: isLocked },
+                          { value: "glitch", label: "Glitch", locked: isLocked },
+                          { value: "dream", label: "Sueño", locked: isLocked },
+                          { value: "hypnotic", label: "Hipnótico", locked: isLocked }
+                        ]}
+                      />
+                      <div className="mt-5">
+                        {renderControl("Intensidad Filtro", "arIntensity", 0.0, 1.0, 0.05, undefined, false, true)}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-4 mb-4">
+                    <div className="flex justify-between items-center bg-black/20 p-3 rounded-2xl border border-white/5 gap-2">
+                       <label className="text-[10px] sm:text-xs uppercase tracking-wider text-gray-300 font-semibold truncate flex-1">Rotación Manual</label>
+                       <div onClick={() => handleChange('vrDragRotation', !params.vrDragRotation)} className={`liquid-switch shrink-0 ${params.vrDragRotation ? 'active-purple' : ''}`}><div className="liquid-switch-thumb"></div></div>
+                    </div>
+                    <div className="flex justify-between items-center bg-black/20 p-3 rounded-2xl border border-white/5 gap-2">
+                       <label className="text-[10px] sm:text-xs uppercase tracking-wider text-gray-300 font-semibold truncate flex-1">Pantalla Dividida</label>
+                       <div onClick={() => handleChange('vrSplitScreen', !params.vrSplitScreen)} className={`liquid-switch shrink-0 ${params.vrSplitScreen ? 'active-purple' : ''}`}><div className="liquid-switch-thumb"></div></div>
+                    </div>
+                    <div className="flex justify-between items-center bg-black/20 p-3 rounded-2xl border border-white/5 gap-2">
+                       <label className="text-[10px] sm:text-xs uppercase tracking-wider text-gray-300 font-semibold truncate flex-1">Portal Infinito</label>
+                       <div onClick={() => handleChange('vrSymmetric', !params.vrSymmetric)} className={`liquid-switch shrink-0 ${params.vrSymmetric ? 'active-purple' : ''}`}><div className="liquid-switch-thumb"></div></div>
+                    </div>
+                  </div>
+                  
+                  {renderControl("Profundidad Z", "vrDepth", 1, 100, 1, undefined, false, isVRARLocked)}
+                  {renderControl("Radio del Portal", "vrRadius", 0, 20, 0.5, undefined, false, isVRARLocked)}
+                  {renderControl("Grosor de Línea", "vrThickness", 0.1, 10, 0.1, undefined, false, isVRARLocked)}
+                  {renderControl("Desplazamiento Z", "vrDistance", -20, 20, 0.5, undefined, false, isVRARLocked)}
+                </div>
+              )}
+            </div>
+
+            {/* AR Portal Section (Versión Alpha) */}
+            <div className="liquid-section break-inside-avoid border-emerald-500/30 shadow-[inset_0_0_30px_rgba(168,85,247,0.05)]">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-bold neon-text text-emerald-400 flex items-center gap-2" style={{backgroundImage: 'linear-gradient(135deg, #34d399 0%, #10b981 100%)'}}>
+                  <Glasses className="w-5 h-5 icon-neon-pink" /> 
+                  <span>Portal AR</span>
+                  <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Versión Alpha</span>
+                  {isLocked && <Lock size={16} className="text-amber-400" />}
+                </h3>
+                <button onClick={() => randomizeSection('vrAr')} className={`text-emerald-400 hover:text-emerald-300 transition-colors ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}`} title="Armonía Aleatoria">
+                  <Shuffle size={18} className="icon-neon-emerald" />
+                </button>
+              </div>
+              
+              <div className="mb-6 flex justify-between items-center bg-black/20 p-3 rounded-2xl border border-white/5 gap-2">
+                 <label className="text-[10px] sm:text-xs uppercase tracking-wider text-gray-300 font-semibold truncate flex-1 flex items-center gap-1">
+                    Modo Portal Inteligente
+                    {isLocked && <Lock size={12} className="text-amber-400 cursor-pointer" onClick={onShowSubscription} />}
+                 </label>
+                 <div 
+                   onClick={() => {
+                     if (isLocked) {
+                       onShowSubscription();
+                       return;
+                     }
+                     handleChange('arPortalMode', !params.arPortalMode);
+                   }}
+                   className={`liquid-switch shrink-0 ${params.arPortalMode ? 'active-emerald' : ''} ${isLocked ? 'opacity-60' : ''}`}
+                 >
+                   <div className="liquid-switch-thumb"></div>
+                 </div>
+              </div>
+
+              {params.arPortalMode && (
+                <div className="animate-in fade-in slide-in-from-top-4 duration-700">
+                  {renderControl("Escala del Portal", "arPortalScale", 0.1, 20.0, 0.1, undefined, false, true)}
+                  {renderControl("Intensidad Perspectiva", "arPortalPerspectiveIntensity", 0.0, 5.0, 0.1, undefined, false, true)}
+                  {renderControl("Amplitud Punto de Fuga", "arPortalVanishingRadius", 0.0, 10.0, 0.1, undefined, false, true)}
+                  {renderControl("Difuminado de Profundidad", "arPortalFade", 0.0, 5.0, 0.01, undefined, false, true)}
+                  {renderControl("Doblado del Portal", "arPortalBending", 0.0, 1.0, 0.01, undefined, false, true)}
+                </div>
+              )}
+            </div>
+
           </div>
         </div>
       </div>
 
-      {/* Preset Modal */}
+      {/* Presets Hub Modal (Ventana de 2 opciones: Librería y Biblioteca) */}
       {showPresetModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="liquid-panel w-full max-w-md p-6 border border-white/20 shadow-2xl">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold neon-text flex items-center gap-2">
-                <Save className="w-6 h-6 icon-neon" />
-                Presets y Ajustes
-              </h2>
-              <button onClick={() => setShowPresetModal(false)} className="text-gray-400 hover:text-white">
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-            
-            <p className="text-sm text-gray-300 mb-6">
-              Selecciona qué categorías deseas guardar o cargar.
-            </p>
+        <PresetsHubModal
+          open={showPresetModal}
+          onClose={() => setShowPresetModal(false)}
+          currentParams={params}
+          setParams={setParams}
+          onApplyPreset={(preset) => {
+            handleApplyLibraryPreset(preset);
+            if (onApplyPreset) onApplyPreset(preset);
+          }}
+          selectedLibraryPreset={activeSelectedLibraryPreset}
+          onSelectLibraryPreset={(preset) => {
+            setActiveSelectedLibraryPreset(preset);
+            handleApplyLibraryPreset(preset);
+            setTargetFolderForSelectedLibraryPreset(selectedFolder === 'all' || selectedFolder === 'none' ? '' : selectedFolder);
+          }}
+          sync={sync}
+          userDisplayName={user?.displayName || (user?.email ? user.email.split('@')[0] : 'Viajero Sónico')}
+        />
+      )}
 
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              {[
-                { id: 'baseGeometry', label: 'Geometría Base' },
-                { id: 'colors', label: 'Cromatismo' },
-                { id: 'sacredGeometry', label: 'Geometría Sagrada' },
-                { id: 'vrAr', label: 'VR / AR' },
-                { id: 'reactivity', label: 'Reactividad' }
-              ].map(cat => (
-                <label key={cat.id} className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={presetCategories[cat.id as keyof typeof presetCategories]}
-                    onChange={(e) => setPresetCategories(prev => ({ ...prev, [cat.id]: e.target.checked }))}
-                    className="rounded border-gray-500 bg-black/50 text-cyan-500 focus:ring-cyan-500/50"
-                  />
-                  {cat.label}
-                </label>
-              ))}
-            </div>
-
-            <div className="flex flex-col gap-4">
-              <button
-                onClick={handleExportPreset}
-                className="liquid-bubble w-full py-3 text-sm font-bold flex items-center justify-center gap-2 text-emerald-300 hover:text-emerald-200"
-              >
-                <Download className="w-5 h-5 icon-neon" />
-                Exportar Preset Actual
-              </button>
-
-              <div className="relative">
-                <input
-                  type="file"
-                  accept=".json"
-                  ref={fileInputRef}
-                  onChange={handleImportPreset}
-                  className="hidden"
-                />
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="liquid-bubble w-full py-3 text-sm font-bold flex items-center justify-center gap-2 text-cyan-300 hover:text-cyan-200"
-                >
-                  <Upload className="w-5 h-5 icon-neon" />
-                  Importar Preset
-                </button>
-              </div>
-            </div>
-
-            <div className="mt-8 border-t border-white/10 pt-6">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2 mb-4">
-                <Cloud className="w-5 h-5 text-blue-400" />
-                {user ? 'Presets en la Nube (StarSeed OS)' : 'Mis Presets (Guardado Local)'}
-              </h3>
-              
-              <div className="flex gap-2 mb-4">
-                <input
-                  type="text"
-                  value={presetName}
-                  onChange={(e) => setPresetName(e.target.value)}
-                  placeholder="Nombre del preset..."
-                  className="flex-1 bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500"
-                />
-                <button
-                  onClick={handleSaveCloudPreset}
-                  disabled={!presetName.trim() || isSavingPreset}
-                  className={`px-4 py-2 rounded-lg font-bold flex items-center gap-2 transition-all ${
-                    !presetName.trim() || isSavingPreset
-                      ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
-                      : 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-[0_0_10px_rgba(6,182,212,0.5)]'
-                  }`}
-                >
-                  {isSavingPreset ? 'Guardando...' : 'Guardar'}
-                </button>
-              </div>
-
-              <div className="space-y-2 max-h-56 overflow-y-auto pr-2 custom-scrollbar">
-                {cloudPresets.length === 0 ? (
-                  <p className="text-sm text-gray-500 text-center py-4">No tienes presets guardados aún.</p>
-                ) : (
-                  cloudPresets.map((preset, index) => (
-                    <div key={preset.id} className="flex items-center justify-between bg-black/40 border border-white/5 rounded-lg p-3 hover:border-cyan-500/30 transition-colors">
-                      <div className="flex items-center gap-2 min-w-0 flex-1 pr-2">
-                        <div className="flex flex-col gap-0.5">
-                          <button
-                            onClick={() => handleMovePriority(index, 'up')}
-                            disabled={index === 0}
-                            className={`p-0.5 rounded ${index === 0 ? 'text-gray-700' : 'text-gray-400 hover:text-cyan-300'}`}
-                            title="Subir prioridad"
-                          >
-                            <ChevronUp className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleMovePriority(index, 'down')}
-                            disabled={index === cloudPresets.length - 1}
-                            className={`p-0.5 rounded ${index === cloudPresets.length - 1 ? 'text-gray-700' : 'text-gray-400 hover:text-cyan-300'}`}
-                            title="Bajar prioridad"
-                          >
-                            <ChevronDown className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                        <span className="text-sm font-medium text-gray-200 truncate">{preset.name}</span>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <button
-                          onClick={() => handleLoadCloudPreset(preset)}
-                          className="p-1.5 bg-cyan-500/20 text-cyan-300 rounded hover:bg-cyan-500/40 transition-colors"
-                          title="Cargar"
-                        >
-                          <Download className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteCloudPreset(preset.id)}
-                          className="p-1.5 bg-red-500/20 text-red-300 rounded hover:bg-red-500/40 transition-colors"
-                          title="Eliminar"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* Preset Detail Modal (Comentarios, Recomendaciones Musicales, Ajustes e Información Completa) */}
+      {inspectingPreset && (
+        <PresetDetailModal
+          open={!!inspectingPreset}
+          onClose={() => setInspectingPreset(null)}
+          preset={inspectingPreset}
+          onApplyPreset={(presetToApply) => {
+            handleApplyPresetItem(presetToApply);
+          }}
+          isSelected={
+            selectedPresetInfo?.id === inspectingPreset.id ||
+            (selectedPresetInfo?.name === (inspectingPreset.name || inspectingPreset.title) &&
+              (!inspectingPreset.folder || selectedPresetInfo?.folder === inspectingPreset.folder))
+          }
+          userDisplayName={user?.displayName || (user?.email ? user.email.split('@')[0] : 'Viajero Sónico')}
+        />
       )}
     </>
   );

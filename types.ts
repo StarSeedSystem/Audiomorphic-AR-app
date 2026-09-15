@@ -216,7 +216,7 @@ export const DEFAULT_PARAMS: VisualizerParams = {
   autoOptionSaturation: 50,
   autoRelationshipMode: 'empathetic',
   autoParamRatioLeveler: 50,
-  autoRandomOnBeat: false,
+  autoRandomOnBeat: true,
   autoRandomMode: 'none',
   lockedParams: [],
 
