@@ -93,16 +93,17 @@ async function createWindow() {
   // Load the Local Server URL
   mainWindow.loadURL(url, { userAgent });
 
-  // Open any target="_blank" or window.open in default OS browser (e.g., Stripe links)
-  // EXCEPT: Allow Firebase auth popups to open within Electron
+  // Open any target="_blank" or window.open in default OS browser (e.g., Stripe links, StarSeed OS)
+  // EXCEPT: Allow Firebase and Supabase auth popups to open within Electron
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    const isFirebaseAuth = url.includes('firebaseapp.com') || 
-                           url.includes('accounts.google.com') || 
-                           url.includes('googleapis.com') ||
-                           url.includes('firebase.google.com') ||
-                           url.includes('auth.google.com');
+    const isAuthPopup = url.includes('firebaseapp.com') || 
+                        url.includes('accounts.google.com') || 
+                        url.includes('googleapis.com') ||
+                        url.includes('firebase.google.com') ||
+                        url.includes('auth.google.com') ||
+                        url.includes('supabase.co');
     
-    if (isFirebaseAuth) {
+    if (isAuthPopup) {
       return { 
         action: 'allow',
         overrideBrowserWindowOptions: {
@@ -123,15 +124,16 @@ async function createWindow() {
   });
 
   // Prevent main window from navigating away. Redirect to OS browser instead.
-  // EXCEPT: Allow Firebase auth redirects to pass through for Google login
+  // EXCEPT: Allow Firebase/Supabase auth redirects to pass through
   mainWindow.webContents.on('will-navigate', (event, url) => {
     const isLocalhost = url.includes('localhost') || url.includes('127.0.0.1');
-    const isFirebaseAuth = url.includes('firebaseapp.com') || 
+    const isAuthRedirect = url.includes('firebaseapp.com') || 
                            url.includes('accounts.google.com') || 
                            url.includes('googleapis.com') ||
-                           url.includes('firebase.googleapis.com');
+                           url.includes('firebase.googleapis.com') ||
+                           url.includes('supabase.co');
     
-    if (url.startsWith('http') && !isLocalhost && !isFirebaseAuth) {
+    if (url.startsWith('http') && !isLocalhost && !isAuthRedirect) {
       event.preventDefault();
       shell.openExternal(url);
     }
@@ -196,6 +198,15 @@ async function createWindow() {
       const isFullScreen = mainWindow.isFullScreen();
       mainWindow.setFullScreen(!isFullScreen);
     }
+  });
+
+  // Handle open external URL in default OS browser
+  ipcMain.handle('open-external', async (event, url) => {
+    if (url && typeof url === 'string') {
+      await shell.openExternal(url);
+      return true;
+    }
+    return false;
   });
 
   // Handle system audio/desktop capture

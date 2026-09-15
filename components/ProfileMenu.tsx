@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabaseClient';
 import { SubscriptionTier } from '../types';
 import { usePresets, Preset } from '../hooks/usePresets';
+import { openExternalUrl, buildStarSeedOsHandoffUrl } from '../utils/platform';
 
 interface ProfileMenuProps {
   subscriptionTier: SubscriptionTier;
@@ -94,27 +95,20 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
     }
   };
 
-  // SSO: abrir StarSeed OS con la sesión actual (token handoff).
+  // SSO: abrir StarSeed OS con la sesión actual (token handoff o soberano).
   const handleOpenStarSeedOS = async () => {
     setHandoffLoading(true);
     try {
       const { data } = await supabase.auth.getSession();
-      const session = data.session;
-      if (!session) {
+      const session = data?.session || user;
+      if (!session && !user) {
         setAuthModalOpen(true);
         return;
       }
-      const params = new URLSearchParams({
-        access_token: session.access_token,
-        refresh_token: session.refresh_token,
-        token_type: 'bearer',
-        expires_in: '3600',
-        type: 'signup',
-      });
-      window.open(`https://starseed-os.vercel.app/funciones#${params.toString()}`, '_blank', 'noopener');
-    } catch (e) {
-      // Si falla, abrimos el OS sin sesión (el usuario podrá iniciar sesión allí).
-      window.open('https://starseed-os.vercel.app/funciones', '_blank', 'noopener');
+      const targetUrl = buildStarSeedOsHandoffUrl(session || user);
+      openExternalUrl(targetUrl);
+    } catch {
+      openExternalUrl('https://starseed-os.vercel.app/funciones');
     } finally {
       setHandoffLoading(false);
       setIsOpen(false);

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, ExternalLink, Heart, BrainCircuit, Music, Sparkles, Rocket, Star, AtSign, LogIn } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabaseClient';
+import { openExternalUrl, buildStarSeedOsHandoffUrl } from '../utils/platform';
 
 interface AboutScreenProps {
   onClose: () => void;
@@ -22,23 +23,17 @@ const AboutScreen: React.FC<AboutScreenProps> = ({ onClose }) => {
   const avatarUrl = profile?.avatarUrl ?? null;
   const starseedAddress = profile?.starseedAddress ?? (handle ? `${handle}@star.seed` : null);
 
-  // SSO: abrir StarSeed OS con la sesion actual (token handoff).
+  // SSO: abrir StarSeed OS con la sesion actual (token handoff o soberano).
   const handleOpenStarSeedOS = async () => {
     setHandoffLoading(true);
     try {
       const { data } = await supabase.auth.getSession();
-      const session = data.session;
-      if (!session) { setAuthModalOpen(true); return; }
-      const params = new URLSearchParams({
-        access_token: session.access_token,
-        refresh_token: session.refresh_token,
-        token_type: 'bearer',
-        expires_in: '3600',
-        type: 'signup',
-      });
-      window.open(`https://starseed-os.vercel.app/funciones#${params.toString()}`, '_blank', 'noopener');
-    } catch (e) {
-      window.open('https://starseed-os.vercel.app/funciones', '_blank', 'noopener');
+      const session = data?.session || user;
+      if (!session && !user) { setAuthModalOpen(true); return; }
+      const targetUrl = buildStarSeedOsHandoffUrl(session || user);
+      openExternalUrl(targetUrl);
+    } catch {
+      openExternalUrl('https://starseed-os.vercel.app/funciones');
     } finally {
       setHandoffLoading(false);
     }

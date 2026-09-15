@@ -25,7 +25,7 @@ export function getStarSeedDb(): SupabaseClient {
     clientInstance = createClient(STARSEED_SUPABASE_URL, STARSEED_SUPABASE_ANON_KEY, {
       auth: {
         persistSession: true,
-        storageKey: 'starseed-auth-token-v2',
+        storageKey: 'starseed.auth',
         autoRefreshToken: true,
         detectSessionInUrl: true,
       },
@@ -61,7 +61,7 @@ export interface AudiomorphicPresetRecord {
   id: string;
   title: string;
   description: string;
-  category: 'genesis' | 'harmonic' | 'drift' | 'quantum' | 'community' | 'custom';
+  category: 'genesis' | 'harmonic' | 'drift' | 'quantum' | 'community' | 'custom' | 'rhythmic' | 'sacred' | 'essentials';
   author: {
     id?: string;
     name: string;

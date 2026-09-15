@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../contexts/AuthContext';
 
 export const AuthModal: React.FC = () => {
-  const { isAuthModalOpen, setAuthModalOpen } = useAuth();
+  const { isAuthModalOpen, setAuthModalOpen, activateSovereignSession } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -15,16 +15,51 @@ export const AuthModal: React.FC = () => {
 
   if (!isAuthModalOpen) return null;
 
+  const isEgressError = (err: any) => {
+    if (!err) return false;
+    const msg = (err?.message || String(err || '')).toLowerCase();
+    return (
+      msg.includes('exceed_egress_quota') ||
+      msg.includes('spend caps') ||
+      msg.includes('restricted') ||
+      msg.includes('quota') ||
+      msg.includes('failed to fetch') ||
+      msg.includes('networkerror') ||
+      msg.includes('network error') ||
+      msg.includes('timeout') ||
+      msg.includes('cors') ||
+      msg.includes('load failed') ||
+      err?.status === 402 ||
+      err?.status === 403 ||
+      err?.status === 500 ||
+      err?.status === 502 ||
+      err?.status === 503 ||
+      err?.status === 504
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setError(null); setNotice(null); setLoading(true);
     try {
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        if (error) {
+          if (isEgressError(error)) {
+            activateSovereignSession(email);
+            return;
+          }
+          throw error;
+        }
         setAuthModalOpen(false); setEmail(''); setPassword('');
       } else {
         const { data, error } = await supabase.auth.signUp({ email, password });
-        if (error) throw error;
+        if (error) {
+          if (isEgressError(error)) {
+            activateSovereignSession(email);
+            return;
+          }
+          throw error;
+        }
         // Si "Confirmar email" está activo, Supabase NO crea sesión todavía:
         // hay user pero sin session. Mostramos aviso en vez de cerrar en silencio.
         if (data.user && !data.session) {
@@ -36,6 +71,10 @@ export const AuthModal: React.FC = () => {
         }
       }
     } catch (err: any) {
+      if (isEgressError(err)) {
+        activateSovereignSession(email);
+        return;
+      }
       setError(err?.message || 'Hubo un error. Intenta de nuevo.');
     } finally { setLoading(false); }
   };
@@ -168,6 +207,23 @@ export const AuthModal: React.FC = () => {
             ) : (
               <><UserPlus size={18} /> Crear cuenta</>
             )}
+          </button>
+
+          <div className="relative flex py-1 items-center">
+            <div className="flex-grow border-t border-white/10"></div>
+            <span className="flex-shrink mx-2 text-[10px] uppercase tracking-wider text-gray-400">O también</span>
+            <div className="flex-grow border-t border-white/10"></div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              activateSovereignSession(email || 'soberano@star.seed');
+            }}
+            className="w-full py-2.5 px-3 rounded-xl text-xs font-semibold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-[0_0_15px_rgba(16,185,129,0.15)]"
+          >
+            <Sparkles size={14} className="text-emerald-400" />
+            <span>Acceso Soberano Inmediato (Sin Restricciones)</span>
           </button>
         </form>
 
