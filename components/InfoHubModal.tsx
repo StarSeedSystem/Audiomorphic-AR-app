@@ -1041,14 +1041,27 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
 
               {/* Centro de Descargas por Sistema Operativo */}
               <div>
-                <div className="mb-4">
-                  <h4 className="text-lg font-bold text-white flex items-center gap-2">
-                    <Download className="text-cyan-400" />
-                    Descargar Audiomorphic para tu Dispositivo
-                  </h4>
-                  <p className="text-xs text-gray-400">
-                    Binarios optimizados y adaptados para cada sistema operativo con soporte de aceleración gráfica por hardware.
-                  </p>
+                <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <h4 className="text-lg font-bold text-white flex items-center gap-2">
+                      <Download className="text-cyan-400" />
+                      Descargar Audiomorphic para tu Dispositivo
+                    </h4>
+                    <p className="text-xs text-gray-400">
+                      Binarios optimizados y adaptados para cada sistema operativo con soporte de aceleración gráfica por hardware.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <a
+                      href="https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/tag/v1.2.0"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-cyan-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border border-cyan-500/20 shadow-sm"
+                    >
+                      <ExternalLink size={13} />
+                      <span>Ver Release en GitHub (v1.2.0) ↗</span>
+                    </a>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
