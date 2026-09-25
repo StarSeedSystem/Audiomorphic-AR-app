@@ -1,150 +1,150 @@
 <div align="center">
 
-# 🌌 Audiomorphic
-### Motor Audiovisual Sinestésico · Recurrencia Compleja & Realidad Virtual / Aumentada
+<img src="public/icon-512.png" alt="Icono de Audiomorphic" width="112" />
 
-[![Version](https://img.shields.io/badge/Versi%C3%B3n-v1.2.0--soberana-00f2fe?style=for-the-badge&logo=rocket)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases)
-[![Plataformas](https://img.shields.io/badge/Plataformas-Windows%20%7C%20macOS%20%7C%20Linux%20%7C%20Android%20%7C%20Web-a855f7?style=for-the-badge)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases)
-[![Licencia](https://img.shields.io/badge/Acceso-100%25%20Gratuito%20%26%20Libre-10b981?style=for-the-badge)](https://github.com/StarSeedSystem/Audiomorphic-AR-app)
-[![Ecosistema](https://img.shields.io/badge/StarSeed-OS%20Conectado-f59e0b?style=for-the-badge&logo=buffer)](https://starseed-os.vercel.app)
+# Audiomorphic
 
-<p align="center">
-  <strong>Traduce cualquier frecuencia acústica en geometrías sagradas vivas tridimensionales.</strong><br>
-  Motor armónico en tiempo real impulsado por la Web Audio API, Three.js WebGL, WebXR y el Tratado de Unificación Armónica.
-</p>
+**Convierte el sonido en geometría sagrada viva: en tu pantalla, en realidad virtual y sobre tu propio espacio en realidad aumentada.**
 
-[✨ Probar en la Web](https://audiomorphic.vercel.app) • [📥 Descargas por SO](#-descargas-oficiales-por-sistema-operativo) • [📐 Principios Matemáticos](#-principios-matem%C3%A1ticos--geometr%C3%ADa-sagrada) • [🔄 Actualizaciones Inteligentes](#-sistema-inteligente-de-actualizaciones-en-la-app) • [💖 Fundación StarSeed](https://linktr.ee/FundacionStarseed)
+[![Última versión](https://img.shields.io/github/v/release/StarSeedSystem/Audiomorphic-AR-app?label=versi%C3%B3n&color=00b4d8)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/latest)
+[![Licencia](https://img.shields.io/badge/licencia-pendiente%20de%20definir-lightgrey)](#licencia)
+[![Web en vivo](https://img.shields.io/badge/web-audiomorphic.vercel.app-a855f7)](https://audiomorphic.vercel.app)
+[![Plataformas](https://img.shields.io/badge/plataformas-Web%20%C2%B7%20macOS%20%C2%B7%20Windows%20%C2%B7%20Linux%20%C2%B7%20Android-10b981)](#descargas)
 
----
+[**Abrir en la web**](https://audiomorphic.vercel.app) · [**Descargas**](#descargas) · [**Documentación**](#cómo-funciona)
 
 </div>
 
-## 🌟 Características Principales
-
-- **100% Gratuito y Soberano (0% Paywalls):** Todas las geometrías (Flor de la Vida, Metatrón, Espiral Áurea, Fractales), pilotos automáticos y modos inmersivos están desbloqueados para todo el mundo sin suscripciones obligatorias.
-- **Análisis Espectral FFT en Vivo:** Separación continua de frecuencias en bajos (dilatación Yang), medios (modulación torsional) y agudos (velocidad fotónica y brillo espectral).
-- **Piloto Automático Inteligente:** Modos autónomos *Génesis Geométrico*, *Arquitectura Armónica* y *Deriva Total* para sesiones meditativas e inmersivas sin intervención manual.
-- **Realidad Virtual (VR 3D) & Realidad Aumentada (AR):** Soporte nativo para visores WebXR (Meta Quest, Apple Vision Pro, SteamVR) y cámaras de dispositivos para proyectar la geometría armónica en tu espacio físico.
-- **Pantalla Siempre Activa (Wake Lock):** Evita la suspensión o bloqueo de la pantalla durante sesiones prolongadas de escucha y visualización.
-- **Ruteo de Salida de Audio:** Selector de dispositivo de salida y micrófono de alta precisión en tiempo real.
-- **Identidad Soberana & Presets StarSeed OS:** Sincronización bidireccional en la nube con [StarSeed OS](https://starseed-os.vercel.app) para guardar y compartir configuraciones.
+> **In short (English):** Audiomorphic is a real-time audio visualizer that turns sound into living sacred geometry. Volume expands the spiral, frequency rotates it, and bass, mids and treble shape 20 geometry modes. It runs in the browser, as desktop and Android apps, in VR (WebXR) and in AR with your camera. Free to use, with or without an account. Part of the StarSeed ecosystem: it also runs inside [StarSeed OS](https://starseed-os.vercel.app). [Latest release](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/latest).
 
 ---
 
-## 📥 Descargas Oficiales por Sistema Operativo
+## Qué es
 
-> [!TIP]
-> **Última Versión Oficial:** `v1.2.0` (Compilación 2026.09) · Todas las descargas son nativas y cuentan con soporte de aceleración por GPU.
+Audiomorphic escucha lo que suena a tu alrededor (música, voz, un cuenco tibetano) y lo transforma al instante en una espiral y en figuras de geometría sagrada que respiran con el sonido. Sirve para meditar, acompañar un concierto, proyectar visuales o simplemente mirar la música.
 
-| Sistema Operativo | Formato / Tipo | Arquitectura | Tamaño | Enlace de Descarga Directa |
-| :--- | :--- | :--- | :--- | :--- |
-| **🪟 Windows 10 / 11** | Paquete Portable (`.zip`) | ARM64 & x64 Universal | `~247 MB` | [⬇️ Descargar Windows (.zip)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.2.0/Audiomorphic_v1.2.0_Windows.zip) |
-| **🍎 macOS (Apple Silicon)** | Imagen de Disco (`.dmg`) | Apple Silicon (M1 / M2 / M3 / M4) | `~232 MB` | [⬇️ Descargar Apple Silicon (.dmg)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.2.0/Audiomorphic_v1.2.0_macOS_arm64.dmg) |
-| **🍎 macOS Universal** | Archivo `.zip` con DMG | Intel & Apple Silicon | `~232 MB` | [⬇️ Descargar Mac Universal (.zip)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.2.0/audiomorphic-mac.zip) |
-| **🐧 Linux (x64)** | Paquete Portable (`.tar.gz`) | PC / Laptop x86_64 | `~774 MB` | [⬇️ Descargar Linux x64 (.tar.gz)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.2.0/Audiomorphic_v1.2.0_Linux_x64.tar.gz) |
-| **🐧 Linux (ARM64)** | Paquete Portable (`.tar.gz`) | ARM64 (Raspberry Pi / Asahi) | `~694 MB` | [⬇️ Descargar Linux ARM64 (.tar.gz)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.2.0/Audiomorphic_v1.2.0_Linux_arm64.tar.gz) |
-| **🤖 Android** | Paquete APK Nativo (`.apk`) | Android 8.0+ (Oreo o sup.) | `~5.4 MB` | [⬇️ Descargar APK Oficial (.apk)](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.2.0/Audiomorphic_v1.2.0.apk) |
-| **🌐 Web App / PWA** | Web Progresiva Instalable | Chrome, Edge, Safari, Firefox | En vivo | [🚀 Abrir Web App Soberana](https://audiomorphic.vercel.app) |
-| **☁️ Espejo Drive** | Espejo Oficial en Google Drive | Todos los Sistemas | Universal | [☁️ Carpeta de Instaladores Mirror](https://drive.google.com/drive/folders/1bZ8yvbWr7r3eJUdKIQCSSuu-p398mAkn?usp=sharing) |
+Todas las funciones son **gratuitas**, con o sin cuenta. La cuenta de StarSeed es opcional y solo sirve para guardar tus presets en la nube.
 
-### ☁️ Mirror Oficial en Google Drive
-Si experimentas límites de ancho de banda o requieres descargas de alta velocidad en cualquier parte del mundo, accede a la carpeta espejo oficial:
-👉 **[Acceder a Carpeta Espejo de Google Drive (Todos los Instaladores)](https://drive.google.com/drive/folders/1bZ8yvbWr7r3eJUdKIQCSSuu-p398mAkn?usp=sharing)**
+## Descargas
 
----
+Versión actual: **v1.2.0** (15 de septiembre de 2026). Usa siempre **[la última versión](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/latest)** para no quedarte con un enlace viejo.
 
-## 🔒 Guía de Permisos Nativos por Sistema Operativo
+| Sistema | Archivo | Tamaño | Cómo instalar |
+|---|---|---|---|
+| Android 6.0 o superior | [`Audiomorphic_v1.2.0.apk`](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.2.0/Audiomorphic_v1.2.0.apk) | 5,5 MB | Abre el APK y permite «instalar apps desconocidas» si te lo pide. |
+| macOS (Apple Silicon) | [`Audiomorphic_v1.2.0_macOS_arm64.dmg`](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.2.0/Audiomorphic_v1.2.0_macOS_arm64.dmg) | 213 MB | Abre el `.dmg` y arrastra Audiomorphic a Aplicaciones. |
+| Windows 10/11 | [`Audiomorphic_v1.2.0_Windows.zip`](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.2.0/Audiomorphic_v1.2.0_Windows.zip) | 134 MB | Descomprime y abre la app, sin instalar. |
+| Linux x64 | [`Audiomorphic_v1.2.0_Linux_x64.tar.gz`](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.2.0/Audiomorphic_v1.2.0_Linux_x64.tar.gz) | 774 MB | `tar -xzf Audiomorphic_v1.2.0_Linux_x64.tar.gz` y abre el ejecutable de la carpeta. |
+| Linux ARM64 | [`Audiomorphic_v1.2.0_Linux_arm64.tar.gz`](https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/download/v1.2.0/Audiomorphic_v1.2.0_Linux_arm64.tar.gz) | 694 MB | Igual que x64 (Raspberry Pi, Asahi…). |
+| Web / PWA | [audiomorphic.vercel.app](https://audiomorphic.vercel.app) | — | Sin instalar nada; también se instala como app. ¿Mac con Intel o iPhone? Usa esta opción. |
 
-Audiomorphic requiere acceso a interfaces de hardware específicas para generar la sinestesia en tiempo real:
+**Primera apertura.** Los binarios no están firmados por Apple ni Microsoft: en macOS haz clic derecho → **Abrir**; en Windows, **Más información → Ejecutar de todas formas**. Hay además un [espejo en Google Drive](https://drive.google.com/drive/folders/1bZ8yvbWr7r3eJUdKIQCSSuu-p398mAkn?usp=sharing) por si GitHub va lento.
 
-### 🐧 Linux (Ubuntu, Debian, Fedora, Arch, SteamOS)
-1. **Ejecución Portable:** Descomprime con `tar -xzf Audiomorphic_v1.2.0_Linux_x64.tar.gz` y ejecuta `./audiomorphic.sh` o `./audiomorphic`.
-2. **Pantalla Completa Inmersiva:** La aplicación se abre por defecto en modo pantalla completa cubriendo la barra superior del entorno (GNOME, KDE Plasma, XFCE). Puedes alternar con `F11` o la tecla `Escape`.
-3. **Audio (ALSA, PulseAudio y PipeWire):** Soporta enrutamiento dinámico de salidas de audio a través de `select-audio-output` y captura de audio de escritorio mediante `WebRTCPipeWireCapturer` en sesiones Wayland y X11.
-4. **Cámara y AR:** Compatible con dispositivos V4L2 (`/dev/video*`) para tracking de realidad aumentada.
+**Actualizaciones.** La web siempre sirve la última versión. En las apps instaladas, la pestaña **Actualizaciones** del Centro de Información enlaza el instalador adecuado para tu sistema.
 
-### 🍎 macOS
-1. **Micrófono:** Al abrir la app por primera vez, pulsa **"Permitir"** en el cuadro de diálogo de macOS. Si lo denegaste por error, ve a *Ajustes del Sistema → Privacidad y Seguridad → Micrófono* y activa la casilla de **Audiomorphic**.
-2. **Cámara (Modos AR):** Requerida únicamente si activas la Realidad Aumentada para superponer la espiral sobre tu entorno. Se gestiona en *Ajustes del Sistema → Privacidad y Seguridad → Cámara*.
-3. **Pantalla Completa:** Inicia en pantalla completa total y puedes alternar con `F11` o el atajo de pantalla completa.
+## Funciones principales
 
-### 🪟 Windows
-1. **Micrófono:** Ve a *Configuración de Windows → Privacidad y Seguridad → Micrófono* y asegúrate de que esté habilitada la opción *"Permitir que las aplicaciones de escritorio accedan al micrófono"*.
-2. **Aceleración por Hardware:** Asegúrate de tener actualizados los controladores de tu tarjeta gráfica (NVIDIA, AMD o Intel) para renderizar la espiral fractal a 60/120 FPS.
-3. **Pantalla Completa:** Inicia cubriendo la barra de tareas y ventana completa; presiona `F11` para alternar.
+- **Análisis del sonido en vivo**: separa graves, medios y agudos (FFT) y mide volumen y frecuencia dominante, con sensibilidad y rango ajustables.
+- **20 geometrías**: espiral áurea, flor de la vida, cubo de Metatrón, merkaba, sólidos platónicos, Sri Yantra, cimática, toroide, árbol de la vida, mandalas, flor de loto y más.
+- **Piloto automático** con tres modos (Génesis, Armónico y Deriva) para sesiones largas sin tocar nada.
+- **29 presets incluidos** por categorías, más los tuyos, con carpetas, exportación e importación en JSON.
+- **Realidad virtual (WebXR)** para visores como Meta Quest, y giroscopio en el móvil cuando no hay visor.
+- **Realidad aumentada**: la geometría sobre tu entorno con la cámara, con filtros (psicodélico, neón, glitch, sueño…), y **modo Portal**, que sigue tu cara para dar profundidad real a la escena.
+- **Elige micrófono y salida de audio** (altavoces, auriculares Bluetooth, interfaces).
+- **Pantalla siempre encendida** durante las sesiones y panel de diagnóstico de micrófono, cámara, audio, VR y wake lock.
+- **Dentro de StarSeed OS**: se abre en `/audiomorphic` y puede ser el fondo animado del escritorio.
 
-### 🤖 Android
-1. **Pantalla Completa Inmersiva (Edge-to-Edge):** La app cubre el 100% de la pantalla por encima de la barra superior de estado y barra de navegación, adaptándose a notch y recortes de cámara.
-2. **Permiso de Grabación de Audio y Salidas Bluetooth:** Análisis de frecuencia FFT en tiempo real y soporte para auriculares inalámbricos.
-3. **Cámara:** Requerida para los modos de AR espacial.
-4. **Pantalla Siempre Activa:** Integra `FLAG_KEEP_SCREEN_ON` para evitar bloqueos durante sesiones de escucha activa.
+## Cómo funciona
 
----
-
-## 🔄 Sistema Inteligente de Actualizaciones en la App
-
-Dentro del **Centro de Información (`Info`)** o haciendo clic en el botón **Descargar App** del menú de control, encontrarás la pestaña **Actualizaciones & Descargas**:
-
-- ⚡ **Actualizaciones Internas en Vivo (OTA):** Cuando se lanzan mejoras en el motor de renderizado, nuevas fórmulas de geometría sagrada, presets o mejoras de interfaz, la app las integra **automáticamente en segundo plano sin necesidad de reinstalar**.
-- 📦 **Actualizaciones Mayores de Binarios:** Solo cuando se actualizan librerías de bajo nivel del sistema operativo (permisos de hardware, nuevo runtime de Electron o drivers de audio), la aplicación te notificará claramente con el enlace de descarga correspondiente a tu sistema operativo y reiniciará tras completarse.
-- 🛠 **Diagnóstico de Hardware:** Panel interactivo que verifica en tiempo real el estado de tu micrófono, cámara AR, altavoces, WebXR VR y Wake Lock.
-
----
-
-## 📐 Principios Matemáticos & Geometría Sagrada
-
-El motor visual de Audiomorphic implementa el **Tratado de Unificación Armónica**:
-
-$$\alpha = \frac{V}{2} \quad \text{(Variable Dual / Estructura)}$$
-$$\beta = \sqrt{E} \quad \text{(Variable Potencial / Tensión)}$$
-
-- **Régimen Primario ($\alpha \ge \beta$):** Estabilidad armónica y resonancia expansiva.
-- **Régimen Recíproco ($\alpha < \beta$):** Dinámica torsional y contracción focal.
-- **Factor de Cierre Fractal ($k$):** Determinado por la relación entre la respiración Yang ($\Sigma = c + b$) y Yin ($\Gamma = c - b$), estabilizando la espiral logarítmica para que jamás colapse la pantalla.
-- **Matrices Geométricas:** Flor de la Vida, Cubo de Metatrón (proyección de los 5 sólidos platónicos: Tetraedro, Cubo, Octaedro, Icosaedro y Dodecaedro) y Ondas Cuánticas Toroidales.
-
----
-
-## 💖 Donaciones Opcionales & Fundación StarSeed
-
-Audiomorphic es un proyecto de código soberano libre. No contiene anuncios ni funciones bloqueadas.
-
-Si deseas apoyar el desarrollo continuo de herramientas abiertas y proyectos de educación y conciencia, puedes realizar una **donación voluntaria**:
-
-- **Aporte Creador ($369 MXN/año):** [Donar vía Stripe Oficial](https://buy.stripe.com/8x2dRbdxpa0W1F3giv6Na01) *(Genera tu Tarjeta Virtual 3D de Oro)*
-- **Aporte Maestro ($963 MXN - Pago único):** [Donar vía Stripe Oficial](https://donate.stripe.com/9B6eVfdxp0qmbfD5DR6Na00) *(Genera tu Tarjeta Holográfica 3D Tornasol de Mecenas)*
-- **Conocer la Fundación:** Visita el [Linktree Oficial de la Fundación StarSeed](https://linktr.ee/FundacionStarseed)
-
----
-
-## 🛠 Desarrollo Local
-
-### Requisitos Previos
-- [Node.js](https://nodejs.org/) (v18 o superior)
-- `npm`
-
-### Pasos de Ejecución
-```bash
-# 1. Clonar el repositorio
-git clone https://github.com/StarSeedSystem/Audiomorphic-AR-app.git
-cd Audiomorphic-AR-app
-
-# 2. Instalar dependencias
-npm install
-
-# 3. Iniciar servidor de desarrollo local
-npm run dev
-
-# 4. Compilar aplicación web para producción
-npm run build
-
-# 5. Compilar binarios de escritorio (macOS / Windows)
-npm run build:desktop
+```mermaid
+flowchart LR
+    MIC["Micrófono o<br/>entrada de audio"] --> FFT["Análisis FFT<br/>Web Audio API"]
+    FFT -- "volumen" --> EXP["Expansión de la espiral"]
+    FFT -- "frecuencia" --> ROT["Rotación"]
+    FFT -- "graves · medios · agudos" --> GEO["Geometría sagrada"]
+    EXP & ROT & GEO --> C2D["Lienzo 2D"]
+    EXP & ROT & GEO --> XR["Escena 3D · VR · AR<br/>three.js + WebXR"]
+    CAM["Cámara"] --> MP["MediaPipe<br/>seguimiento facial local"] --> XR
 ```
 
----
+- **Espiral ↔ volumen.** La espiral se dibuja como una recurrencia compleja: cuanto más fuerte suena, más se expande y más gruesa es su línea. En silencio conserva un pulso mínimo para no apagarse.
+- **Rotación ↔ frecuencia.** La frecuencia dominante aumenta el ángulo que gira cada paso de la recurrencia: los agudos retuercen la espiral más que los graves. Con el color armónico activado, la frecuencia también cambia el tono.
+- **Bandas ↔ movimiento.** Con el piloto automático, los graves engrosan y expanden la espiral, los medios la hacen girar y los agudos la hacen vibrar; las figuras de geometría sagrada se superponen y respiran con el volumen.
+- **AR y VR.** La escena 3D (React Three Fiber) entra en VR o AR mediante WebXR. En modo Portal, MediaPipe localiza tu cara con la cámara frontal y mueve la perspectiva como si miraras por una ventana.
+
+El motor sigue el *Tratado de Unificación Armónica*: con α = V/2 (estructura) y β = √E (tensión), el régimen primario (α ≥ β) expande y el recíproco (α < β) contrae; un factor de cierre fractal mantiene la espiral estable en pantalla.
+
+**Stack:** React 19 · Vite 6 · TypeScript · three.js · React Three Fiber 9 · @react-three/xr (WebXR) · MediaPipe Tasks Vision · Supabase · PWA · Electron 41 · Capacitor (Android e iOS).
+
+## Desarrollo local
+
+Necesitas **Node.js 20 o superior** (recomendado 22) y npm.
+
+```bash
+git clone https://github.com/StarSeedSystem/Audiomorphic-AR-app.git
+cd Audiomorphic-AR-app
+npm install
+npm run dev          # http://localhost:3000
+```
+
+| Comando | Qué hace |
+|---|---|
+| `npm run build` | Compila la web en `dist/` |
+| `npm run preview` | Sirve la compilación para probarla |
+| `npm run lint` | Comprueba los tipos con TypeScript |
+| `npm run build && npx electron .` | Prueba la app de escritorio |
+| `npm run build:desktop` | Empaqueta macOS y Windows con electron-builder |
+| `bash build-android.sh` | Compila un APK de depuración con Capacitor |
+
+Para conectar con StarSeed puedes definir `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` en `.env.local`. No pongas claves secretas en ese archivo: la configuración actual de Vite expone al navegador las variables de entorno de la compilación.
+
+## Estructura del proyecto
+
+```
+.
+├── App.tsx                 estado principal, audio y modos
+├── components/             VisualizerCanvas (2D), VisualizerVR (3D/VR/AR), ControlPanel, InfoHubModal…
+├── hooks/                  análisis de audio, identidad y sincronía StarSeed, presets, actualizaciones
+├── lib/                    presets incluidos y cliente de Supabase
+├── contexts/               sesión de usuario
+├── utils/                  modo incrustado en StarSeed OS y detección de plataforma
+├── electron-main.cjs       app de escritorio
+├── android/ · ios/         proyectos nativos de Capacitor
+├── public/                 iconos, manifiesto y service worker
+└── scripts/                empaquetado y migraciones
+```
+
+## Privacidad y seguridad
+
+- **Micrófono.** El audio se analiza en tu dispositivo, fotograma a fotograma; nunca se graba ni se envía a ningún servidor.
+- **Cámara.** Solo se enciende en los modos AR o Portal. MediaPipe procesa la imagen en tu dispositivo; la primera vez descarga su modelo desde un CDN público, pero ninguna imagen sale de tu equipo.
+- **Ajustes y presets.** Se guardan en tu navegador. Si inicias sesión con tu cuenta de StarSeed (opcional), tus presets se sincronizan con ella a través de Supabase.
+- **Sin publicidad ni analítica.**
+- **Permisos por sistema.** macOS pide micrófono, cámara y Bluetooth la primera vez (se cambian en *Ajustes del Sistema → Privacidad y seguridad*); en Windows revisa *Configuración → Privacidad → Micrófono*; en Android se piden al usar cada función.
+
+¿Has encontrado una vulnerabilidad? No abras un issue público: usa **Security → Report a vulnerability** en este repositorio (si no aparece, abre un issue pidiendo un canal privado, sin detalles).
+
+## Contribuir
+
+1. Busca o abre un [issue](https://github.com/StarSeedSystem/Audiomorphic-AR-app/issues) contando qué quieres mejorar.
+2. Crea una rama y haz commits pequeños con mensajes claros ([Conventional Commits](https://www.conventionalcommits.org/es/)).
+3. Comprueba que `npm run lint` y `npm run build` pasan y prueba tu cambio en el navegador (y en VR/AR si lo tocas).
+4. Abre un pull request explicando **qué** cambia, **por qué** y **cómo lo probaste**.
+
+## Apoyar el proyecto
+
+Audiomorphic no tiene anuncios ni funciones bloqueadas. Si quieres apoyar su desarrollo, puedes hacer una donación voluntaria desde la pestaña **Donaciones y aportes** de la app o a través de la [Fundación StarSeed](https://linktr.ee/FundacionStarseed).
+
+## Licencia
+
+**Pendiente de definir por el autor.** Este repositorio todavía no incluye un archivo `LICENSE`; mientras no lo tenga, por defecto se reservan todos los derechos. Como referencia, [StarSeed OS](https://github.com/StarSeedSystem/starseed-system) se publica bajo [AGPL-3.0](https://github.com/StarSeedSystem/starseed-system/blob/main/LICENSE).
+
+## Ecosistema StarSeed
+
+- **[StarSeed OS](https://starseed-os.vercel.app)**: el sistema operativo social descentralizado. Audiomorphic también funciona **dentro** de StarSeed OS. ([código](https://github.com/StarSeedSystem/starseed-system))
+- **[Omnifrecuencias](https://omnifrecuencias.vercel.app)**: generador de frecuencias con cimática 3D y sesiones en vivo. ([código](https://github.com/StarSeedSystem/generador_frecuencias))
+- **[Fundación StarSeed](https://linktr.ee/FundacionStarseed)**: comunidad y proyectos.
 
 <div align="center">
-  <sub>Desarrollado con devoción armónica por <strong>Alex Bordón Garrigós</strong> y la red comunitaria <strong>StarSeed OS</strong>.</sub><br>
-  <sub>© 2026 Audiomorphic · Todos los derechos soberanos reservados.</sub>
+<sub>Creado por Alex Bordón Garrigós y la comunidad StarSeed.</sub>
 </div>
