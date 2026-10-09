@@ -143,16 +143,24 @@ export function useStarSeedSync(userId?: string | null): UseStarSeedSyncResult {
       return;
     }
 
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setSyncStatus('offline');
+      return;
+    }
+
     setSyncStatus('syncing');
     try {
       const supabase = getStarSeedDb();
 
-      // Read from user_settings
-      const { data, error } = await supabase
+      // Read from user_settings with timeout
+      const timeout = new Promise<any>((resolve) => setTimeout(() => resolve({ error: { message: 'timeout' } }), 1500));
+      const req = supabase
         .from('user_settings')
         .select('prefs')
         .eq('user_id', userId)
         .maybeSingle();
+
+      const { data, error } = await Promise.race([req, timeout]);
 
       if (error) {
         console.warn('[StarSeedSync] Error reading user_settings:', error.message);

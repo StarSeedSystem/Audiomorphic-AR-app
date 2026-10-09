@@ -69,9 +69,9 @@ export interface HardwarePermissionsState {
   fullscreen: boolean;  // Fullscreen API available
 }
 
-export const CURRENT_APP_VERSION = '1.2.0';
-export const CURRENT_BUILD_DATE = '2026-09-14';
-export const CURRENT_NATIVE_CONTAINER = '1.2.0';
+export const CURRENT_APP_VERSION = '1.2.1';
+export const CURRENT_BUILD_DATE = '2026-10-09';
+export const CURRENT_NATIVE_CONTAINER = '1.2.1';
 
 const GITHUB_REPO_URL = 'https://github.com/StarSeedSystem/Audiomorphic-AR-app';
 const GOOGLE_DRIVE_MIRROR = 'https://drive.google.com/drive/folders/1bZ8yvbWr7r3eJUdKIQCSSuu-p398mAkn?usp=sharing';
@@ -114,12 +114,25 @@ export const OFFICIAL_DOWNLOADS: PlatformDownloads = {
   web: {
     name: 'Web App Soberana (PWA)',
     url: 'https://audiomorphic.vercel.app',
-    status: '100% Operativa',
+    status: '100% Operativa Offline',
   },
   mirrorDrive: GOOGLE_DRIVE_MIRROR,
 };
 
 export const CHANGELOG_HISTORY: VersionChangelog[] = [
+  {
+    version: '1.2.1',
+    date: '2026-10-09',
+    type: 'native_required',
+    title: 'Actualización Soberana 100% Offline Universal (Sin Red Requerida)',
+    notes: [
+      'Independencia total de internet: la app funciona de forma autónoma desde el primer segundo de instalación sin requerir conexión previa.',
+      'Empaquetado local de estilos Tailwind CSS: eliminación definitiva de scripts CDN bloqueantes.',
+      'Arranque resiliente y soberano: sesión offline local inmediata con tolerancia total a fallos de red.',
+      'Soporte PWA sin conexión optimizado mediante Service Worker de caché persistente.',
+      'Nuevos instaladores nativos para Android APK, macOS DMG, Windows y Linux con soporte completo fuera de línea.',
+    ],
+  },
   {
     version: '1.2.0',
     date: '2026-09-14',

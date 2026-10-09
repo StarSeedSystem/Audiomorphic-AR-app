@@ -3,8 +3,8 @@
    - cache-first para estáticos del propio origen (js/css/img/fonts/wasm)
    - NUNCA cachea /api/ ni orígenes externos ni peticiones no-GET
    Aditivo y defensivo: si algo falla, la app sigue funcionando desde la red. */
-const CACHE = 'audiomorphic-v1';
-const CORE = ['./', './index.html', './manifest.webmanifest'];
+const CACHE = 'audiomorphic-v1.2.1';
+const CORE = ['./', './index.html', './manifest.webmanifest', './favicon.ico'];
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();

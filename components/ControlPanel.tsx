@@ -2,9 +2,6 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { VisualizerParams, SacredGeometryMode, SacredGeometrySettings, DEFAULT_PARAMS, AutoPilotMode, BackgroundMode, GeometryInfo, SubscriptionTier } from '../types';
 import { Activity, Zap, Maximize, Minimize, RotateCw, Palette, Target, Music, BrainCircuit, Wind, Droplets, Waves, Shuffle, Sprout, Glasses, Download, X, RotateCcw, Save, Upload, Heart, Lock, Unlock, LogIn, LogOut, User, Star, Cloud, Trash2, Info, ChevronUp, ChevronDown, Volume2, Folder, FolderPlus, FolderOpen, Filter, ArrowUpDown, Plus, Bookmark, ExternalLink, Search, Sparkles, Check, Play } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { db } from '../firebase';
-import { collection, addDoc, getDocs, query, where, deleteDoc, doc } from 'firebase/firestore';
-import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 import { isInstalledApp } from '../utils/platform';
 import { DEFAULT_PRESETS } from '../lib/defaultPresets';
 

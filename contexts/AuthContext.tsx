@@ -52,10 +52,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const isMaestro = u.email === MAESTRO;
     const isSovereign = (u as any)?.app_metadata?.provider === 'starseed_sovereign';
     let tier: SubscriptionTier = (isMaestro || isSovereign) ? 'lifetime' : 'free';
-    if (!isSovereign) {
+    if (!isSovereign && typeof navigator !== 'undefined' && navigator.onLine) {
       try {
-        const { data } = await supabase.from('audiomorphic_subscriptions')
+        const timeout = new Promise<{ data: null }>((resolve) => setTimeout(() => resolve({ data: null }), 1200));
+        const req = supabase.from('audiomorphic_subscriptions')
           .select('plan,status').eq('user_id', u.id).maybeSingle();
+        const { data } = await Promise.race([req, timeout]) as any;
         if (data && (data.status === 'active' || data.status === 'trialing') && data.plan) {
           tier = data.plan as SubscriptionTier;
         }
@@ -80,8 +82,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setProfile({
+        handle: (u as any)?.user_metadata?.handle || `@${(u.email || 'soberano').split('@')[0].toLowerCase()}`,
+        displayName: (u as any)?.user_metadata?.full_name || u.email?.split('@')[0] || 'Identidad Soberana',
+        avatarUrl: (u as any)?.user_metadata?.avatar_url || null,
+        coverUrl: null,
+        bio: 'Cuenta StarSeed OS (Modo Offline)',
+        starseedAddress: `${(u.email || 'user').split('@')[0]}@star.seed`,
+      });
+      return;
+    }
+
     try {
-      const [{ data: prof }, { data: identity }] = await Promise.all([
+      const timeout = new Promise<any[]>((resolve) => setTimeout(() => resolve([{ data: null }, { data: null }]), 1500));
+      const req = Promise.all([
         supabase.from('profiles')
           .select('handle,display_name,avatar_url,cover_url,bio')
           .eq('user_id', u.id).maybeSingle(),
@@ -89,9 +104,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .select('handle,address')
           .eq('owner', u.id).maybeSingle(),
       ]);
+      const [{ data: prof }, { data: identity }] = await Promise.race([req, timeout]) as any;
       setProfile({
-        handle: prof?.handle ?? identity?.handle ?? null,
-        displayName: prof?.display_name ?? null,
+        handle: prof?.handle ?? identity?.handle ?? (u as any)?.user_metadata?.handle ?? null,
+        displayName: prof?.display_name ?? (u as any)?.user_metadata?.full_name ?? null,
         avatarUrl: prof?.avatar_url ?? null,
         coverUrl: prof?.cover_url ?? null,
         bio: prof?.bio ?? null,
@@ -197,10 +213,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (e) {}
 
-    // 2. Query Supabase session
-    supabase.auth.getSession()
+    // 2. Query Supabase session (offline-resilient)
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      if (!hasLocalSovereign) {
+        activateSovereignSession('soberano@star.seed', 'Explorador Offline');
+      }
+      setLoading(false);
+      return;
+    }
+
+    const sessionTimeout = new Promise<{ data: { session: null } }>((resolve) =>
+      setTimeout(() => resolve({ data: { session: null } }), 1200)
+    );
+
+    Promise.race([supabase.auth.getSession(), sessionTimeout])
       .then(({ data }) => {
-        const u = data.session?.user ?? null;
+        const u = data?.session?.user ?? null;
         if (u) {
           setUser(u);
           loadProfile(u);

@@ -1,7 +1,7 @@
 {
   "name": "audiomorphic-ar",
   "private": true,
-  "version": "1.2.0",
+  "version": "1.2.1",
   "type": "module",
   "main": "electron-main.cjs",
   "author": "Audiomorphic",
@@ -107,9 +107,12 @@
     "@types/three": "^0.183.1",
     "@vercel/node": "^5.6.24",
     "@vitejs/plugin-react": "^5.0.0",
+    "autoprefixer": "^10.6.1",
     "concurrently": "^9.2.1",
     "electron": "^41.1.1",
     "electron-builder": "^26.8.1",
+    "postcss": "^8.5.29",
+    "tailwindcss": "^3.4.19",
     "typescript": "~5.8.2",
     "vite": "^6.2.0",
     "wait-on": "^9.0.4"

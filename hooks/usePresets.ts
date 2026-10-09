@@ -1,18 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { 
-  collection, 
-  query, 
-  where, 
-  getDocs, 
-  addDoc, 
-  deleteDoc, 
-  doc,
-  updateDoc
-} from 'firebase/firestore';
-import { db } from '../firebase';
+import { getStarSeedDb } from '../lib/starseedDb';
 import { useAuth } from '../contexts/AuthContext';
 import { VisualizerParams } from '../types';
-import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 
 import { DEFAULT_PRESETS } from '../lib/defaultPresets';
 
@@ -267,6 +256,22 @@ export const usePresets = () => {
   const [folders, setFolders] = useState<string[]>(() => readLocalFolders());
   const [loading, setLoading] = useState(false);
 
+  const syncPresetsToSupabase = async (presetsToSync: Preset[]) => {
+    if (!user) return;
+    try {
+      const supabase = getStarSeedDb();
+      const { data } = await supabase.from('user_settings').select('prefs').eq('user_id', user.id).maybeSingle();
+      const prefs = data?.prefs || {};
+      await supabase.from('user_settings').upsert({
+        user_id: user.id,
+        prefs: { ...prefs, audiomorphic_presets_v2: presetsToSync },
+        updated_at: new Date().toISOString()
+      });
+    } catch (e) {
+      console.error('Error syncing presets to Supabase', e);
+    }
+  };
+
   const fetchPresets = useCallback(async () => {
     if (!user) { 
       setCloudPresets(readLocal()); 
@@ -274,23 +279,10 @@ export const usePresets = () => {
     }
     setLoading(true);
     try {
-      const q = query(
-        collection(db, 'presets'), 
-        where('userId', '==', user.uid)
-      );
-      const querySnapshot = await getDocs(q);
-      const presets: Preset[] = [];
-      querySnapshot.forEach((docSnap) => {
-        const data = docSnap.data();
-        presets.push({
-          id: docSnap.id,
-          name: data.name,
-          params: data.params,
-          createdAt: data.createdAt,
-          folder: data.folder || '',
-          category: data.category || 'custom'
-        });
-      });
+      const supabase = getStarSeedDb();
+      const { data } = await supabase.from('user_settings').select('prefs').eq('user_id', user.id).maybeSingle();
+      const prefs = data?.prefs || {};
+      const presets: Preset[] = prefs.audiomorphic_presets_v2 || [];
 
       // Sincronización a la nube: Si el usuario en la nube aún no tiene el folder Audiomorphic Essentials,
       // lo sincronizamos automáticamente manteniendo intacto su folder y parámetros.
@@ -299,26 +291,16 @@ export const usePresets = () => {
         const localPresets = readLocal();
         const essentialsToSync = localPresets.filter(p => p.folder === ESSENTIALS_FOLDER_NAME);
         for (const lp of essentialsToSync) {
-          try {
-            const addedDoc = await addDoc(collection(db, 'presets'), {
-              userId: user.uid,
-              name: lp.name,
-              params: typeof lp.params === 'string' ? lp.params : JSON.stringify(lp.params),
-              createdAt: lp.createdAt || Date.now(),
-              folder: lp.folder || ESSENTIALS_FOLDER_NAME,
-              category: lp.category || 'custom'
-            });
-            presets.push({
-              id: addedDoc.id,
-              name: lp.name,
-              params: lp.params,
-              createdAt: lp.createdAt || Date.now(),
-              folder: lp.folder || ESSENTIALS_FOLDER_NAME,
-              category: lp.category || 'custom'
-            });
-          } catch (syncErr) {
-            console.warn('[usePresets] Error sincronizando preset inicial a Firestore:', syncErr);
-          }
+          presets.push({
+            id: `essential_${Date.now()}_${Math.random().toString(36).substring(2,7)}`,
+            name: lp.name,
+            params: lp.params,
+            createdAt: lp.createdAt || Date.now(),
+            folder: lp.folder || ESSENTIALS_FOLDER_NAME,
+            category: lp.category || 'custom'
+          });
+          // We will sync after the loop
+          await syncPresetsToSupabase(presets);
         }
       }
 
@@ -343,7 +325,7 @@ export const usePresets = () => {
 
       setCloudPresets([...orderedEssentials, ...userCustom]);
     } catch (error) {
-      handleFirestoreError(error, OperationType.LIST, 'presets');
+      console.error('Error fetching presets', error);
       setCloudPresets(readLocal());
     } finally {
       setLoading(false);
@@ -375,7 +357,11 @@ export const usePresets = () => {
     // Remove folder association from presets
     setCloudPresets(prev => {
       const updated = prev.map(p => p.folder === folderName ? { ...p, folder: '' } : p);
-      if (!user) writeLocal(updated);
+      if (!user) {
+        writeLocal(updated);
+      } else {
+        syncPresetsToSupabase(updated);
+      }
       return updated;
     });
   }, [user]);
@@ -390,7 +376,11 @@ export const usePresets = () => {
     });
     setCloudPresets(prev => {
       const updated = prev.map(p => p.folder === oldName ? { ...p, folder: trimmed } : p);
-      if (!user) writeLocal(updated);
+      if (!user) {
+        writeLocal(updated);
+      } else {
+        syncPresetsToSupabase(updated);
+      }
       return updated;
     });
   }, [user]);
@@ -403,10 +393,11 @@ export const usePresets = () => {
       return;
     }
     try {
-      await updateDoc(doc(db, 'presets', presetId), { folder: targetFolder });
-      setCloudPresets(prev => prev.map(p => p.id === presetId ? { ...p, folder: targetFolder } : p));
+      const next = cloudPresets.map(p => p.id === presetId ? { ...p, folder: targetFolder } : p);
+      setCloudPresets(next);
+      await syncPresetsToSupabase(next);
     } catch (e) {
-      console.error('Error updating preset folder in db', e);
+      console.error('Error updating preset folder', e);
     }
   }, [user]);
 
@@ -436,27 +427,20 @@ export const usePresets = () => {
       return preset;
     }
     try {
-      const newPreset = {
-        userId: user.uid,
+      const preset: Preset = {
+        id: `cloud_${Date.now()}_${Math.random().toString(36).substring(2,7)}`,
         name: trimmed,
         params: JSON.stringify(params),
         createdAt: Date.now(),
         folder: resolvedFolder,
         category: resolvedCat
       };
-      const docRef = await addDoc(collection(db, 'presets'), newPreset);
-      const preset: Preset = {
-        id: docRef.id,
-        name: newPreset.name,
-        params: newPreset.params,
-        createdAt: newPreset.createdAt,
-        folder: newPreset.folder,
-        category: newPreset.category
-      };
-      setCloudPresets(prev => [preset, ...prev]);
+      const next = [preset, ...cloudPresets];
+      setCloudPresets(next);
+      await syncPresetsToSupabase(next);
       return preset;
     } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, 'presets');
+      console.error('Error creating preset', error);
     }
   };
 
@@ -485,27 +469,20 @@ export const usePresets = () => {
       return preset;
     }
     try {
-      const newPreset = {
-        userId: user.uid,
+      const preset: Preset = {
+        id: `cloud_${Date.now()}_${Math.random().toString(36).substring(2,7)}`,
         name: trimmed,
         params: typeof paramsObj === 'string' ? paramsObj : JSON.stringify(paramsObj),
         createdAt: Date.now(),
         folder: resolvedFolder,
         category: resolvedCat
       };
-      const docRef = await addDoc(collection(db, 'presets'), newPreset);
-      const preset: Preset = {
-        id: docRef.id,
-        name: newPreset.name,
-        params: newPreset.params,
-        createdAt: newPreset.createdAt,
-        folder: newPreset.folder,
-        category: newPreset.category
-      };
-      setCloudPresets(prev => [preset, ...prev]);
+      const next = [preset, ...cloudPresets];
+      setCloudPresets(next);
+      await syncPresetsToSupabase(next);
       return preset;
     } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, 'presets');
+      console.error('Error adding preset', error);
     }
   };
 
@@ -517,10 +494,11 @@ export const usePresets = () => {
       return;
     }
     try {
-      await deleteDoc(doc(db, 'presets', id));
-      setCloudPresets(prev => prev.filter(p => p.id !== id));
+      const next = cloudPresets.filter(p => p.id !== id);
+      setCloudPresets(next);
+      await syncPresetsToSupabase(next);
     } catch (error) {
-      handleFirestoreError(error, OperationType.DELETE, `presets/${id}`);
+      console.error('Error deleting preset', error);
     }
   };
 
@@ -594,17 +572,22 @@ export const usePresets = () => {
         return;
       }
 
-      for (const p of incomingPresets) {
-        await addDoc(collection(db, 'presets'), {
-          userId: user.uid,
-          name: p.name + " (Importado)",
-          params: typeof p.params === 'string' ? p.params : JSON.stringify(p.params),
-          createdAt: Date.now(),
-          folder: targetFolder || p.folder || '',
-          category: p.category || 'custom'
-        });
-      }
-      await fetchPresets();
+      const importedPresets = incomingPresets.map(p => ({
+        id: `cloud_${Date.now()}_${Math.random().toString(36).substring(2,7)}`,
+        name: p.name + " (Importado)",
+        params: typeof p.params === 'string' ? p.params : JSON.stringify(p.params),
+        createdAt: Date.now(),
+        folder: targetFolder || p.folder || '',
+        category: p.category || 'custom'
+      }));
+      const next = [...importedPresets, ...cloudPresets];
+      setCloudPresets(next);
+      await syncPresetsToSupabase(next);
+      setFolders(prev => {
+        const newFolders = Array.from(new Set([...prev, ...(targetFolder ? [targetFolder] : incomingPresets.map(p => p.folder).filter(Boolean) as string[])]));
+        writeLocalFolders(newFolders);
+        return newFolders;
+      });
       alert(`¡${incomingPresets.length} presets importados a tu cuenta correctamente!`);
     } catch (error) {
       console.error("Error importing presets", error);
@@ -616,6 +599,8 @@ export const usePresets = () => {
     setCloudPresets(newOrder);
     if (!user) {
       writeLocal(newOrder);
+    } else {
+      syncPresetsToSupabase(newOrder);
     }
   };
 
