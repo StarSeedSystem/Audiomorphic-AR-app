@@ -1053,13 +1053,13 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <a
-                      href="https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/tag/v1.2.0"
+                      href={`https://github.com/StarSeedSystem/Audiomorphic-AR-app/releases/tag/v${updateSystem.currentVersion}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-cyan-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border border-cyan-500/20 shadow-sm"
                     >
                       <ExternalLink size={13} />
-                      <span>Ver Release en GitHub (v1.2.0) ↗</span>
+                      <span>Ver Release en GitHub (v{updateSystem.currentVersion}) ↗</span>
                     </a>
                   </div>
                 </div>
