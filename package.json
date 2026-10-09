@@ -12,6 +12,7 @@
     "directories": {
       "output": "dist-electron"
     },
+    "afterPack": "scripts/after-pack.cjs",
     "mac": {
       "target": "dmg",
       "icon": "build/icon.icns",
