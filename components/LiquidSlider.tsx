@@ -17,12 +17,12 @@ const LiquidSlider: React.FC<LiquidSliderProps> = ({
   max = 100,
   step = 1,
   className = '',
-  disabled = false
+  disabled = false,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const percentage = ((value - min) / (max - min)) * 100;
+  const percentage = Math.max(0, Math.min(100, ((value - min) / (max - min || 1)) * 100));
 
   const handleInteraction = (clientX: number) => {
     if (!containerRef.current || disabled) return;
@@ -67,39 +67,47 @@ const LiquidSlider: React.FC<LiquidSliderProps> = ({
   }, [isDragging]);
 
   return (
-    <div 
+    <div
       ref={containerRef}
       className={`relative h-6 flex items-center group ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'} ${className}`}
       onMouseDown={onMouseDown}
       onTouchStart={onTouchStart}
     >
-      {/* Track Background */}
-      <div className="absolute inset-0 h-1.5 my-auto w-full bg-white/5 rounded-full overflow-hidden border border-white/5 shadow-inner" />
-      
-      {/* Progress Fill */}
-      <div 
-        className="absolute h-1.5 my-auto bg-gradient-to-r from-cyan-500/50 to-purple-500/80 rounded-full transition-all duration-75 ease-out shadow-[0_0_8px_rgba(6,182,212,0.3)]"
-        style={{ width: `${percentage}%` }}
+      <div className="absolute inset-0 h-1.5 my-auto w-full bg-white/10 rounded-full overflow-hidden border border-white/10 shadow-inner" />
+
+      <div
+        className="absolute h-1.5 my-auto rounded-full transition-all duration-75 ease-out"
+        style={{
+          width: `${percentage}%`,
+          background:
+            'linear-gradient(90deg, hsl(var(--morph-hue-1) 90% 56%), hsl(var(--morph-hue-2) 88% 60%), hsl(var(--morph-hue-3) 88% 60%))',
+          boxShadow: '0 0 12px hsla(var(--morph-hue-1) 92% 60% / 0.45)',
+        }}
       />
 
-      {/* Slider Thumb (Liquid Bubble) */}
-      <div 
-        className={`absolute h-4 w-4 bg-white rounded-full shadow-[0_0_12px_rgba(255,255,255,0.4)] border border-cyan-200/50 transition-all duration-75 ease-out z-10 
-          ${isDragging ? 'scale-125 ring-4 ring-white/10' : 'group-hover:scale-110'}`}
-        style={{ 
+      <div
+        className={`absolute h-4 w-4 rounded-full border border-white/70 transition-all duration-75 ease-out z-10 ${
+          isDragging ? 'scale-125 ring-4 ring-white/15' : 'group-hover:scale-110'
+        }`}
+        style={{
           left: `calc(${percentage}% - 8px)`,
-          background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,1), rgba(6,182,212,0.6))'
+          background:
+            'radial-gradient(circle at 30% 30%, #ffffff, hsl(var(--morph-hue-1) 92% 64%))',
+          boxShadow: '0 0 14px hsla(var(--morph-hue-1) 94% 64% / 0.65)',
         }}
       >
-        {/* Active Value Bubble */}
         {(isDragging || !disabled) && (
-          <div className={`absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-md px-1.5 py-0.5 rounded text-[10px] font-mono text-cyan-200 border border-cyan-500/30 transition-opacity duration-200 ${isDragging ? 'opacity-100 scale-110' : 'opacity-0 scale-95 group-hover:opacity-100'}`}>
+          <div
+            className={`absolute -top-8 left-1/2 -translate-x-1/2 bg-black/85 backdrop-blur-md px-1.5 py-0.5 rounded text-[10px] font-mono morph-accent-text border transition-opacity duration-200 ${
+              isDragging ? 'opacity-100 scale-110' : 'opacity-0 scale-95 group-hover:opacity-100'
+            }`}
+            style={{ borderColor: 'var(--morph-border)' }}
+          >
             {value.toFixed(1)}
           </div>
         )}
       </div>
 
-      {/* Discrete Steps (Subtle Indicators) */}
       <div className="absolute inset-0 h-1.5 my-auto pointer-events-none flex justify-between px-1 opacity-20">
         {[...Array(5)].map((_, i) => (
           <div key={i} className="w-[1px] h-1 bg-white/50" />

@@ -1,7 +1,7 @@
 {
   "name": "audiomorphic-ar",
   "private": true,
-  "version": "1.2.1",
+  "version": "1.3.0",
   "type": "module",
   "main": "electron-main.cjs",
   "author": "Audiomorphic",
@@ -68,7 +68,8 @@
       "dist/**/*",
       "electron-main.cjs",
       "preload.cjs",
-      "build/**/*"
+      "build/**/*",
+      "!node_modules/**/*"
     ]
   },
   "scripts": {

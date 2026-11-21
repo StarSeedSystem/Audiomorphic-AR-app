@@ -12,8 +12,10 @@ import { VisualizerParams, DEFAULT_PARAMS, GeometryInfo, GeometryRegime, SacredG
 import { useAudioAnalyzer } from './hooks/useAudioAnalyzer';
 import { useAuth } from './contexts/AuthContext';
 import ProfileMenu from './components/ProfileMenu';
-import { Zap, Activity, RotateCw, Star, Clock, Info, Heart } from 'lucide-react';
+import { Zap, Activity, RotateCw, Star, Clock, Info, Heart, BrainCircuit } from 'lucide-react';
 import { EMBED, getPresetParams, getSyntheticMetrics } from './utils/embedMode';
+import { useChromaticMorph } from './hooks/useChromaticMorph';
+import { usePresets } from './hooks/usePresets';
 
 // --- TREATISE DATA: GENESIS & MUSIC ---
 const GENESIS_STAGES = [
@@ -152,9 +154,10 @@ const App: React.FC = () => {
   const [showAbout, setShowAbout] = useState(false);
   const paramsRef = useRef<VisualizerParams>(params);
 
-  // Integración viva StarSeed OS: identidad, donaciones y presets en Supabase (pqzdpmedcsgcedkvndzl)
+  // Integración viva StarSeed OS: identidad, cerebros, neuronas, donaciones y presets
   const identity = useStarSeedIdentity();
-  const sync = useStarSeedSync(identity.user?.id || null);
+  const presetsStore = usePresets();
+  const sync = useStarSeedSync(identity.user?.id || user?.id || null);
   const subscription = useSubscription(identity.isLoggedIn, sync.addThankYouCard);
 
   const [infoHubOpen, setInfoHubOpen] = useState(() => {
@@ -254,6 +257,9 @@ const App: React.FC = () => {
     },
     [getAudioMetrics, isActive]
   );
+
+  // Motor cromático vivo (reactivo al sonido y tono visual -> CSS vars globales)
+  useChromaticMorph(getVisualMetrics, isActive, params.baseHue, params.sensitivity, params.freqRange);
 
   // --- EMBED: auto-start microphone (?mic=1) ---
   // Tries to capture the mic once on mount. If the browser/iframe denies it,
@@ -895,27 +901,27 @@ const App: React.FC = () => {
 
       {!EMBED.bg && !(params.vrMode || params.arPortalMode) && params.showIndicators && (
         <div 
-          className="absolute top-3 right-3 sm:top-6 sm:right-6 flex items-center gap-1.5 sm:gap-3 z-20 transition-opacity duration-500 max-w-[calc(100vw-1.5rem)] overflow-hidden" 
+          className="absolute top-3 right-3 sm:top-6 sm:right-6 flex items-center gap-1.5 sm:gap-2.5 z-20 transition-opacity duration-500 max-w-[calc(100vw-1.5rem)] overflow-hidden" 
           style={{ 
             top: 'max(0.75rem, env(safe-area-inset-top))', 
             right: 'max(0.75rem, env(safe-area-inset-right))',
-            opacity: controlsVisible ? 1 : 0.7 
+            opacity: controlsVisible ? 1 : 0.78 
           }}
         >
-           <div className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full border text-[11px] sm:text-xs font-mono backdrop-blur-sm transition-colors duration-300 pointer-events-none shrink-0
+           <div className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full border text-[11px] sm:text-xs font-mono backdrop-blur-md transition-colors duration-300 pointer-events-none shrink-0
              ${isActive 
-               ? 'bg-red-500/10 border-red-500/40 text-red-400 animate-pulse' 
-               : 'bg-gray-800/30 border-gray-700 text-gray-500'}
+               ? 'bg-red-500/15 border-red-400/50 text-red-300 animate-pulse' 
+               : 'quantum-glass text-slate-300'}
            `}>
-             <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${isActive ? 'bg-red-500' : 'bg-gray-500'}`}></div>
+             <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${isActive ? 'bg-red-400' : 'bg-slate-400'}`}></div>
              <span>{isActive ? 'MIC' : 'OFF'}</span>
            </div>
            
            {params.autoPilot && (
-             <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full border border-indigo-500/40 bg-indigo-500/10 text-indigo-400 text-[11px] sm:text-xs font-mono backdrop-blur-sm shadow-[0_0_15px_rgba(99,102,241,0.3)] shrink min-w-0">
-                <Zap className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)] shrink-0" />
-                <span className="font-bold tracking-wider hidden md:inline">Audiomorphic</span>
-                <RotateCw size={10} className="animate-spin text-cyan-400/50 shrink-0 hidden xs:inline" /> 
+             <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full morph-pill text-[11px] sm:text-xs font-mono backdrop-blur-md shrink min-w-0">
+                <Zap className="w-3 h-3 sm:w-3.5 sm:h-3.5 morph-accent-text shrink-0" />
+                <span className="font-bold tracking-wider hidden md:inline starseed-text-gradient">Audiomorphic</span>
+                <RotateCw size={10} className="animate-spin opacity-60 shrink-0 hidden xs:inline" /> 
                 <span className="truncate max-w-[85px] xs:max-w-[120px] sm:max-w-none">
                   {params.autoRandomMode === 'sacred' ? 'RESONANCIAS' :
                    params.autoRandomMode === 'rhythmic' ? 'RITMOS' :
@@ -926,12 +932,25 @@ const App: React.FC = () => {
              </div>
            )}
 
+           {presetsStore.selectedBrain && (
+             <button
+               type="button"
+               onClick={() => handleOpenInfo('account')}
+               className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full quantum-glass hover:brightness-110 text-[11px] font-mono text-slate-100 pointer-events-auto cursor-pointer shrink-0 max-w-[170px]"
+               title={`Cerebro activo: ${presetsStore.selectedBrain.name}`}
+             >
+               <BrainCircuit size={12} className="morph-accent-text-2 shrink-0" />
+               <span className="truncate">{presetsStore.selectedBrain.name}</span>
+             </button>
+           )}
+
            <button
+             type="button"
              onClick={() => handleOpenInfo('guide')}
-             className="flex items-center gap-1 px-2.5 sm:px-3 py-1 rounded-full border border-cyan-500/40 bg-cyan-950/60 hover:bg-cyan-900/80 text-cyan-300 text-[11px] sm:text-xs font-mono backdrop-blur-md transition-all shadow-[0_0_12px_rgba(6,182,212,0.3)] pointer-events-auto cursor-pointer shrink-0"
-             title="Centro de Información & Red StarSeed"
+             className="flex items-center gap-1 px-2.5 sm:px-3 py-1 rounded-full morph-btn-glass text-[11px] sm:text-xs font-mono pointer-events-auto cursor-pointer shrink-0"
+             title="Centro de Información, Cerebros & Red StarSeed"
            >
-             <Info size={12} className="text-cyan-400" />
+             <Info size={12} className="morph-accent-text" />
              <span className="font-semibold tracking-wide">Info</span>
            </button>
       </div>
@@ -950,9 +969,9 @@ const App: React.FC = () => {
           className="fixed inset-0 z-30 flex items-center justify-center pointer-events-none select-none px-4 animate-in fade-in duration-700"
           aria-hidden="true"
         >
-          <div className="px-6 py-3.5 sm:px-8 sm:py-4 rounded-full bg-black/45 backdrop-blur-md border border-white/20 shadow-[0_0_50px_rgba(0,0,0,0.8),0_0_25px_rgba(6,182,212,0.25)] animate-pulse flex items-center gap-3">
-            <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping shrink-0" />
-            <p className="text-white/80 text-sm sm:text-base md:text-lg font-semibold tracking-wider text-center drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]">
+          <div className="px-6 py-3.5 sm:px-8 sm:py-4 rounded-full art-nouveau-frame animate-pulse flex items-center gap-3">
+            <span className="w-2.5 h-2.5 rounded-full animate-ping shrink-0" style={{ backgroundColor: 'var(--morph-accent-1)' }} />
+            <p className="starseed-text-gradient text-sm sm:text-base md:text-lg font-bold tracking-wider text-center">
               Toca la pantalla para abrir el menú
             </p>
           </div>

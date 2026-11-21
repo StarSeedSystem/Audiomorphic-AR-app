@@ -69,9 +69,9 @@ export interface HardwarePermissionsState {
   fullscreen: boolean;  // Fullscreen API available
 }
 
-export const CURRENT_APP_VERSION = '1.2.1';
-export const CURRENT_BUILD_DATE = '2026-10-09';
-export const CURRENT_NATIVE_CONTAINER = '1.2.1';
+export const CURRENT_APP_VERSION = '1.3.0';
+export const CURRENT_BUILD_DATE = '2026-11-21';
+export const CURRENT_NATIVE_CONTAINER = '1.3.0';
 
 const GITHUB_REPO_URL = 'https://github.com/StarSeedSystem/Audiomorphic-AR-app';
 const GOOGLE_DRIVE_MIRROR = 'https://drive.google.com/drive/folders/1bZ8yvbWr7r3eJUdKIQCSSuu-p398mAkn?usp=sharing';
@@ -82,7 +82,7 @@ export const OFFICIAL_DOWNLOADS: PlatformDownloads = {
     version: CURRENT_APP_VERSION,
     installerUrl: `${GITHUB_REPO_URL}/releases/download/v${CURRENT_APP_VERSION}/Audiomorphic_v${CURRENT_APP_VERSION}_Windows.zip`,
     portableUrl: `${GITHUB_REPO_URL}/releases/download/v${CURRENT_APP_VERSION}/Audiomorphic_v${CURRENT_APP_VERSION}_Windows.zip`,
-    size: '~247 MB',
+    size: '~142 MB',
     arch: 'x64 & ARM64 Universal',
   },
   macos: {
@@ -90,7 +90,7 @@ export const OFFICIAL_DOWNLOADS: PlatformDownloads = {
     version: CURRENT_APP_VERSION,
     arm64DmgUrl: `${GITHUB_REPO_URL}/releases/download/v${CURRENT_APP_VERSION}/Audiomorphic_v${CURRENT_APP_VERSION}_macOS_arm64.dmg`,
     intelDmgUrl: `${GITHUB_REPO_URL}/releases/download/v${CURRENT_APP_VERSION}/audiomorphic-mac.zip`,
-    size: '~232 MB',
+    size: '~122 MB',
     arch: 'Apple Silicon (M1/M2/M3/M4) & Intel Universal',
   },
   linux: {
@@ -101,7 +101,7 @@ export const OFFICIAL_DOWNLOADS: PlatformDownloads = {
     arm64Url: `${GITHUB_REPO_URL}/releases/download/v${CURRENT_APP_VERSION}/Audiomorphic_v${CURRENT_APP_VERSION}_Linux_arm64.tar.gz`,
     appImageUrl: `${GITHUB_REPO_URL}/releases/download/v${CURRENT_APP_VERSION}/Audiomorphic_v${CURRENT_APP_VERSION}_Linux.tar.gz`,
     debUrl: `${GITHUB_REPO_URL}/releases/download/v${CURRENT_APP_VERSION}/Audiomorphic_v${CURRENT_APP_VERSION}_Linux.tar.gz`,
-    size: '~774 MB (x64) / ~694 MB (arm64)',
+    size: '~118 MB (x64 & arm64)',
     arch: 'x64 & ARM64 (ALSA, Pulse & PipeWire)',
   },
   android: {
@@ -120,6 +120,17 @@ export const OFFICIAL_DOWNLOADS: PlatformDownloads = {
 };
 
 export const CHANGELOG_HISTORY: VersionChangelog[] = [
+  {
+    version: '1.3.0',
+    date: '2026-11-21',
+    type: 'native_required',
+    title: 'Autonomía Offline Total, Estética Viva OmniFrecuencias y StarSeed Cerebros',
+    notes: [
+      'Arranque 100% autónomo sin conexión a internet en escritorio y móvil mediante protocolo interno app:// y cero dependencias CDN bloqueantes al iniciar.',
+      'Nueva estética viva reactiva al sonido con cristal iridiscente cromático al estilo OmniFrecuencias.',
+      'Integración completa con cuentas StarSeed OS: selecciona o crea cualquier Cerebro disponible, guarda presets en Folders específicos y sincroniza cambios en tiempo real entre tus Neuronas conectadas.',
+    ],
+  },
   {
     version: '1.2.1',
     date: '2026-10-09',

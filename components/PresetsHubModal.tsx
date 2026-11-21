@@ -19,7 +19,12 @@ import {
   Save, 
   Sparkles, 
   BookOpen, 
-  Layers
+  Layers,
+  BrainCircuit,
+  Cpu,
+  RefreshCw,
+  HardDrive,
+  WifiOff
 } from 'lucide-react';
 import { VisualizerParams } from '../types';
 import { AudiomorphicPresetRecord } from '../lib/starseedDb';
@@ -27,6 +32,7 @@ import { DEFAULT_PRESETS } from '../lib/defaultPresets';
 import { usePresets, Preset, ESSENTIALS_FOLDER_NAME } from '../hooks/usePresets';
 import { usePresetCommunity, MusicRecommendationType } from '../hooks/usePresetCommunity';
 import { UseStarSeedSyncResult } from '../hooks/useStarSeedSync';
+import SaveToBrainModal from './SaveToBrainModal';
 
 interface PresetsHubModalProps {
   open: boolean;
@@ -79,7 +85,17 @@ const PresetsHubModal: React.FC<PresetsHubModalProps> = ({
     deletePreset,
     exportPresets,
     importPresets,
-    reorderPresets
+    reorderPresets,
+    brains,
+    selectedBrain,
+    selectedBrainId,
+    selectBrain,
+    createBrain,
+    neurons,
+    syncState,
+    syncMessage,
+    isOnline,
+    refreshBrainsAndSync,
   } = usePresets();
 
   const userPresets = Array.isArray(rawPresets) ? rawPresets : (Array.isArray(cloudPresets) ? cloudPresets : []);
@@ -131,6 +147,9 @@ const PresetsHubModal: React.FC<PresetsHubModalProps> = ({
   const [savePresetName, setSavePresetName] = useState('');
   const [savePresetFolder, setSavePresetFolder] = useState('');
   const [savePresetCategory, setSavePresetCategory] = useState('custom');
+  const [showSaveToBrainModal, setShowSaveToBrainModal] = useState(false);
+  const [showNewBrainRow, setShowNewBrainRow] = useState(false);
+  const [newBrainInput, setNewBrainInput] = useState('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -329,7 +348,7 @@ const PresetsHubModal: React.FC<PresetsHubModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-2 sm:p-4">
-      <div className="liquid-panel w-full max-w-5xl h-[92vh] max-h-[920px] flex flex-col border border-white/20 shadow-2xl rounded-2xl overflow-hidden bg-gradient-to-b from-black/90 via-slate-950/95 to-black/95 animate-in fade-in zoom-in-95 duration-200">
+      <div className="art-nouveau-frame w-full max-w-5xl h-[92vh] max-h-[920px] flex flex-col rounded-2xl sm:rounded-3xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         
         {/* ========================================================= */}
         {/* MODAL HEADER WITH TAB SELECTOR                           */}
@@ -337,15 +356,15 @@ const PresetsHubModal: React.FC<PresetsHubModalProps> = ({
         <div className="p-4 sm:p-5 border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0 bg-black/40">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-cyan-500/20 border border-cyan-400/30 text-cyan-300 shadow-[0_0_12px_rgba(6,182,212,0.3)]">
+              <div className="p-2 rounded-xl morph-pill">
                 <Layers className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="text-base sm:text-lg font-bold text-white tracking-wide flex items-center gap-2">
+                <h2 className="text-base sm:text-lg font-extrabold starseed-text-gradient tracking-wide flex items-center gap-2">
                   <span>Gestión de Presets & Sintonización</span>
                 </h2>
-                <p className="text-[11px] text-gray-400">
-                  Explora la Librería Soberana o administra tu Biblioteca personal
+                <p className="text-[11px] text-slate-300">
+                  Explora la Librería Soberana o sincroniza tu Biblioteca con cerebros y neuronas StarSeed OS
                 </p>
               </div>
             </div>
@@ -359,19 +378,19 @@ const PresetsHubModal: React.FC<PresetsHubModalProps> = ({
           </div>
 
           {/* 2 MAIN TABS: LIBRERÍA & BIBLIOTECA */}
-          <div className="flex items-center gap-2 bg-black/60 p-1 rounded-xl border border-white/10 self-start sm:self-auto">
+          <div className="flex items-center gap-2 bg-black/50 p-1 rounded-xl border border-white/10 self-start sm:self-auto">
             <button
               type="button"
               onClick={() => setActiveTab('library')}
               className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer ${
                 activeTab === 'library'
-                  ? 'bg-gradient-to-r from-cyan-600 to-indigo-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)]'
+                  ? 'morph-tab-active'
                   : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`}
             >
               <Sparkles className="w-4 h-4" />
               <span>Librería</span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/20 text-cyan-200">
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/15 text-white">
                 {allLibraryPresets.length}
               </span>
             </button>
@@ -381,13 +400,13 @@ const PresetsHubModal: React.FC<PresetsHubModalProps> = ({
               onClick={() => setActiveTab('collection')}
               className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer ${
                 activeTab === 'collection'
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-[0_0_15px_rgba(168,85,247,0.4)]'
+                  ? 'morph-tab-active'
                   : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`}
             >
               <BookOpen className="w-4 h-4" />
               <span>Biblioteca</span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/20 text-purple-200">
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/15 text-white">
                 {userPresets.length}
               </span>
             </button>
@@ -1039,8 +1058,124 @@ const PresetsHubModal: React.FC<PresetsHubModalProps> = ({
             
             {/* Carpetas Bar */}
             <div className="p-3 sm:p-4 border-b border-white/10 bg-black/40 space-y-3 shrink-0">
+              {/* StarSeed OS Brain & Neurons Sync Strip */}
+              <div className="p-2.5 sm:p-3 rounded-2xl quantum-glass flex flex-col gap-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    {brains.length > 0 ? (
+                      <BrainCircuit size={16} className="morph-accent-text-2 shrink-0" />
+                    ) : (
+                      <HardDrive size={16} className="morph-accent-text shrink-0" />
+                    )}
+                    <span className="text-xs font-bold text-white truncate">
+                      {brains.length > 0
+                        ? `Cerebro Activo: ${selectedBrain?.name || 'StarSeed OS'}`
+                        : 'Almacenamiento Local Autónomo'}
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full morph-pill shrink-0 flex items-center gap-1">
+                      {!isOnline && <WifiOff size={10} />}
+                      <span>
+                        {syncState === 'synced'
+                          ? 'Sincronizado'
+                          : syncState === 'syncing'
+                          ? 'Sincronizando...'
+                          : syncState === 'offline_queued'
+                          ? 'En cola offline'
+                          : syncState === 'read_only'
+                          ? 'Solo lectura'
+                          : 'Modo Local'}
+                      </span>
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {brains.length > 0 && (
+                      <>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-black/45 border border-white/15 text-slate-200 flex items-center gap-1">
+                          <Cpu size={11} className="morph-accent-text" />
+                          {neurons.filter((n) => n.isOnline).length || 1} Neurona(s)
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setShowNewBrainRow(!showNewBrainRow)}
+                          disabled={!isOnline}
+                          className="px-2 py-1 rounded-lg morph-btn-glass text-[10px] font-bold flex items-center gap-1 cursor-pointer disabled:opacity-40"
+                        >
+                          <Plus size={11} /> Nuevo Cerebro
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => refreshBrainsAndSync()}
+                          className="px-2 py-1 rounded-lg morph-btn-glass text-[10px] font-bold flex items-center gap-1 cursor-pointer"
+                          title="Sincronizar cerebro y neuronas ahora"
+                        >
+                          <RefreshCw size={11} className={syncState === 'syncing' ? 'animate-spin' : ''} />
+                          <span>Sincronizar</span>
+                        </button>
+                      </>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setShowSaveToBrainModal(true)}
+                      className="px-2.5 py-1 rounded-lg morph-btn-primary text-[10px] font-bold flex items-center gap-1 cursor-pointer"
+                    >
+                      <FolderPlus size={11} />
+                      <span>Guardar en Cerebro/Folder...</span>
+                    </button>
+                  </div>
+                </div>
+
+                {brains.length > 0 && (
+                  <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+                    <select
+                      value={selectedBrainId || ''}
+                      onChange={(e) => selectBrain(e.target.value)}
+                      className="liquid-select-native !py-1.5 !text-xs flex-1"
+                    >
+                      {brains.map((b) => (
+                        <option key={b.id} value={b.id}>
+                          🧠 {b.name} ({b.accessLevel.toUpperCase()} · {b.isOwner ? 'Propio' : 'Compartido'})
+                        </option>
+                      ))}
+                    </select>
+                    {syncMessage && (
+                      <span className="text-[10px] text-slate-300 truncate max-w-xs">{syncMessage}</span>
+                    )}
+                  </div>
+                )}
+
+                {showNewBrainRow && (
+                  <div className="flex items-center gap-2 pt-1">
+                    <input
+                      type="text"
+                      value={newBrainInput}
+                      onChange={(e) => setNewBrainInput(e.target.value)}
+                      placeholder="Nombre del nuevo cerebro StarSeed OS..."
+                      className="flex-1 bg-black/60 border border-white/15 rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:border-cyan-400"
+                    />
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (!newBrainInput.trim()) return;
+                        const res = await createBrain(newBrainInput.trim());
+                        if (res.ok) {
+                          showNotice(`Cerebro "${newBrainInput.trim()}" creado y seleccionado.`);
+                          setNewBrainInput('');
+                          setShowNewBrainRow(false);
+                        } else if (res.error) {
+                          showNotice(res.error);
+                        }
+                      }}
+                      className="px-3 py-1.5 rounded-lg morph-btn-primary text-xs font-bold cursor-pointer"
+                    >
+                      Crear
+                    </button>
+                  </div>
+                )}
+              </div>
+
               <div className="flex items-center justify-between gap-2 flex-wrap">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-purple-300">
+                <div className="flex items-center gap-1.5 text-xs font-bold morph-accent-text-2">
                   <Folder className="w-4 h-4" />
                   <span>Carpetas de tu Almacén:</span>
                 </div>
@@ -1391,6 +1526,18 @@ const PresetsHubModal: React.FC<PresetsHubModalProps> = ({
         )}
 
       </div>
+
+      <SaveToBrainModal
+        isOpen={showSaveToBrainModal}
+        onClose={() => setShowSaveToBrainModal(false)}
+        currentParams={currentParams}
+        initialFolder={selectedFolder === 'all' || selectedFolder === 'none' ? '' : selectedFolder}
+        onSaved={(presetName, folder, brainName) => {
+          showNotice(
+            `Preset "${presetName}" guardado${folder ? ` en "${folder}"` : ''}${brainName ? ` (${brainName})` : ''}.`
+          );
+        }}
+      />
     </div>
   );
 };

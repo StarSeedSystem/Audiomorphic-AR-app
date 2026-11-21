@@ -40,6 +40,10 @@ const useFaceTracker = (enabled: boolean) => {
 
     let isMounted = true;
     const init = async () => {
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        setHasCamera(false);
+        return;
+      }
       try {
         const vision = await FilesetResolver.forVisionTasks(
           "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"

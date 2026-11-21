@@ -1,196 +1,211 @@
-import React, { useState } from 'react';
-import { X, Mail, Lock, LogIn, UserPlus, AlertCircle, CheckCircle2, Eye, EyeOff, Sparkles } from 'lucide-react';
-import { supabase } from '../lib/supabaseClient';
+import React, { useState, useEffect } from 'react';
+import {
+  X,
+  User,
+  Lock,
+  LogIn,
+  UserPlus,
+  AlertCircle,
+  CheckCircle2,
+  Eye,
+  EyeOff,
+  Sparkles,
+  Globe,
+  ExternalLink,
+  HardDrive,
+} from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { STARSEED_OS_OFFICIAL_URL } from '../lib/supabaseClient';
+import { openExternalUrl } from '../utils/platform';
 
 export const AuthModal: React.FC = () => {
-  const { isAuthModalOpen, setAuthModalOpen, activateSovereignSession } = useAuth();
+  const { isAuthModalOpen, setAuthModalOpen, loginWithIdentifier, signUpWithIdentifier } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    if (!isAuthModalOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setAuthModalOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isAuthModalOpen, setAuthModalOpen]);
+
   if (!isAuthModalOpen) return null;
 
-  const isEgressError = (err: any) => {
-    if (!err) return false;
-    const msg = (err?.message || String(err || '')).toLowerCase();
-    return (
-      msg.includes('exceed_egress_quota') ||
-      msg.includes('spend caps') ||
-      msg.includes('restricted') ||
-      msg.includes('quota') ||
-      msg.includes('failed to fetch') ||
-      msg.includes('networkerror') ||
-      msg.includes('network error') ||
-      msg.includes('timeout') ||
-      msg.includes('cors') ||
-      msg.includes('load failed') ||
-      err?.status === 402 ||
-      err?.status === 403 ||
-      err?.status === 500 ||
-      err?.status === 502 ||
-      err?.status === 503 ||
-      err?.status === 504
-    );
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); setError(null); setNotice(null); setLoading(true);
+    e.preventDefault();
+    setError(null);
+    setNotice(null);
+    setLoading(true);
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) {
-          if (isEgressError(error)) {
-            activateSovereignSession(email);
-            return;
-          }
-          throw error;
+        const res = await loginWithIdentifier(identifier, password);
+        if (!res.ok) {
+          setError(res.error || 'No se pudo iniciar sesión en StarSeed OS.');
+        } else {
+          setIdentifier('');
+          setPassword('');
         }
-        setAuthModalOpen(false); setEmail(''); setPassword('');
       } else {
-        const { data, error } = await supabase.auth.signUp({ email, password });
-        if (error) {
-          if (isEgressError(error)) {
-            activateSovereignSession(email);
-            return;
-          }
-          throw error;
-        }
-        // Si "Confirmar email" está activo, Supabase NO crea sesión todavía:
-        // hay user pero sin session. Mostramos aviso en vez de cerrar en silencio.
-        if (data.user && !data.session) {
-          setNotice('Te enviamos un correo de confirmación. Verifícalo y vuelve a iniciar sesión con tu misma cuenta StarSeed.');
+        const res = await signUpWithIdentifier(identifier, password, displayName);
+        if (!res.ok) {
+          setError(res.error || 'No se pudo crear la cuenta.');
+        } else if (res.error) {
+          setNotice(res.error);
           setPassword('');
           setIsLogin(true);
         } else {
-          setAuthModalOpen(false); setEmail(''); setPassword('');
+          setIdentifier('');
+          setDisplayName('');
+          setPassword('');
         }
       }
-    } catch (err: any) {
-      if (isEgressError(err)) {
-        activateSovereignSession(email);
-        return;
-      }
-      setError(err?.message || 'Hubo un error. Intenta de nuevo.');
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const switchTab = (login: boolean) => {
-    setIsLogin(login);
+  const switchTab = (loginTab: boolean) => {
+    setIsLogin(loginTab);
     setError(null);
     setNotice(null);
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-300">
-      {/* Fondo radial oscuro + orbes violeta/púrpura difuminados (look StarSeed unificado) */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,#1a1030,#070510_70%)]" onClick={() => setAuthModalOpen(false)} />
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-24 -left-24 w-[28rem] h-[28rem] rounded-full bg-violet-600/30 blur-[120px]" />
-        <div className="absolute -bottom-24 -right-16 w-[24rem] h-[24rem] rounded-full bg-fuchsia-600/25 blur-[120px]" />
-      </div>
+    <div
+      className="fixed inset-0 z-[200] flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-300"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="auth-modal-title"
+    >
+      <div
+        className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(20,18,45,0.92),rgba(3,6,15,0.96)_72%)] backdrop-blur-xl"
+        onClick={() => setAuthModalOpen(false)}
+      />
 
-      {/* Tarjeta glass centrada (~420px) */}
-      <div className="relative w-full max-w-[420px] my-auto max-h-[92dvh] overflow-y-auto bg-white/[0.04] backdrop-blur-2xl border border-white/10 rounded-3xl shadow-[0_20px_70px_rgba(0,0,0,0.7)] p-5 sm:p-8">
+      <div className="relative w-full max-w-[440px] my-auto max-h-[92dvh] overflow-y-auto art-nouveau-frame rounded-3xl p-5 sm:p-8 text-white">
         <button
+          type="button"
           onClick={() => setAuthModalOpen(false)}
-          className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+          className="absolute top-4 right-4 p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
           aria-label="Cerrar"
         >
-          <X size={20} />
+          <X size={18} />
         </button>
 
-        {/* Wordmark StarSeed: gradiente violeta -> teal */}
-        <div className="text-center mb-7">
-          <div className="inline-flex items-center justify-center gap-2 mb-3">
-            <Sparkles size={18} className="text-violet-300" />
-            <span className="text-2xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-[#a78bfa] to-[#34d399]">
-              StarSeed
-            </span>
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center justify-center gap-2 mb-2 px-3 py-1 rounded-full morph-pill text-xs font-bold">
+            <Sparkles size={14} />
+            <span>Ecosistema StarSeed OS</span>
           </div>
-          <h2 className="text-lg font-semibold text-white">
-            {isLogin ? 'Entra a tu cuenta' : 'Crea tu cuenta StarSeed'}
+          <h2 id="auth-modal-title" className="text-2xl font-extrabold starseed-text-gradient tracking-tight">
+            {isLogin ? 'Conecta tu Cuenta StarSeed' : 'Crea tu Cuenta StarSeed'}
           </h2>
-          <p className="text-gray-400 text-xs mt-1">
-            Audiomorphic · una sola cuenta para todo el ecosistema
+          <p className="text-slate-300 text-xs mt-1.5 leading-relaxed">
+            Sincroniza tus presets, folders, cerebros y dispositivos (neuronas) en todo el ecosistema.
           </p>
         </div>
 
-        {/* Tabs: Entrar / Crear cuenta */}
-        <div className="relative grid grid-cols-2 mb-6 p-1 rounded-2xl bg-black/30 border border-white/10">
-          <div
-            className={`absolute top-1 bottom-1 w-[calc(50%-0.25rem)] rounded-xl bg-gradient-to-r from-violet-500/80 to-fuchsia-500/80 shadow-[0_0_18px_rgba(167,139,250,0.4)] transition-transform duration-300 ${isLogin ? 'translate-x-0' : 'translate-x-[calc(100%+0.5rem)]'}`}
-          />
+        <div className="relative grid grid-cols-2 mb-5 p-1 rounded-2xl bg-black/40 border border-white/10">
           <button
             type="button"
             onClick={() => switchTab(true)}
-            className={`relative z-10 py-2 text-sm font-semibold rounded-xl transition-colors ${isLogin ? 'text-white' : 'text-gray-400 hover:text-gray-200'}`}
+            className={`py-2 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer ${
+              isLogin ? 'morph-tab-active' : 'text-slate-400 hover:text-white'
+            }`}
           >
             Entrar
           </button>
           <button
             type="button"
             onClick={() => switchTab(false)}
-            className={`relative z-10 py-2 text-sm font-semibold rounded-xl transition-colors ${!isLogin ? 'text-white' : 'text-gray-400 hover:text-gray-200'}`}
+            className={`py-2 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer ${
+              !isLogin ? 'morph-tab-active' : 'text-slate-400 hover:text-white'
+            }`}
           >
             Crear cuenta
           </button>
         </div>
 
         {notice && (
-          <div className="mb-5 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-start gap-2 text-emerald-300 text-sm">
-            <CheckCircle2 size={16} className="mt-0.5 shrink-0" /><p>{notice}</p>
+          <div className="mb-4 p-3 bg-emerald-500/15 border border-emerald-500/35 rounded-xl flex items-start gap-2 text-emerald-200 text-xs">
+            <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-emerald-400" />
+            <p>{notice}</p>
           </div>
         )}
         {error && (
-          <div className="mb-5 p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-2 text-red-400 text-sm">
-            <AlertCircle size={16} className="mt-0.5 shrink-0" /><p>{error}</p>
+          <div className="mb-4 p-3 bg-red-500/15 border border-red-500/35 rounded-xl flex items-start gap-2 text-red-200 text-xs">
+            <AlertCircle size={15} className="mt-0.5 shrink-0 text-red-400" />
+            <p>{error}</p>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3.5">
+          {!isLogin && (
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-300 mb-1">
+                Nombre visible
+              </label>
+              <input
+                type="text"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="Ej. Viajero Cósmico"
+                className="w-full bg-black/45 border border-white/15 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+              />
+            </div>
+          )}
+
           <div>
-            <label className="block text-xs font-medium text-gray-400 mb-1.5">Correo electrónico</label>
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-300 mb-1">
+              {isLogin ? 'Usuario (@handle) o Correo StarSeed OS' : 'Correo electrónico'}
+            </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Mail size={16} className="text-gray-500" />
+                <User size={15} className="text-slate-400" />
               </div>
               <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                type={isLogin ? 'text' : 'email'}
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
                 required
-                className="w-full bg-black/40 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-white placeholder-gray-600 focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-400/40 transition-colors"
-                placeholder="tu@correo.com"
+                className="w-full bg-black/45 border border-white/15 rounded-xl py-2.5 pl-9 pr-4 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                placeholder={isLogin ? '@usuario o tu@correo.com' : 'tu@correo.com'}
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-400 mb-1.5">Contraseña</label>
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-300 mb-1">
+              Contraseña
+            </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Lock size={16} className="text-gray-500" />
+                <Lock size={15} className="text-slate-400" />
               </div>
               <input
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full bg-black/40 border border-white/10 rounded-xl py-2.5 pl-10 pr-11 text-white placeholder-gray-600 focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-400/40 transition-colors"
+                className="w-full bg-black/45 border border-white/15 rounded-xl py-2.5 pl-9 pr-10 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
                 placeholder="••••••••"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-300 transition-colors"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white cursor-pointer"
                 aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
               >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
               </button>
             </div>
           </div>
@@ -198,41 +213,42 @@ export const AuthModal: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className={`w-full py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all ${loading ? 'bg-violet-500/40 text-white/60 cursor-not-allowed' : 'bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-400 hover:to-fuchsia-400 text-white shadow-[0_0_20px_rgba(167,139,250,0.45)]'}`}
+            className="w-full py-3 rounded-xl morph-btn-primary font-bold text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
             {loading ? (
-              <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : isLogin ? (
-              <><LogIn size={18} /> Entrar</>
+              <>
+                <LogIn size={16} /> Entrar a StarSeed OS
+              </>
             ) : (
-              <><UserPlus size={18} /> Crear cuenta</>
+              <>
+                <UserPlus size={16} /> Crear Cuenta
+              </>
             )}
-          </button>
-
-          <div className="relative flex py-1 items-center">
-            <div className="flex-grow border-t border-white/10"></div>
-            <span className="flex-shrink mx-2 text-[10px] uppercase tracking-wider text-gray-400">O también</span>
-            <div className="flex-grow border-t border-white/10"></div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              activateSovereignSession(email || 'soberano@star.seed');
-            }}
-            className="w-full py-2.5 px-3 rounded-xl text-xs font-semibold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-[0_0_15px_rgba(16,185,129,0.15)]"
-          >
-            <Sparkles size={14} className="text-emerald-400" />
-            <span>Acceso Soberano Inmediato (Sin Restricciones)</span>
           </button>
         </form>
 
-        {/* Nota honesta del ecosistema */}
-        <p className="mt-6 text-[11px] leading-relaxed text-gray-500 text-center">
-          Una sola cuenta para todo el ecosistema StarSeed (OS, Nexus, Café, Audiomorphic).
-          Al crear tu cuenta recibes tu dirección interna{' '}
-          <span className="text-emerald-300/90 font-mono">@star.seed</span>.
-        </p>
+        <div className="mt-5 pt-4 border-t border-white/10 space-y-2.5">
+          <button
+            type="button"
+            onClick={() => setAuthModalOpen(false)}
+            className="w-full py-2.5 px-3 rounded-xl morph-btn-glass text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <HardDrive size={14} className="morph-accent-text" />
+            <span>Continuar en Modo Local Autónomo (Sin Conexión)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => openExternalUrl(STARSEED_OS_OFFICIAL_URL)}
+            className="w-full py-2 px-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.09] border border-white/10 text-[11px] text-slate-300 hover:text-white flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+          >
+            <Globe size={13} className="morph-accent-text-2" />
+            <span>Abrir Portal Oficial starseed-os.vercel.app</span>
+            <ExternalLink size={11} />
+          </button>
+        </div>
       </div>
     </div>
   );

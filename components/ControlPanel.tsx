@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { VisualizerParams, SacredGeometryMode, SacredGeometrySettings, DEFAULT_PARAMS, AutoPilotMode, BackgroundMode, GeometryInfo, SubscriptionTier } from '../types';
-import { Activity, Zap, Maximize, Minimize, RotateCw, Palette, Target, Music, BrainCircuit, Wind, Droplets, Waves, Shuffle, Sprout, Glasses, Download, X, RotateCcw, Save, Upload, Heart, Lock, Unlock, LogIn, LogOut, User, Star, Cloud, Trash2, Info, ChevronUp, ChevronDown, Volume2, Folder, FolderPlus, FolderOpen, Filter, ArrowUpDown, Plus, Bookmark, ExternalLink, Search, Sparkles, Check, Play } from 'lucide-react';
+import { Activity, Zap, Maximize, Minimize, RotateCw, Palette, Target, Music, BrainCircuit, Wind, Droplets, Waves, Shuffle, Sprout, Glasses, Download, X, RotateCcw, Save, Upload, Heart, Lock, Unlock, LogIn, LogOut, User, Star, Cloud, Trash2, Info, ChevronUp, ChevronDown, Volume2, Folder, FolderPlus, FolderOpen, Filter, ArrowUpDown, Plus, Bookmark, ExternalLink, Search, Sparkles, Check, Play, Cpu, RefreshCw, HardDrive, WifiOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { isInstalledApp } from '../utils/platform';
 import { DEFAULT_PRESETS } from '../lib/defaultPresets';
@@ -9,6 +9,7 @@ import { usePresets, Preset, ESSENTIALS_FOLDER_NAME } from '../hooks/usePresets'
 import { UseStarSeedSyncResult } from '../hooks/useStarSeedSync';
 import PresetsHubModal from './PresetsHubModal';
 import PresetDetailModal from './PresetDetailModal';
+import SaveToBrainModal from './SaveToBrainModal';
 import ProfileMenu from './ProfileMenu';
 import LiquidSelect from './LiquidSelect';
 import LiquidSlider from './LiquidSlider';
@@ -1419,8 +1420,30 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
     deletePreset: deleteCloudPresetFromServer, 
     exportPresets,
     importPresets,
-    reorderPresets 
+    reorderPresets,
+    brains,
+    selectedBrainId,
+    selectedBrain,
+    canWriteCurrentBrain,
+    neurons,
+    currentNeuron,
+    syncState,
+    syncMessage,
+    lastSyncedAt,
+    isOnline,
+    isLoadingBrains,
+    hasLocalDevicePresets,
+    selectBrain,
+    createBrain,
+    refreshBrainsAndSync,
+    importLocalPresetsIntoBrain,
   } = usePresets();
+
+  const [showSaveToBrainModal, setShowSaveToBrainModal] = useState(false);
+  const [showQuickNewBrain, setShowQuickNewBrain] = useState(false);
+  const [quickNewBrainName, setQuickNewBrainName] = useState('');
+  const [creatingQuickBrain, setCreatingQuickBrain] = useState(false);
+  const [showNeuronsPopover, setShowNeuronsPopover] = useState(false);
 
   const [isInstalled, setIsInstalled] = useState(false);
   useEffect(() => {
@@ -2046,18 +2069,31 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       </svg>
       <style>{`
         .liquid-panel {
-          background: rgba(20, 25, 30, calc(${params.menuTransparency} * 0.2));
-          backdrop-filter: blur(calc(${params.menuTransparency} * 20px)) saturate(150%) contrast(110%);
-          -webkit-backdrop-filter: blur(calc(${params.menuTransparency} * 20px)) saturate(150%) contrast(110%);
-          border: 1px solid rgba(255, 255, 255, 0.1);
+          background:
+            radial-gradient(
+              115% 85% at 12% 0%,
+              hsla(var(--morph-hue-1, 185), 88%, 56%, calc(${params.menuTransparency} * 0.16 * var(--morph-glow-alpha, 1))) 0%,
+              transparent 58%
+            ),
+            radial-gradient(
+              95% 85% at 92% 100%,
+              hsla(var(--morph-hue-2, 265), 88%, 58%, calc(${params.menuTransparency} * 0.14 * var(--morph-glow-alpha, 1))) 0%,
+              transparent 60%
+            ),
+            rgba(14, 18, 26, calc(${params.menuTransparency} * 0.28 + 0.12));
+          backdrop-filter: blur(calc(${params.menuTransparency} * 22px + 4px)) saturate(165%) contrast(112%);
+          -webkit-backdrop-filter: blur(calc(${params.menuTransparency} * 22px + 4px)) saturate(165%) contrast(112%);
+          border: 1px solid hsla(var(--morph-hue-1, 185), 85%, 72%, 0.24);
           box-shadow: 
-            0 40px 100px rgba(0, 0, 0, 0.6),
-            inset 0 2px 4px rgba(255, 255, 255, 0.2),
-            inset 0 -10px 40px rgba(255, 255, 255, 0.05),
-            inset 0 20px 60px rgba(255, 255, 255, 0.02);
+            0 40px 100px rgba(0, 0, 0, 0.65),
+            0 0 42px hsla(var(--morph-hue-1, 185), 90%, 60%, calc(0.14 * var(--morph-glow-alpha, 1))),
+            inset 0 2px 4px rgba(255, 255, 255, 0.22),
+            inset 0 -10px 40px hsla(var(--morph-hue-2, 265), 75%, 65%, 0.08),
+            inset 0 20px 60px rgba(255, 255, 255, 0.03);
           border-radius: 32px;
           overflow: hidden;
           position: relative;
+          transition: border-color 0.45s ease, box-shadow 0.45s ease;
         }
         @media (min-width: 768px) {
           .liquid-panel {
@@ -2285,11 +2321,17 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         }
 
         .liquid-section {
-          background: rgba(255, 255, 255, 0.06);
-          backdrop-filter: blur(10px);
-          -webkit-backdrop-filter: blur(10px);
-          border: 1px solid rgba(255, 255, 255, 0.15);
-          border-top: 1px solid rgba(255, 255, 255, 0.3);
+          background:
+            linear-gradient(
+              145deg,
+              hsla(var(--morph-hue-1, 185), 75%, 52%, 0.08) 0%,
+              hsla(var(--morph-hue-2, 265), 70%, 50%, 0.05) 55%,
+              rgba(255, 255, 255, 0.04) 100%
+            );
+          backdrop-filter: blur(12px) saturate(140%);
+          -webkit-backdrop-filter: blur(12px) saturate(140%);
+          border: 1px solid hsla(var(--morph-hue-1, 185), 75%, 72%, 0.18);
+          border-top: 1px solid hsla(var(--morph-hue-2, 265), 85%, 78%, 0.32);
           border-radius: 24px;
           box-shadow: 
             inset 0 0 30px rgba(255, 255, 255, 0.05), 
@@ -2313,6 +2355,51 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           top: -50%; left: -50%; width: 200%; height: 200%;
           background: radial-gradient(circle at 50% 0%, rgba(255,255,255,0.15), transparent 50%);
           pointer-events: none;
+        }
+
+        .liquid-panel .liquid-bubble {
+          background:
+            linear-gradient(
+              135deg,
+              hsla(var(--morph-hue-1, 185), 85%, 56%, 0.14),
+              hsla(var(--morph-hue-2, 265), 82%, 56%, 0.10)
+            );
+          border-color: hsla(var(--morph-hue-1, 185), 85%, 72%, 0.28);
+          transition: transform 0.2s ease, border-color 0.35s ease, box-shadow 0.35s ease, background 0.35s ease;
+        }
+
+        .liquid-panel .liquid-bubble:hover {
+          border-color: hsla(var(--morph-hue-2, 265), 90%, 76%, 0.55);
+          box-shadow: 0 0 18px hsla(var(--morph-hue-1, 185), 90%, 60%, calc(0.28 * var(--morph-glow-alpha, 1)));
+        }
+
+        .liquid-panel .liquid-switch.active {
+          background: linear-gradient(
+            135deg,
+            hsla(var(--morph-hue-1, 185), 90%, 56%, 0.85),
+            hsla(var(--morph-hue-2, 265), 88%, 60%, 0.85)
+          );
+          box-shadow: 0 0 16px hsla(var(--morph-hue-1, 185), 90%, 62%, calc(0.45 * var(--morph-glow-alpha, 1)));
+        }
+
+        @media (forced-colors: active) {
+          .liquid-panel,
+          .liquid-section,
+          .liquid-panel .liquid-bubble {
+            border-color: CanvasText;
+            box-shadow: none;
+          }
+          .liquid-panel .liquid-switch.active {
+            background: Highlight;
+            color: HighlightText;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .liquid-panel,
+          .liquid-panel .liquid-bubble {
+            transition: none;
+          }
         }
 
         .neon-metal-text {
@@ -2451,6 +2538,43 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               </>
             )}
 
+            <button
+              type="button"
+              onClick={() => (user ? setShowPresetModal(true) : setAuthModalOpen(true))}
+              className="morph-pill px-3 py-1.5 sm:py-2 text-xs font-semibold flex items-center gap-1.5 shrink-0 cursor-pointer"
+              title={
+                user
+                  ? `Cerebro activo: ${selectedBrain?.name || 'Personal'} (${isOnline ? `${neurons.filter((n) => n.isOnline).length} neurona(s) en línea` : 'Modo autónomo offline'})`
+                  : 'Modo autónomo local — Conectar cuenta StarSeed OS'
+              }
+            >
+              {user ? (
+                isOnline ? (
+                  <Cpu size={14} className="text-cyan-300 shrink-0" />
+                ) : (
+                  <WifiOff size={14} className="text-amber-300 shrink-0" />
+                )
+              ) : (
+                <HardDrive size={14} className="text-emerald-300 shrink-0" />
+              )}
+              <span className="max-w-[120px] truncate">
+                {user ? (selectedBrain?.name || 'Cerebro') : 'Autónomo Local'}
+              </span>
+              {user && (
+                <span className="text-[10px] opacity-80 font-mono">
+                  {isOnline ? `${neurons.filter((n) => n.isOnline).length}N` : 'Offline'}
+                </span>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowSaveToBrainModal(true)}
+              className="morph-btn-primary px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-full flex items-center gap-1.5 text-xs sm:text-sm font-semibold shrink-0 cursor-pointer"
+              title="Guardar ajuste actual en un Cerebro y Folder específico de StarSeed OS"
+            >
+              <Cloud size={15} className="shrink-0" />
+              <span>Guardar en Cerebro</span>
+            </button>
             <button
               onClick={() => setShowPresetModal(true)}
               className="liquid-bubble px-3.5 sm:px-4 py-1.5 sm:py-2 text-yellow-300 hover:text-yellow-200 flex items-center gap-1.5 text-xs sm:text-sm font-semibold shrink-0 cursor-pointer"
@@ -2652,7 +2776,202 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   </div>
 
                   {/* Presets */}
-                  <div className="bg-black/30 p-3 rounded-xl border border-white/10">
+                  <div className="quantum-glass p-3.5 rounded-2xl border border-white/15">
+                    {/* StarSeed OS Cerebro & Neuronas Sync Bar */}
+                    <div className="mb-3 p-2.5 rounded-xl bg-black/35 border border-white/10 space-y-2">
+                      {user ? (
+                        <>
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-cyan-300">
+                                <Cpu size={12} className="shrink-0" />
+                                Cerebro:
+                              </span>
+                              {brains.length > 0 ? (
+                                <select
+                                  aria-label="Seleccionar Cerebro de StarSeed OS"
+                                  value={selectedBrainId || ''}
+                                  onChange={(e) => {
+                                    if (e.target.value) void selectBrain(e.target.value);
+                                  }}
+                                  className="bg-black/50 border border-cyan-400/35 rounded-lg px-2 py-1 text-[11px] font-semibold text-white outline-none focus:border-cyan-300 max-w-[180px]"
+                                >
+                                  {brains.map((b) => (
+                                    <option key={b.id} value={b.id} className="bg-slate-950 text-white">
+                                      {b.name}
+                                      {b.accessLevel === 'lectura' ? ' (Solo lectura)' : b.isOwner ? '' : ` (${b.accessLevel})`}
+                                    </option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <span className="text-[11px] text-white/75">
+                                  {isLoadingBrains ? 'Cargando cerebros...' : 'Personal (Local)'}
+                                </span>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => setShowQuickNewBrain((v) => !v)}
+                                disabled={!isOnline}
+                                className="morph-btn-glass px-2 py-1 rounded-lg text-[10px] font-semibold flex items-center gap-1 disabled:opacity-40 cursor-pointer"
+                                title={isOnline ? 'Crear un nuevo Cerebro en tu cuenta StarSeed OS' : 'Conéctate a internet para crear un Cerebro'}
+                              >
+                                <Plus size={11} />
+                                <span>Cerebro</span>
+                              </button>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className="morph-pill px-2 py-0.5 text-[10px] font-semibold inline-flex items-center gap-1">
+                                {syncState === 'syncing' ? (
+                                  <>
+                                    <RefreshCw size={10} className="animate-spin text-cyan-300" />
+                                    <span>Sincronizando</span>
+                                  </>
+                                ) : syncState === 'synced' ? (
+                                  <>
+                                    <Check size={10} className="text-emerald-300" />
+                                    <span>Sincronizado</span>
+                                  </>
+                                ) : syncState === 'offline_queued' ? (
+                                  <>
+                                    <WifiOff size={10} className="text-amber-300" />
+                                    <span>Cola offline</span>
+                                  </>
+                                ) : syncState === 'read_only' ? (
+                                  <>
+                                    <Lock size={10} className="text-amber-300" />
+                                    <span>Solo lectura</span>
+                                  </>
+                                ) : syncState === 'error' ? (
+                                  <>
+                                    <WifiOff size={10} className="text-rose-300" />
+                                    <span>Error sync</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Cloud size={10} className="text-cyan-300" />
+                                    <span>{isOnline ? 'Conectado' : 'Local offline'}</span>
+                                  </>
+                                )}
+                              </span>
+
+                              <button
+                                type="button"
+                                onClick={() => setShowNeuronsPopover((v) => !v)}
+                                className="morph-btn-glass px-2 py-0.5 rounded-lg text-[10px] font-semibold inline-flex items-center gap-1 cursor-pointer"
+                                title="Ver dispositivos (Neuronas) conectados en este Cerebro"
+                              >
+                                <Cpu size={10} className="text-purple-300" />
+                                <span>
+                                  {neurons.filter((n) => n.isOnline).length}{' '}
+                                  {neurons.filter((n) => n.isOnline).length === 1 ? 'Neurona' : 'Neuronas'}
+                                </span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => void refreshBrainsAndSync()}
+                                disabled={!isOnline || isLoadingBrains}
+                                className="morph-btn-glass px-2 py-0.5 rounded-lg text-[10px] font-semibold inline-flex items-center gap-1 disabled:opacity-40 cursor-pointer"
+                                title="Sincronizar cambios con StarSeed OS y otras Neuronas"
+                              >
+                                <RefreshCw size={10} className={syncState === 'syncing' ? 'animate-spin' : ''} />
+                                <span>Sincronizar</span>
+                              </button>
+
+                              {hasLocalDevicePresets && canWriteCurrentBrain && (
+                                <button
+                                  type="button"
+                                  onClick={() => void importLocalPresetsIntoBrain()}
+                                  className="morph-btn-primary px-2 py-0.5 rounded-lg text-[10px] font-bold inline-flex items-center gap-1 cursor-pointer"
+                                  title="Combinar e importar presets locales de este dispositivo al Cerebro activo"
+                                >
+                                  <Upload size={10} />
+                                  <span>Importar locales</span>
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          {showQuickNewBrain && (
+                            <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-white/10">
+                              <input
+                                type="text"
+                                value={quickNewBrainName}
+                                onChange={(e) => setQuickNewBrainName(e.target.value)}
+                                placeholder="Nombre del nuevo Cerebro..."
+                                className="flex-1 min-w-[140px] bg-black/50 border border-white/20 rounded-lg px-2.5 py-1 text-[11px] text-white outline-none focus:border-cyan-400"
+                              />
+                              <button
+                                type="button"
+                                disabled={creatingQuickBrain || !quickNewBrainName.trim() || !isOnline}
+                                onClick={async () => {
+                                  const trimmed = quickNewBrainName.trim();
+                                  if (!trimmed) return;
+                                  setCreatingQuickBrain(true);
+                                  try {
+                                    await createBrain(trimmed);
+                                    setQuickNewBrainName('');
+                                    setShowQuickNewBrain(false);
+                                  } finally {
+                                    setCreatingQuickBrain(false);
+                                  }
+                                }}
+                                className="morph-btn-primary px-2.5 py-1 rounded-lg text-[10px] font-bold disabled:opacity-40 cursor-pointer"
+                              >
+                                {creatingQuickBrain ? 'Creando...' : 'Crear Cerebro'}
+                              </button>
+                            </div>
+                          )}
+
+                          {showNeuronsPopover && (
+                            <div className="pt-1.5 border-t border-white/10 space-y-1">
+                              <div className="flex items-center justify-between text-[10px] text-white/60">
+                                <span>Dispositivos (Neuronas) — Dispositivo actual: {currentNeuron.name}</span>
+                                {syncMessage && <span className="text-cyan-300/90 truncate max-w-[220px]">{syncMessage}</span>}
+                              </div>
+                              <div className="flex flex-wrap gap-1.5">
+                                {neurons.length > 0 ? (
+                                  neurons.map((n) => (
+                                    <span
+                                      key={n.id}
+                                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[10px] text-white/85"
+                                    >
+                                      <Cpu size={10} className={n.isOnline ? 'text-emerald-300' : 'text-white/40'} />
+                                      <span>{n.name}</span>
+                                      {(n.isCurrentDevice || n.id === currentNeuron.id) && (
+                                        <span className="text-cyan-300">(este)</span>
+                                      )}
+                                      <span className="text-white/45">• {n.isOnline ? 'En línea' : 'Offline'}</span>
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span className="text-[10px] text-white/55">
+                                    Neurona local: {currentNeuron.name} ({isOnline ? 'En línea' : 'Autónoma offline'})
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-200">
+                            <HardDrive size={12} className="text-emerald-300 shrink-0" />
+                            Almacenamiento Local Autónomo (100% operativo sin internet)
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setAuthModalOpen(true)}
+                            className="morph-btn-glass px-2.5 py-1 rounded-lg text-[10px] font-semibold inline-flex items-center gap-1 cursor-pointer"
+                          >
+                            <Cloud size={11} className="text-cyan-300" />
+                            <span>Conectar StarSeed OS</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
                     <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                       <div className="flex items-center gap-2">
                         <FolderOpen className="w-4 h-4 text-cyan-400" />
@@ -2666,6 +2985,15 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                         </div>
                       </div>
                       <div className="flex items-center gap-1.5 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={() => setShowSaveToBrainModal(true)}
+                          className="morph-btn-primary px-2.5 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 cursor-pointer"
+                          title="Guardar ajuste actual eligiendo Cerebro y Folder"
+                        >
+                          <Cloud size={11} />
+                          <span>En Cerebro</span>
+                        </button>
                         <button
                           type="button"
                           onClick={() => setShowLibraryPicker(!showLibraryPicker)}
@@ -4523,6 +4851,13 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           userDisplayName={user?.displayName || (user?.email ? user.email.split('@')[0] : 'Viajero Sónico')}
         />
       )}
+
+      <SaveToBrainModal
+        isOpen={showSaveToBrainModal}
+        onClose={() => setShowSaveToBrainModal(false)}
+        currentParams={params}
+        initialFolder={selectedFolder === 'all' || selectedFolder === 'none' ? '' : selectedFolder}
+      />
     </>
   );
 };

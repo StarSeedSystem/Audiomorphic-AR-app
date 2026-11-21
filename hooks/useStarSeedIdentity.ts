@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback } from 'react';
-import { getStarSeedDb, StarSeedProfile } from '../lib/starseedDb';
+import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 
 export interface StarSeedSession {
   id?: string;
@@ -12,39 +12,39 @@ export interface StarSeedSession {
 }
 
 export interface StarSeedIdentity {
-  /** True when a StarSeed session (or OS hand-off) was detected. */
+  /** True when a StarSeed session (or OS hand-off) is active. */
   isLoggedIn: boolean;
-  /** The raw session object, if any could be parsed. */
+  /** Unified user reference (aliased cleanly so callers reading identity.user work seamlessly). */
+  user: StarSeedSession | null;
+  /** The raw session object, if any. */
   session: StarSeedSession | null;
-  /** Friendly display name for the UI (falls back to handle, email, or a default). */
+  /** Friendly display name for the UI. */
   displayName: string | null;
   /** Sovereign handle (e.g. @alex) */
   handle: string | null;
   /** Avatar URL if present */
   avatarUrl: string | null;
-  /** True when the user arrived from the StarSeed OS via URL/global handoff. */
+  /** Address <handle>@star.seed if available */
+  starseedAddress: string | null;
+  /** True when the user arrived from StarSeed OS via URL/global handoff. */
   cameFromOS: boolean;
-  /** Manually mark this device as linked to StarSeed (persisted). */
+  /** Manually mark this device as linked to StarSeed. */
   linkStarSeed: (session?: StarSeedSession) => void;
-  /** Remove any local StarSeed link (does not touch external sessions). */
+  /** Remove any local StarSeed link. */
   unlinkStarSeed: () => void;
   /** Re-run detection on demand. */
   refresh: () => void;
-  /** Supabase Auth: Sign in with email and password */
-  loginWithEmail: (email: string, pass: string) => Promise<{ ok: boolean; error?: string }>;
-  /** Supabase Auth: Sign up with email and password */
+  /** StarSeed OS login with email or @handle + password */
+  loginWithEmail: (identifier: string, pass: string) => Promise<{ ok: boolean; error?: string }>;
+  /** StarSeed OS sign up */
   signUpWithEmail: (email: string, pass: string, name?: string) => Promise<{ ok: boolean; error?: string }>;
-  /** Supabase Auth: Sign out */
+  /** Sign out */
   logout: () => Promise<void>;
 }
 
-// Keys a StarSeed bridge is likely to write a session under.
 const SESSION_KEYS = [
-  'starseed_sovereign_user',
-  'starseed.auth',
-  'sb-pqzdpmedcsgcedkvndzl-auth-token',
-  'starseed-auth-token-v2',
   'audiomorphic.starseed.linked.v2',
+  'starseed_sovereign_user',
   'starseed.session',
   'starseed.user',
   'star.seed.session',
@@ -54,7 +54,6 @@ const SESSION_KEYS = [
   'ss.session',
 ];
 
-// Our own persisted "this device is linked to StarSeed" marker.
 const LOCAL_LINK_KEY = 'audiomorphic.starseed.linked.v2';
 
 const safeGet = (key: string): string | null => {
@@ -76,7 +75,6 @@ const safeParse = (raw: string | null): StarSeedSession | null => {
   try {
     const parsed = JSON.parse(trimmed);
     if (parsed && typeof parsed === 'object') {
-      // If it's a Supabase session token object
       if (parsed.user && typeof parsed.user === 'object') {
         const u = parsed.user;
         return {
@@ -92,7 +90,7 @@ const safeParse = (raw: string | null): StarSeedSession | null => {
       return parsed as StarSeedSession;
     }
   } catch {
-    /* ignore malformed JSON */
+    /* ignore */
   }
   return null;
 };
@@ -115,7 +113,13 @@ const detectFromUrl = (): boolean => {
 const detectGlobal = (): StarSeedSession | null => {
   try {
     const w = window as any;
-    const g = w?.StarSeed || w?.starSeed || w?.STARSEED || w?.__STARSEED_OS__ || w?.parent?.StarSeed || w?.parent?.starSeed;
+    const g =
+      w?.StarSeed ||
+      w?.starSeed ||
+      w?.STARSEED ||
+      w?.__STARSEED_OS__ ||
+      w?.parent?.StarSeed ||
+      w?.parent?.starSeed;
     if (!g) return null;
     if (g.session && typeof g.session === 'object') return g.session as StarSeedSession;
     if (g.user && typeof g.user === 'object') return g.user as StarSeedSession;
@@ -126,335 +130,130 @@ const detectGlobal = (): StarSeedSession | null => {
   return null;
 };
 
-const resolveDisplayName = (s: StarSeedSession | null): string | null => {
-  if (!s) return null;
-  const candidate =
-    (typeof s.name === 'string' && s.name) ||
-    (typeof (s as any).displayName === 'string' && (s as any).displayName) ||
-    (typeof (s as any).username === 'string' && (s as any).username) ||
-    (typeof s.handle === 'string' && s.handle) ||
-    (typeof s.email === 'string' && s.email?.split('@')[0]) ||
-    null;
-  return candidate || 'Identidad Soberana';
-};
-
 export const useStarSeedIdentity = (): StarSeedIdentity => {
-  const [session, setSession] = useState<StarSeedSession | null>(null);
+  const {
+    user: authUser,
+    profile: authProfile,
+    loginWithIdentifier,
+    signUpWithIdentifier,
+    activateSovereignSession,
+    logout: authLogout,
+  } = useAuth();
+
+  const [fallbackSession, setFallbackSession] = useState<StarSeedSession | null>(null);
   const [cameFromOS, setCameFromOS] = useState(false);
-  const [profile, setProfile] = useState<StarSeedProfile | null>(null);
-
-  const fetchProfile = useCallback(async (userId: string) => {
-    try {
-      const db = getStarSeedDb();
-      const { data } = await db
-        .from('os_profiles')
-        .select('*')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      if (data) {
-        setProfile(data as StarSeedProfile);
-      }
-    } catch {
-      /* ignore */
-    }
-  }, []);
 
   const refresh = useCallback(() => {
     try {
       const fromUrl = detectFromUrl();
-      let detectedSession = detectGlobal();
+      setCameFromOS(fromUrl);
 
-      if (!detectedSession) {
+      let detected = detectGlobal();
+      if (!detected) {
         for (const key of SESSION_KEYS) {
           const parsed = safeParse(safeGet(key));
-          if (parsed) {
-            detectedSession = parsed;
+          if (parsed && (parsed.id || parsed.email)) {
+            detected = parsed;
             break;
           }
         }
       }
-
-      if (!detectedSession) {
-        const linked = safeParse(safeGet(LOCAL_LINK_KEY));
-        if (linked) detectedSession = linked;
+      if (!detected && fromUrl) {
+        detected = { id: 'starseed-os', name: 'Identidad StarSeed OS' };
       }
-
-      if (!detectedSession && fromUrl) {
-        detectedSession = { id: 'starseed-os', name: 'Identidad StarSeed OS' };
-      }
-
-      setSession(detectedSession);
-      setCameFromOS(fromUrl);
-
-      if (detectedSession?.id && detectedSession.id !== 'starseed-os') {
-        fetchProfile(detectedSession.id);
-      }
+      setFallbackSession(detected);
     } catch {
-      setSession(null);
+      setFallbackSession(null);
       setCameFromOS(false);
     }
-  }, [fetchProfile]);
+  }, []);
 
   useEffect(() => {
     refresh();
-
-    // Supabase auth state listener
-    let authSub: any = null;
-    try {
-      const db = getStarSeedDb();
-      const res = db.auth.onAuthStateChange((event, s) => {
-        if (s?.user) {
-          const sObj: StarSeedSession = {
-            id: s.user.id,
-            email: s.user.email,
-            name: s.user.user_metadata?.full_name || s.user.email?.split('@')[0],
-            handle: s.user.user_metadata?.handle,
-            avatarUrl: s.user.user_metadata?.avatar_url,
-            access_token: s.access_token,
-            refresh_token: s.refresh_token,
-          };
-          setSession(sObj);
-          fetchProfile(s.user.id);
-        } else if (event === 'SIGNED_OUT') {
-          refresh();
-        }
-      });
-      authSub = res.data;
-    } catch {
-      /* ignore */
-    }
-
-    const onSessionSync = () => {
-      refresh();
-    };
-    window.addEventListener('starseed:session-changed', onSessionSync);
-    window.addEventListener('storage', onSessionSync);
-
+    const onSync = () => refresh();
+    window.addEventListener('starseed:session-changed', onSync);
+    window.addEventListener('storage', onSync);
     return () => {
-      authSub?.subscription?.unsubscribe?.();
-      window.removeEventListener('starseed:session-changed', onSessionSync);
-      window.removeEventListener('storage', onSessionSync);
+      window.removeEventListener('starseed:session-changed', onSync);
+      window.removeEventListener('storage', onSync);
     };
-  }, [refresh, fetchProfile]);
+  }, [refresh]);
+
+  const activeSession = useMemo<StarSeedSession | null>(() => {
+    if (authUser) {
+      return {
+        id: authUser.id,
+        email: authUser.email,
+        name:
+          authProfile?.displayName ||
+          (authUser.user_metadata as any)?.full_name ||
+          authUser.email?.split('@')[0] ||
+          'Viajero StarSeed',
+        handle: authProfile?.handle || (authUser.user_metadata as any)?.handle || undefined,
+        avatarUrl: authProfile?.avatarUrl || (authUser.user_metadata as any)?.avatar_url || undefined,
+        plan: 'lifetime',
+      };
+    }
+    return fallbackSession;
+  }, [authUser, authProfile, fallbackSession]);
 
   const linkStarSeed = useCallback(
     (incoming?: StarSeedSession) => {
       const next: StarSeedSession = incoming || { id: 'starseed-os', name: 'Cuenta StarSeed' };
       try {
         window.localStorage.setItem(LOCAL_LINK_KEY, JSON.stringify(next));
-        window.dispatchEvent(new CustomEvent('starseed:session-changed', { detail: next }));
       } catch {
         /* ignore */
       }
-      setSession(next);
+      activateSovereignSession(next.email, next.name);
+      setFallbackSession(next);
     },
-    []
+    [activateSovereignSession]
   );
 
   const unlinkStarSeed = useCallback(() => {
     try {
       window.localStorage.removeItem(LOCAL_LINK_KEY);
-      window.localStorage.removeItem('starseed_sovereign_user');
-      window.localStorage.removeItem('starseed.session');
-      window.dispatchEvent(new CustomEvent('starseed:session-changed', { detail: null }));
     } catch {
       /* ignore */
     }
-    refresh();
-  }, [refresh]);
+    setFallbackSession(null);
+    void authLogout();
+  }, [authLogout]);
 
-  const isEgressRestricted = (err: any) => {
-    if (!err) return false;
-    const msg = (err.message || String(err)).toLowerCase();
-    return (
-      msg.includes('exceed_egress_quota') ||
-      msg.includes('spend caps') ||
-      msg.includes('restricted') ||
-      msg.includes('quota') ||
-      msg.includes('failed to fetch') ||
-      msg.includes('networkerror') ||
-      msg.includes('network error') ||
-      msg.includes('timeout') ||
-      msg.includes('cors') ||
-      msg.includes('load failed') ||
-      err.status === 402 ||
-      err.status === 403 ||
-      err.status === 500 ||
-      err.status === 502 ||
-      err.status === 503 ||
-      err.status === 504
-    );
-  };
-
-  const loginWithEmail = useCallback(async (email: string, pass: string) => {
-    try {
-      const db = getStarSeedDb();
-      const { data, error } = await db.auth.signInWithPassword({
-        email: email.trim(),
-        password: pass,
-      });
-      if (error) {
-        if (isEgressRestricted(error)) {
-          const cleanHandle = email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '');
-          const sObj: StarSeedSession = {
-            id: 'starseed-' + (cleanHandle || 'sovereign'),
-            email: email.trim(),
-            name: email.split('@')[0],
-            handle: '@' + (cleanHandle || 'sovereign'),
-            plan: 'lifetime',
-          };
-          try {
-            window.localStorage.setItem('starseed_sovereign_user', JSON.stringify({
-              id: sObj.id,
-              email: sObj.email,
-              user_metadata: { full_name: sObj.name, name: sObj.name, handle: sObj.handle },
-              app_metadata: { provider: 'starseed_sovereign' },
-              aud: 'authenticated',
-              role: 'authenticated',
-            }));
-          } catch {}
-          linkStarSeed(sObj);
-          return { ok: true };
-        }
-        return { ok: false, error: error.message };
-      }
-      if (data.user) {
-        const sObj: StarSeedSession = {
-          id: data.user.id,
-          email: data.user.email,
-          name: data.user.user_metadata?.full_name || data.user.email?.split('@')[0],
-          handle: data.user.user_metadata?.handle,
-          avatarUrl: data.user.user_metadata?.avatar_url,
-        };
-        linkStarSeed(sObj);
-        return { ok: true };
-      }
-      return { ok: true };
-    } catch (e: any) {
-      if (isEgressRestricted(e)) {
-        const cleanHandle = email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '');
-        const sObj: StarSeedSession = {
-          id: 'starseed-' + (cleanHandle || 'sovereign'),
-          email: email.trim(),
-          name: email.split('@')[0],
-          handle: '@' + (cleanHandle || 'sovereign'),
-          plan: 'lifetime',
-        };
-        try {
-          window.localStorage.setItem('starseed_sovereign_user', JSON.stringify({
-            id: sObj.id,
-            email: sObj.email,
-            user_metadata: { full_name: sObj.name, name: sObj.name, handle: sObj.handle },
-            app_metadata: { provider: 'starseed_sovereign' },
-            aud: 'authenticated',
-            role: 'authenticated',
-          }));
-        } catch {}
-        linkStarSeed(sObj);
-        return { ok: true };
-      }
-      return { ok: false, error: e?.message || 'Error al iniciar sesión' };
+  const displayName = useMemo(() => {
+    if (authProfile?.displayName) return authProfile.displayName;
+    if (activeSession?.name && typeof activeSession.name === 'string') return activeSession.name;
+    if (activeSession?.handle && typeof activeSession.handle === 'string') return activeSession.handle;
+    if (activeSession?.email && typeof activeSession.email === 'string') {
+      return activeSession.email.split('@')[0];
     }
-  }, [linkStarSeed]);
+    return activeSession ? 'Identidad StarSeed' : null;
+  }, [authProfile, activeSession]);
 
-  const signUpWithEmail = useCallback(async (email: string, pass: string, name?: string) => {
-    try {
-      const db = getStarSeedDb();
-      const { data, error } = await db.auth.signUp({
-        email: email.trim(),
-        password: pass,
-        options: {
-          data: {
-            full_name: name || email.split('@')[0],
-          },
-        },
-      });
-      if (error) {
-        if (isEgressRestricted(error)) {
-          const cleanHandle = email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '');
-          const sObj: StarSeedSession = {
-            id: 'starseed-' + (cleanHandle || 'sovereign'),
-            email: email.trim(),
-            name: name || email.split('@')[0],
-            handle: '@' + (cleanHandle || 'sovereign'),
-            plan: 'lifetime',
-          };
-          try {
-            window.localStorage.setItem('starseed_sovereign_user', JSON.stringify({
-              id: sObj.id,
-              email: sObj.email,
-              user_metadata: { full_name: sObj.name, name: sObj.name, handle: sObj.handle },
-              app_metadata: { provider: 'starseed_sovereign' },
-              aud: 'authenticated',
-              role: 'authenticated',
-            }));
-          } catch {}
-          linkStarSeed(sObj);
-          return { ok: true };
-        }
-        return { ok: false, error: error.message };
-      }
-      if (data.user) {
-        const sObj: StarSeedSession = {
-          id: data.user.id,
-          email: data.user.email,
-          name: name || data.user.email?.split('@')[0],
-        };
-        linkStarSeed(sObj);
-        return { ok: true };
-      }
-      return { ok: true };
-    } catch (e: any) {
-      if (isEgressRestricted(e)) {
-        const cleanHandle = email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '');
-        const sObj: StarSeedSession = {
-          id: 'starseed-' + (cleanHandle || 'sovereign'),
-          email: email.trim(),
-          name: name || email.split('@')[0],
-          handle: '@' + (cleanHandle || 'sovereign'),
-          plan: 'lifetime',
-        };
-        try {
-          window.localStorage.setItem('starseed_sovereign_user', JSON.stringify({
-            id: sObj.id,
-            email: sObj.email,
-            user_metadata: { full_name: sObj.name, name: sObj.name, handle: sObj.handle },
-            app_metadata: { provider: 'starseed_sovereign' },
-            aud: 'authenticated',
-            role: 'authenticated',
-          }));
-        } catch {}
-        linkStarSeed(sObj);
-        return { ok: true };
-      }
-      return { ok: false, error: e?.message || 'Error al registrarse' };
-    }
-  }, [linkStarSeed]);
-
-  const logout = useCallback(async () => {
-    try {
-      const db = getStarSeedDb();
-      await db.auth.signOut();
-    } catch {
-      /* ignore */
-    }
-    unlinkStarSeed();
-  }, [unlinkStarSeed]);
+  const handle = useMemo(() => {
+    if (authProfile?.handle) return authProfile.handle;
+    if (activeSession?.handle) return String(activeSession.handle);
+    return null;
+  }, [authProfile, activeSession]);
 
   return {
-    isLoggedIn: !!session,
-    session,
-    displayName: profile?.display_name || resolveDisplayName(session),
-    handle: profile?.handle || (session?.handle as string) || (session?.name ? `@${session.name.toLowerCase().replace(/\s+/g, '')}` : null),
-    avatarUrl: profile?.avatar_url || (session?.avatarUrl as string) || null,
+    isLoggedIn: Boolean(activeSession),
+    user: activeSession,
+    session: activeSession,
+    displayName,
+    handle,
+    avatarUrl: authProfile?.avatarUrl || (activeSession?.avatarUrl as string) || null,
+    starseedAddress:
+      authProfile?.starseedAddress ||
+      (handle ? `${handle.replace(/^@/, '')}@star.seed` : null),
     cameFromOS,
     linkStarSeed,
     unlinkStarSeed,
     refresh,
-    loginWithEmail,
-    signUpWithEmail,
-    logout,
+    loginWithEmail: loginWithIdentifier,
+    signUpWithEmail: signUpWithIdentifier,
+    logout: authLogout,
   };
 };
 

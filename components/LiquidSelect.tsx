@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import ReactDOM from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { ChevronDown, Lock } from 'lucide-react';
 
 interface Option {
@@ -21,7 +21,7 @@ const LiquidSelect: React.FC<LiquidSelectProps> = ({ value, onChange, options, p
   const containerRef = useRef<HTMLDivElement>(null);
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null);
 
-  const selectedOption = options.find(opt => opt.value === value);
+  const selectedOption = options.find((opt) => opt.value === value);
 
   const updateDropdownPosition = useCallback(() => {
     if (containerRef.current && isOpen) {
@@ -37,7 +37,6 @@ const LiquidSelect: React.FC<LiquidSelectProps> = ({ value, onChange, options, p
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        // Also check if clicking inside the portal dropdown
         const portalEl = document.getElementById('liquid-select-portal');
         if (portalEl && portalEl.contains(event.target as Node)) return;
         setIsOpen(false);
@@ -50,7 +49,6 @@ const LiquidSelect: React.FC<LiquidSelectProps> = ({ value, onChange, options, p
   useEffect(() => {
     if (isOpen) {
       updateDropdownPosition();
-      // Update position on scroll/resize
       const handleScroll = () => updateDropdownPosition();
       window.addEventListener('scroll', handleScroll, true);
       window.addEventListener('resize', handleScroll);
@@ -61,7 +59,6 @@ const LiquidSelect: React.FC<LiquidSelectProps> = ({ value, onChange, options, p
     }
   }, [isOpen, updateDropdownPosition]);
 
-  // Ensure portal root exists
   useEffect(() => {
     if (!document.getElementById('liquid-select-portal')) {
       const portal = document.createElement('div');
@@ -77,70 +74,67 @@ const LiquidSelect: React.FC<LiquidSelectProps> = ({ value, onChange, options, p
     }
   }, []);
 
-  const dropdownContent = isOpen && dropdownPos ? ReactDOM.createPortal(
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0, y: -10, scale: 0.95 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: -10, scale: 0.95 }}
-        transition={{ duration: 0.2, ease: "easeOut" }}
-        style={{
-          position: 'fixed',
-          top: dropdownPos.top,
-          left: dropdownPos.left,
-          width: dropdownPos.width,
-          zIndex: 99999,
-          pointerEvents: 'auto',
-        }}
-        className="p-1 rounded-xl
-                   bg-[#0a0f14]/95 border border-cyan-500/60 backdrop-blur-3xl
-                   shadow-[0_20px_60px_rgba(0,0,0,0.8),0_0_30px_rgba(0,255,255,0.2)]
-                   overflow-hidden"
-      >
-        <div className="max-h-60 overflow-y-auto custom-scrollbar">
-          {options.map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => {
-                onChange(opt.value);
-                setIsOpen(false);
+  const dropdownContent =
+    isOpen && dropdownPos
+      ? ReactDOM.createPortal(
+          <AnimatePresence>
+            <motion.div
+              initial={{ opacity: 0, y: -10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              style={{
+                position: 'fixed',
+                top: dropdownPos.top,
+                left: dropdownPos.left,
+                width: dropdownPos.width,
+                zIndex: 99999,
+                pointerEvents: 'auto',
               }}
-              className={`w-full px-4 py-3 flex items-center justify-between text-sm rounded-lg transition-colors
-                         ${value === opt.value 
-                           ? 'bg-cyan-500/20 text-cyan-300 font-bold' 
-                           : 'text-white/80 hover:bg-white/10 hover:text-white'}`}
+              className="p-1.5 rounded-xl art-nouveau-frame backdrop-blur-3xl overflow-hidden"
             >
-              <span className="truncate">{opt.label}</span>
-              {opt.locked && <Lock size={14} className="text-purple-400 opacity-70" />}
-            </button>
-          ))}
-        </div>
-      </motion.div>
-    </AnimatePresence>,
-    document.getElementById('liquid-select-portal') || document.body
-  ) : null;
+              <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                {options.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => {
+                      onChange(opt.value);
+                      setIsOpen(false);
+                    }}
+                    className={`w-full px-3.5 py-2.5 flex items-center justify-between text-sm rounded-lg transition-all cursor-pointer ${
+                      value === opt.value
+                        ? 'morph-tab-active font-bold'
+                        : 'text-white/85 hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    <span className="truncate">{opt.label}</span>
+                    {opt.locked && <Lock size={14} className="text-purple-300 opacity-70" />}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          </AnimatePresence>,
+          document.getElementById('liquid-select-portal') || document.body
+        )
+      : null;
 
   return (
     <>
       <div className="relative w-full" ref={containerRef}>
         <button
+          type="button"
           onClick={() => setIsOpen(!isOpen)}
-          className="w-full h-11 px-4 flex items-center justify-between rounded-xl 
-                     bg-black/40 border border-cyan-500/30 backdrop-blur-md
-                     text-white hover:border-cyan-400 transition-all duration-300
-                     shadow-[0_0_15px_rgba(0,255,255,0.05)]"
+          className="w-full h-11 px-4 flex items-center justify-between rounded-xl morph-btn-glass text-white transition-all duration-300 cursor-pointer"
         >
           <div className="flex items-center gap-2 overflow-hidden">
-            {selectedOption?.locked && <Lock size={14} className="text-purple-400 shrink-0" />}
+            {selectedOption?.locked && <Lock size={14} className="text-purple-300 shrink-0" />}
             <span className="text-sm font-medium truncate">
               {selectedOption ? selectedOption.label : placeholder || 'Seleccionar...'}
             </span>
           </div>
-          <motion.div
-            animate={{ rotate: isOpen ? 180 : 0 }}
-            transition={{ duration: 0.3, ease: "circOut" }}
-          >
-            <ChevronDown size={18} className="text-cyan-400" />
+          <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.3, ease: 'circOut' }}>
+            <ChevronDown size={18} className="morph-accent-text" />
           </motion.div>
         </button>
       </div>

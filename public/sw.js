@@ -1,9 +1,8 @@
-/* AudioMorphic Visualizer · Service Worker (minimal, safe)
+/* AudioMorphic Visualizer · Service Worker (PWA Web HTTPS only)
    - network-first para navegación (HTML): siempre intenta red, cae a caché offline
    - cache-first para estáticos del propio origen (js/css/img/fonts/wasm)
-   - NUNCA cachea /api/ ni orígenes externos ni peticiones no-GET
-   Aditivo y defensivo: si algo falla, la app sigue funcionando desde la red. */
-const CACHE = 'audiomorphic-v1.2.1';
+   - NUNCA cachea /api/, Supabase ni esquemas no HTTP(S) */
+const CACHE = 'audiomorphic-v1.3.0';
 const CORE = ['./', './index.html', './manifest.webmanifest', './favicon.ico'];
 
 self.addEventListener('install', (e) => {
@@ -27,10 +26,10 @@ self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
-  if (url.origin !== self.location.origin) return;      // no tocar orígenes externos (esm.sh, CDNs, APIs)
-  if (url.pathname.startsWith('/api/')) return;          // nunca cachear API
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
+  if (url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith('/api/')) return;
 
-  // Navegación (documentos HTML): network-first
   if (req.mode === 'navigate' || (req.headers.get('accept') || '').includes('text/html')) {
     event.respondWith(
       fetch(req).then((res) => {
@@ -42,7 +41,6 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Estáticos del propio origen: cache-first
   if (isStatic(url)) {
     event.respondWith(
       caches.match(req).then((cached) => cached || fetch(req).then((res) => {

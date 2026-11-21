@@ -27,7 +27,6 @@ export interface UseStarSeedSyncResult {
 }
 
 export function useStarSeedSync(userId?: string | null): UseStarSeedSyncResult {
-  // 1. Initial local state
   const [customPresets, setCustomPresets] = useState<AudiomorphicPresetRecord[]>(() => {
     try {
       if (typeof window === 'undefined') return [];
@@ -70,7 +69,6 @@ export function useStarSeedSync(userId?: string | null): UseStarSeedSyncResult {
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'synced' | 'offline' | 'error'>('idle');
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
 
-  // 2. Persist local changes
   const persistCustomPresets = useCallback((list: AudiomorphicPresetRecord[]) => {
     setCustomPresets(list);
     try {
@@ -107,10 +105,8 @@ export function useStarSeedSync(userId?: string | null): UseStarSeedSyncResult {
     }
   }, []);
 
-  // 3. Combined list of presets (defaults + custom presets)
   const presets = useMemo(() => {
     const combined = [...DEFAULT_PRESETS, ...customPresets];
-    // deduplicate by id
     const map = new Map<string, AudiomorphicPresetRecord>();
     for (const p of combined) {
       map.set(p.id, p);
@@ -118,7 +114,6 @@ export function useStarSeedSync(userId?: string | null): UseStarSeedSyncResult {
     return Array.from(map.values());
   }, [customPresets]);
 
-  // 4. Sorted presets according to orderMap
   const allPresetsOrdered = useMemo(() => {
     const sorted = [...presets];
     if (orderMap.length > 0) {
@@ -136,9 +131,9 @@ export function useStarSeedSync(userId?: string | null): UseStarSeedSyncResult {
     return sorted;
   }, [presets, orderMap]);
 
-  // 5. Cloud synchronization with Supabase pqzdpmedcsgcedkvndzl
+  // Cloud synchronization with active StarSeed OS project (jhgvhkypqadfdkkqoxta)
   const syncWithCloud = useCallback(async () => {
-    if (!userId) {
+    if (!userId || userId.startsWith('starseed-')) {
       setSyncStatus('idle');
       return;
     }
@@ -152,8 +147,9 @@ export function useStarSeedSync(userId?: string | null): UseStarSeedSyncResult {
     try {
       const supabase = getStarSeedDb();
 
-      // Read from user_settings with timeout
-      const timeout = new Promise<any>((resolve) => setTimeout(() => resolve({ error: { message: 'timeout' } }), 1500));
+      const timeout = new Promise<any>((resolve) =>
+        setTimeout(() => resolve({ error: { message: 'timeout' } }), 2500)
+      );
       const req = supabase
         .from('user_settings')
         .select('prefs')
@@ -163,7 +159,6 @@ export function useStarSeedSync(userId?: string | null): UseStarSeedSyncResult {
       const { data, error } = await Promise.race([req, timeout]);
 
       if (error) {
-        console.warn('[StarSeedSync] Error reading user_settings:', error.message);
         setSyncStatus('offline');
         return;
       }
@@ -174,28 +169,23 @@ export function useStarSeedSync(userId?: string | null): UseStarSeedSyncResult {
       const remoteOrder: string[] = remotePrefs.audiomorphic_order || [];
       const remoteFolder: string = remotePrefs.audiomorphic_card_folder || '';
 
-      // Merge presets (union by ID)
       const mergedPresetsMap = new Map<string, AudiomorphicPresetRecord>();
       for (const p of customPresets) mergedPresetsMap.set(p.id, p);
       for (const p of remotePresets) mergedPresetsMap.set(p.id, p);
       const mergedCustom = Array.from(mergedPresetsMap.values());
 
-      // Merge cards (union by ID)
       const mergedCardsMap = new Map<string, ThankYouCardRecord>();
       for (const c of thankYouCards) mergedCardsMap.set(c.id, c);
       for (const c of remoteCards) mergedCardsMap.set(c.id, c);
       const mergedCards = Array.from(mergedCardsMap.values());
 
-      // Merge order
       const finalOrder = remoteOrder.length > 0 ? remoteOrder : orderMap;
 
-      // Update local
       persistCustomPresets(mergedCustom);
       persistCards(mergedCards);
       if (finalOrder.length > 0) persistOrder(finalOrder);
       if (remoteFolder) setPreferredCardFolder(remoteFolder);
 
-      // Push merged back to Supabase
       const updatedPrefs = {
         ...remotePrefs,
         audiomorphic_presets: mergedCustom,
@@ -215,22 +205,31 @@ export function useStarSeedSync(userId?: string | null): UseStarSeedSyncResult {
 
       setSyncStatus('synced');
       setLastSyncedAt(new Date().toLocaleTimeString());
-    } catch (err) {
-      console.warn('[StarSeedSync] Sincronización falló de forma no bloqueante:', err);
+    } catch {
       setSyncStatus('offline');
     }
-  }, [userId, customPresets, thankYouCards, orderMap, preferredCardFolder, persistCustomPresets, persistCards, persistOrder, setPreferredCardFolder]);
+  }, [
+    userId,
+    customPresets,
+    thankYouCards,
+    orderMap,
+    preferredCardFolder,
+    persistCustomPresets,
+    persistCards,
+    persistOrder,
+    setPreferredCardFolder,
+  ]);
 
-  // Sync on userId change
   useEffect(() => {
     if (userId) {
       syncWithCloud();
     }
   }, [userId]);
 
-  // 6. Action handlers
   const savePreset = useCallback(
-    async (draft: Omit<AudiomorphicPresetRecord, 'id' | 'createdAt' | 'updatedAt' | 'orderIndex'>): Promise<AudiomorphicPresetRecord> => {
+    async (
+      draft: Omit<AudiomorphicPresetRecord, 'id' | 'createdAt' | 'updatedAt' | 'orderIndex'>
+    ): Promise<AudiomorphicPresetRecord> => {
       const id = 'preset-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7);
       const now = new Date().toISOString();
       const newPreset: AudiomorphicPresetRecord = {
@@ -245,7 +244,6 @@ export function useStarSeedSync(userId?: string | null): UseStarSeedSyncResult {
       persistCustomPresets(updated);
       persistOrder([id, ...orderMap]);
 
-      // Trigger cloud sync in background if logged in
       if (userId) {
         setTimeout(() => syncWithCloud(), 100);
       }

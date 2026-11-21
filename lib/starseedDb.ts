@@ -1,37 +1,34 @@
 /**
  * starseedDb.ts
  * ---------------------------------------------------------------------------
- * Conexión soberana con la nueva base de datos de StarSeed OS.
- * Proyecto activo (migrado el 2026-08-30): pqzdpmedcsgcedkvndzl
- * URL: https://pqzdpmedcsgcedkvndzl.supabase.co
+ * Re-exporta el cliente Supabase compartido del ecosistema StarSeed OS
+ * junto con las definiciones de tipos para perfiles, tarjetas 3D y presets.
  *
  * Principios:
- *  - LOCAL ES LA VERDAD: Tolerante a fallos sin conexión; el almacenamiento local
- *    (localStorage) siempre prevalece y mantiene al usuario operativo.
- *  - NUBE SOBERANA: Sincronización bidireccional con las tablas `user_settings`,
- *    `entity_state` y perfiles de `os_profiles`.
+ *  - LOCAL ES LA VERDAD: la aplicacion opera al 100% de manera autonoma sin
+ *    necesidad de conexion previa ni dependencias externas.
+ *  - NUBE SOBERANA: cuando hay sesion e internet, sincroniza en tiempo real
+ *    con los cerebros, folders y neuronas de StarSeed OS.
  */
 
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { supabase, STARSEED_SUPABASE_URL, STARSEED_SUPABASE_ANON_KEY } from './supabaseClient';
 
-export const STARSEED_SUPABASE_URL = 'https://pqzdpmedcsgcedkvndzl.supabase.co';
-export const STARSEED_SUPABASE_ANON_KEY =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBxemRwbWVkY3NnY2Vka3ZuZHpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgxMTk1MTIsImV4cCI6MjEwMzY5NTUxMn0.PSICGp-7LczYnrcv2oCDpozR3Khfbxe6vADUVNuvC-k';
-
-let clientInstance: SupabaseClient | null = null;
+export { STARSEED_SUPABASE_URL, STARSEED_SUPABASE_ANON_KEY };
 
 export function getStarSeedDb(): SupabaseClient {
-  if (!clientInstance) {
-    clientInstance = createClient(STARSEED_SUPABASE_URL, STARSEED_SUPABASE_ANON_KEY, {
-      auth: {
-        persistSession: true,
-        storageKey: 'starseed.auth',
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
-      },
-    });
-  }
-  return clientInstance;
+  return supabase;
+}
+
+export interface Preset {
+  id: string;
+  name: string;
+  description?: string;
+  params: string; // JSON string
+  createdAt: number;
+  updatedAt?: number;
+  folder?: string;
+  category?: string;
 }
 
 export interface StarSeedProfile {
@@ -40,6 +37,7 @@ export interface StarSeedProfile {
   handle?: string;
   display_name?: string;
   avatar_url?: string;
+  cover_url?: string;
   bio?: string;
   updated_at?: string;
 }
@@ -52,7 +50,7 @@ export interface ThankYouCardRecord {
   tierName: string;
   amount: string;
   issuedAt: string;
-  folderPath: string; // Ubicación en biblioteca, e.g. "Biblioteca/Donaciones/Tarjetas"
+  folderPath: string;
   cardTheme: 'gold' | 'iridescent' | 'holographic' | 'celestial';
   message?: string;
 }

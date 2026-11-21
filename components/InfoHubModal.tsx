@@ -46,7 +46,11 @@ import {
   FolderPlus,
   Play,
   CheckCircle2,
-  Terminal
+  Terminal,
+  Cpu,
+  Wifi,
+  WifiOff,
+  HardDrive
 } from 'lucide-react';
 import { StarSeedIdentity } from '../hooks/useStarSeedIdentity';
 import { UseSubscriptionResult, PlanId } from '../hooks/useSubscription';
@@ -58,6 +62,7 @@ import { ThankYouCardRecord, AudiomorphicPresetRecord } from '../lib/starseedDb'
 import { VisualizerParams } from '../types';
 import { useAppUpdate } from '../hooks/useAppUpdate';
 import { openExternalUrl, buildStarSeedOsHandoffUrl } from '../utils/platform';
+import { STARSEED_OS_OFFICIAL_URL } from '../lib/supabaseClient';
 
 export type InfoHubTab = 'donations' | 'guide' | 'updates' | 'ecosystem' | 'account' | 'presets';
 
@@ -153,6 +158,17 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
 
   // Hook del sistema inteligente de actualizaciones y descargas
   const updateSystem = useAppUpdate();
+  const presetsManager = usePresets();
+
+  // Cerrar con Escape
+  React.useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, onClose]);
 
   // Sincronizar pestaña inicial al abrir
   React.useEffect(() => {
@@ -161,13 +177,17 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
     }
   }, [open, initialTab]);
 
-  // Account form state
+  // Account & Brains form state
   const [emailInput, setEmailInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [authNotice, setAuthNotice] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(false);
   const [handoffLoading, setHandoffLoading] = useState(false);
+  const [newBrainName, setNewBrainName] = useState('');
+  const [brainBusy, setBrainBusy] = useState(false);
+  const [brainNotice, setBrainNotice] = useState<string | null>(null);
 
   // Donations state: Tarjeta 3D activa
   const [activeCard, setActiveCard] = useState<ThankYouCardRecord | null>(() => {
@@ -177,7 +197,6 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
   // Presets category filter & Community state
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const community = usePresetCommunity();
-  const presetsManager = usePresets();
   const [expandedCardSection, setExpandedCardSection] = useState<Record<string, 'none' | 'music' | 'comments'>>({});
   const [appliedNotification, setAppliedNotification] = useState<string | null>(null);
   const [installModalPreset, setInstallModalPreset] = useState<AudiomorphicPresetRecord | null>(null);
@@ -209,27 +228,19 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
   const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError(null);
+    setAuthNotice(null);
     setAuthLoading(true);
     try {
       if (isRegistering) {
         const res = await identity.signUpWithEmail(emailInput, passwordInput);
         if (!res.ok) setAuthError(res.error || 'Error al registrar la cuenta');
+        else if (res.error) setAuthNotice(res.error);
       } else {
         const res = await identity.loginWithEmail(emailInput, passwordInput);
         if (!res.ok) setAuthError(res.error || 'Error al iniciar sesión');
       }
-    } catch {
-      // Fallback soberano automático ante cualquier imprevisto de red/cuota
-      const emailToUse = emailInput.trim() || 'soberano@star.seed';
-      const cleanHandle = emailToUse.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '') || 'soberano';
-      const sovSession = {
-        id: 'starseed-' + cleanHandle,
-        email: emailToUse,
-        name: emailToUse.split('@')[0],
-        handle: '@' + cleanHandle,
-        plan: 'lifetime',
-      };
-      identity.linkStarSeed(sovSession);
+    } catch (err: any) {
+      setAuthError(err?.message || 'No se pudo conectar con StarSeed OS.');
     } finally {
       setAuthLoading(false);
     }
@@ -278,48 +289,56 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
         @keyframes ssTunnel { 0% { transform: scale(.2); opacity:0;} 20%{opacity:.9;} 100% { transform: scale(2.4); opacity:0;} }
         
         .info-hub-shell {
-          background: rgba(10, 14, 26, 0.92);
-          backdrop-filter: blur(40px) saturate(200%);
-          -webkit-backdrop-filter: blur(40px) saturate(200%);
-          border: 1px solid rgba(255, 255, 255, 0.15);
-          box-shadow: 0 40px 100px rgba(0, 0, 0, 0.85), inset 0 1px 2px rgba(255, 255, 255, 0.3);
+          background: linear-gradient(
+            158deg,
+            hsla(var(--morph-hue-1) 60% 11% / 0.94) 0%,
+            rgba(6, 9, 18, 0.96) 52%,
+            hsla(var(--morph-hue-3) 56% 10% / 0.94) 100%
+          );
+          backdrop-filter: blur(40px) saturate(190%);
+          -webkit-backdrop-filter: blur(40px) saturate(190%);
+          border: 1px solid hsla(var(--morph-hue-1) 88% 66% / 0.45);
+          box-shadow:
+            0 40px 100px rgba(0, 0, 0, 0.88),
+            0 0 55px -12px hsla(var(--morph-hue-1) 92% 60% / var(--morph-glow-alpha)),
+            inset 0 1px 1px hsla(var(--morph-hue-2) 92% 85% / 0.25);
           border-radius: 32px;
         }
         .hub-scroll::-webkit-scrollbar { width: 8px; }
         .hub-scroll::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); border-radius: 8px; }
-        .hub-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.22); border-radius: 8px; }
-        .hub-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.38); }
+        .hub-scroll::-webkit-scrollbar-thumb { background: hsla(var(--morph-hue-1) 82% 62% / 0.35); border-radius: 8px; }
+        .hub-scroll::-webkit-scrollbar-thumb:hover { background: hsla(var(--morph-hue-2) 86% 68% / 0.55); }
       `}</style>
 
       <div
         className="info-hub-shell w-full sm:w-[95vw] md:w-[90vw] max-w-6xl h-[100dvh] sm:h-[94vh] max-h-[920px] rounded-none sm:rounded-[32px] flex flex-col relative overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* SLIM UNIFIED APP BAR (Never obstructs content on smartphones or landscape) */}
-        <div className="px-3 sm:px-6 py-2.5 sm:py-3.5 border-b border-white/10 flex justify-between items-center bg-black/60 backdrop-blur-md shrink-0 z-20">
+        {/* SLIM UNIFIED APP BAR */}
+        <div className="px-3 sm:px-6 py-2.5 sm:py-3.5 border-b border-white/10 flex justify-between items-center bg-black/45 backdrop-blur-md shrink-0 z-20">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-500 to-purple-600 flex items-center justify-center p-0.5 shrink-0 shadow-[0_0_12px_rgba(6,182,212,0.4)]">
-              <Sparkles size={16} className="text-white animate-pulse" />
+            <div className="w-8 h-8 rounded-xl morph-pill flex items-center justify-center p-0.5 shrink-0">
+              <Sparkles size={16} className="animate-pulse" />
             </div>
             <div className="min-w-0">
-              <h2 className="text-sm sm:text-base font-extrabold text-white tracking-wide truncate flex items-center gap-1.5">
+              <h2 className="text-sm sm:text-base font-extrabold starseed-text-gradient tracking-wide truncate flex items-center gap-1.5">
                 <span>Audiomorphic Hub</span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 hidden sm:inline-block">v{updateSystem.currentVersion}</span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full morph-pill hidden sm:inline-block">v{updateSystem.currentVersion}</span>
               </h2>
-              <p className="text-[10px] text-gray-400 truncate hidden sm:block">Centro de Información, Ciencia, Descargas y Donaciones</p>
+              <p className="text-[10px] text-slate-300 truncate hidden sm:block">Centro de Información, Ciencia, Descargas y Cuenta StarSeed OS</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
             {identity.isLoggedIn ? (
-              <div className="hidden md:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[11px] font-mono">
+              <div className="hidden md:inline-flex items-center gap-1.5 px-3 py-1 rounded-full morph-pill text-[11px] font-mono">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                 <span className="max-w-[120px] truncate">{identity.displayName || identity.user?.email}</span>
               </div>
             ) : (
               <button 
                 onClick={() => setActiveTab('account')}
-                className="hidden md:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white text-[11px] font-medium transition-colors cursor-pointer"
+                className="hidden md:inline-flex items-center gap-1.5 px-3 py-1 rounded-full morph-btn-glass text-[11px] font-medium cursor-pointer"
               >
                 <User size={12} />
                 <span>Cuenta</span>
@@ -337,14 +356,14 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
           </div>
         </div>
 
-        {/* NAVIGATION TABS (Fluid horizontal scrolling, compact tap targets) */}
-        <div className="px-3 sm:px-6 py-2 bg-black/50 border-b border-white/10 flex gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar whitespace-nowrap shrink-0 z-10">
+        {/* NAVIGATION TABS */}
+        <div className="px-3 sm:px-6 py-2 bg-black/40 border-b border-white/10 flex gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar whitespace-nowrap shrink-0 z-10">
           {[
             { id: 'donations', label: 'Donaciones & Aportes', icon: <Heart size={14} /> },
             { id: 'guide', label: 'Sobre el Proyecto & Ciencia', icon: <BrainCircuit size={14} /> },
             { id: 'updates', label: 'Actualizaciones & Descargas', icon: <Download size={14} /> },
             { id: 'ecosystem', label: 'Ecosistema StarSeed', icon: <Globe size={14} /> },
-            { id: 'account', label: 'Mi Cuenta Soberana', icon: <User size={14} /> },
+            { id: 'account', label: 'Cuenta, Cerebros & Neuronas', icon: <User size={14} /> },
             { id: 'presets', label: 'Librería de Presets', icon: <Sparkles size={14} /> },
           ].map((tab) => {
             const isActive = activeTab === tab.id;
@@ -354,7 +373,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                 onClick={() => setActiveTab(tab.id as InfoHubTab)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[11px] sm:text-xs font-bold whitespace-nowrap transition-all shrink-0 cursor-pointer ${
                   isActive
-                    ? 'bg-gradient-to-r from-cyan-500/25 via-purple-500/25 to-emerald-500/25 text-white border border-cyan-400/50 shadow-[0_0_15px_rgba(0,242,254,0.2)]'
+                    ? 'morph-tab-active'
                     : 'text-gray-400 hover:text-gray-200 hover:bg-white/5 border border-transparent'
                 }`}
               >
@@ -1348,72 +1367,282 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
             </div>
           )}
 
-          {/* TAB 5: MI CUENTA STARSEED (Limpia sin código pqzdpmedcsgcedkvndzl) */}
+          {/* TAB 5: MI CUENTA STARSEED, CEREBROS & NEURONAS */}
           {activeTab === 'account' && (
-            <div className="space-y-8 animate-in fade-in duration-300">
-              <div className="p-6 rounded-3xl bg-gradient-to-r from-cyan-950/40 to-indigo-950/40 border border-cyan-500/30">
-                <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2.5">
-                  <Star className="text-cyan-400" />
-                  Identidad Soberana Unificada (StarSeed DB)
-                </h3>
-                <p className="text-xs text-gray-300 leading-relaxed">
-                  Tu cuenta está conectada a la base de datos soberana del ecosistema StarSeed OS. La misma sesión te da acceso unificado a Audiomorphic, al Café, al Nexus y a todos tus presets guardados en la nube.
-                </p>
+            <div className="space-y-6 animate-in fade-in duration-300">
+              <div className="p-6 rounded-3xl quantum-glass flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-xl font-bold starseed-text-gradient mb-1.5 flex items-center gap-2.5">
+                    <Star className="morph-accent-text" />
+                    Cuenta StarSeed OS, Cerebros y Neuronas
+                  </h3>
+                  <p className="text-xs text-slate-300 leading-relaxed max-w-2xl">
+                    La aplicación funciona al 100% de manera autónoma sin internet. Cuando conectas tu cuenta StarSeed OS, puedes elegir en qué <strong>Cerebro</strong> guardar tus folders y presets y sincronizar cambios en vivo entre todas tus <strong>Neuronas</strong> (dispositivos).
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className={`px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 border ${
+                    presetsManager.isOnline
+                      ? 'bg-emerald-500/15 border-emerald-400/40 text-emerald-300'
+                      : 'bg-amber-500/15 border-amber-400/40 text-amber-300'
+                  }`}>
+                    {presetsManager.isOnline ? <Wifi size={14} /> : <WifiOff size={14} />}
+                    <span>{presetsManager.isOnline ? 'En línea' : 'Modo Offline Autónomo'}</span>
+                  </span>
+                </div>
               </div>
 
               {identity.isLoggedIn ? (
-                /* Perfil conectado */
-                <div className="p-6 sm:p-8 rounded-3xl bg-black/40 border border-white/10 space-y-6">
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-2xl bg-cyan-500/20 border-2 border-cyan-400/50 flex items-center justify-center text-xl font-bold text-cyan-200 overflow-hidden shrink-0">
-                      {identity.avatarUrl ? (
-                        <img src={identity.avatarUrl} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        (identity.displayName || 'U').charAt(0).toUpperCase()
-                      )}
+                <div className="space-y-6">
+                  {/* Perfil conectado */}
+                  <div className="p-5 sm:p-6 rounded-3xl quantum-glass space-y-5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-16 h-16 rounded-2xl morph-pill flex items-center justify-center text-xl font-bold overflow-hidden shrink-0">
+                          {identity.avatarUrl ? (
+                            <img src={identity.avatarUrl} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            (identity.displayName || 'U').charAt(0).toUpperCase()
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="text-lg font-bold text-white truncate">{identity.displayName || 'Usuario StarSeed'}</h4>
+                          {identity.handle && (
+                            <p className="text-xs morph-accent-text flex items-center gap-1">
+                              <AtSign size={13} /> {identity.handle.replace(/^@/, '')}
+                            </p>
+                          )}
+                          <p className="text-xs text-slate-300 truncate mt-0.5">{identity.user?.email}</p>
+                          {identity.starseedAddress && (
+                            <p className="text-[11px] font-mono text-emerald-300 truncate mt-0.5">{identity.starseedAddress}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2.5">
+                        <button
+                          type="button"
+                          onClick={handleOpenStarSeedOS}
+                          disabled={handoffLoading}
+                          className="px-4 py-2.5 rounded-xl morph-btn-primary text-xs font-extrabold uppercase tracking-wider flex items-center gap-2 disabled:opacity-60 cursor-pointer"
+                        >
+                          {handoffLoading ? (
+                            <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          ) : (
+                            <Rocket size={15} />
+                          )}
+                          <span>Abrir StarSeed OS</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => identity.logout()}
+                          className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-red-500/20 text-gray-200 hover:text-red-300 border border-white/10 text-xs font-bold transition-all flex items-center gap-2 cursor-pointer"
+                        >
+                          <LogOut size={15} /> Cerrar Sesión
+                        </button>
+                      </div>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <h4 className="text-lg font-bold text-white truncate">{identity.displayName || 'Usuario Soberano'}</h4>
-                      {identity.handle && (
-                        <p className="text-xs text-cyan-300 flex items-center gap-1">
-                          <AtSign size={13} /> {identity.handle}
+
+                    {brainNotice && (
+                      <div className="px-3.5 py-2 rounded-xl bg-emerald-500/15 border border-emerald-400/40 text-xs text-emerald-200 flex items-center justify-between">
+                        <span>{brainNotice}</span>
+                        <button type="button" onClick={() => setBrainNotice(null)} className="text-xs cursor-pointer">✕</button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Gestor de Cerebros StarSeed OS */}
+                  <div className="p-5 sm:p-6 rounded-3xl quantum-glass space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <h4 className="text-base font-bold text-white flex items-center gap-2">
+                          <BrainCircuit size={18} className="morph-accent-text-2" />
+                          <span>Cerebros Disponibles de tu Cuenta ({presetsManager.brains.length})</span>
+                        </h4>
+                        <p className="text-xs text-slate-300 mt-0.5">
+                          Elige el cerebro donde se sincronizarán tus folders y presets de Audiomorphic.
                         </p>
-                      )}
-                      <p className="text-xs text-gray-400 truncate mt-0.5">{identity.user?.email}</p>
+                      </div>
+
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {presetsManager.hasLocalDevicePresets && (
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              const count = await presetsManager.importLocalPresetsIntoBrain();
+                              setBrainNotice(
+                                count > 0
+                                  ? `Se importaron ${count} presets locales al cerebro activo.`
+                                  : 'Tus presets locales ya estaban sincronizados en este cerebro.'
+                              );
+                            }}
+                            className="px-3 py-2 rounded-xl morph-btn-glass text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <HardDrive size={13} /> Importar Presets Locales
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => presetsManager.refreshBrainsAndSync()}
+                          disabled={presetsManager.isLoadingBrains}
+                          className="px-3 py-2 rounded-xl morph-btn-primary text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                        >
+                          <RefreshCw size={13} className={presetsManager.isLoadingBrains ? 'animate-spin' : ''} />
+                          <span>Sincronizar Ahora</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Grid de cerebros */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {presetsManager.brains.map((brain) => {
+                        const isSelected = presetsManager.selectedBrainId === brain.id;
+                        return (
+                          <button
+                            key={brain.id}
+                            type="button"
+                            onClick={() => presetsManager.selectBrain(brain.id)}
+                            className={`text-left p-4 rounded-2xl border transition-all cursor-pointer space-y-2 ${
+                              isSelected
+                                ? 'morph-tab-active'
+                                : 'bg-black/35 border-white/10 hover:border-white/25'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="font-bold text-sm text-white truncate">🧠 {brain.name}</span>
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-black/40 border border-white/15 uppercase font-mono shrink-0">
+                                {brain.accessLevel}
+                              </span>
+                            </div>
+                            {brain.description && (
+                              <p className="text-[11px] text-slate-300 line-clamp-2">{brain.description}</p>
+                            )}
+                            <div className="flex items-center justify-between text-[10px] text-slate-300 pt-1">
+                              <span>{brain.isOwner ? 'Propio' : `Compartido (${brain.ownerHandle || 'Red'})`}</span>
+                              <span className="font-semibold">
+                                {isSelected ? '✓ Activo para Audiomorphic' : 'Seleccionar cerebro'}
+                              </span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Crear nuevo cerebro */}
+                    <div className="pt-2 border-t border-white/10 flex flex-col sm:flex-row gap-2">
+                      <input
+                        type="text"
+                        value={newBrainName}
+                        onChange={(e) => setNewBrainName(e.target.value)}
+                        placeholder="Crear nuevo cerebro (ej. Estudio Sinestesia)..."
+                        className="flex-1 bg-black/45 border border-white/15 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-400 outline-none focus:border-cyan-400"
+                      />
+                      <button
+                        type="button"
+                        disabled={brainBusy || !newBrainName.trim() || !presetsManager.isOnline}
+                        onClick={async () => {
+                          setBrainBusy(true);
+                          try {
+                            const res = await presetsManager.createBrain(newBrainName.trim());
+                            if (res.ok) {
+                              setBrainNotice(`Cerebro "${newBrainName.trim()}" creado y activado.`);
+                              setNewBrainName('');
+                            } else if (res.error) {
+                              setBrainNotice(res.error);
+                            }
+                          } finally {
+                            setBrainBusy(false);
+                          }
+                        }}
+                        className="px-4 py-2 rounded-xl morph-btn-glass text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40"
+                      >
+                        <Plus size={14} /> Crear Cerebro
+                      </button>
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-3 pt-2">
-                    <button
-                      onClick={handleOpenStarSeedOS}
-                      disabled={handoffLoading}
-                      className="px-6 py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-extrabold text-xs uppercase tracking-wider flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(6,182,212,0.4)] disabled:opacity-60 cursor-pointer"
-                    >
-                      {handoffLoading ? (
-                        <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                      ) : (
-                        <Rocket size={16} />
-                      )}
-                      Abrir StarSeed OS con mi sesión
-                    </button>
+                  {/* Red de Neuronas Conectadas */}
+                  <div className="p-5 sm:p-6 rounded-3xl quantum-glass space-y-4">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div>
+                        <h4 className="text-base font-bold text-white flex items-center gap-2">
+                          <Cpu size={18} className="morph-accent-text" />
+                          <span>Neuronas Conectadas en la Cuenta ({presetsManager.neurons.length || 1})</span>
+                        </h4>
+                        <p className="text-xs text-slate-300 mt-0.5">
+                          Los cambios de presets y folders se sincronizan automáticamente entre todas tus neuronas online.
+                        </p>
+                      </div>
+                      <span className="text-[11px] font-mono morph-pill px-3 py-1 rounded-full">
+                        {presetsManager.syncMessage || 'Listo'}
+                      </span>
+                    </div>
 
-                    <button
-                      onClick={() => identity.logout()}
-                      className="px-4 py-3 rounded-xl bg-white/10 hover:bg-red-500/20 text-gray-300 hover:text-red-300 border border-white/10 text-xs font-bold transition-all flex items-center gap-2 cursor-pointer"
-                    >
-                      <LogOut size={15} /> Cerrar Sesión
-                    </button>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {(presetsManager.neurons.length > 0
+                        ? presetsManager.neurons
+                        : [
+                            {
+                              id: presetsManager.currentNeuron.id,
+                              name: presetsManager.currentNeuron.name,
+                              kind: presetsManager.currentNeuron.kind,
+                              platform: presetsManager.currentNeuron.platform,
+                              isOnline: presetsManager.isOnline,
+                              isCurrentDevice: true,
+                              lastSeenAt: new Date().toISOString(),
+                            },
+                          ]
+                      ).map((neuron) => (
+                        <div
+                          key={neuron.id}
+                          className="p-3.5 rounded-2xl bg-black/35 border border-white/10 flex items-center justify-between gap-3"
+                        >
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-xs font-bold text-white truncate">{neuron.name}</span>
+                              {neuron.isCurrentDevice && (
+                                <span className="text-[9px] px-1.5 py-0.5 rounded-full morph-pill font-bold">
+                                  Esta neurona
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[10px] text-slate-400 mt-0.5">
+                              {neuron.platform || neuron.kind} ·{' '}
+                              {neuron.lastSeenAt ? new Date(neuron.lastSeenAt).toLocaleString() : 'Activo ahora'}
+                            </p>
+                          </div>
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
+                              neuron.isOnline
+                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/35'
+                                : 'bg-white/10 text-slate-400 border border-white/10'
+                            }`}
+                          >
+                            {neuron.isOnline ? 'Online' : 'Offline'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               ) : (
                 /* Formulario de Login / Registro */
-                <form onSubmit={handleAuthSubmit} className="max-w-md mx-auto p-6 sm:p-8 rounded-3xl bg-black/40 border border-white/15 space-y-4">
-                  <div className="text-center mb-4">
-                    <h4 className="text-lg font-bold text-white">
-                      {isRegistering ? 'Crear Cuenta Soberana' : 'Entrar a tu Cuenta StarSeed'}
+                <form onSubmit={handleAuthSubmit} className="max-w-md mx-auto p-6 sm:p-8 rounded-3xl quantum-glass space-y-4">
+                  <div className="text-center mb-3">
+                    <h4 className="text-lg font-bold starseed-text-gradient">
+                      {isRegistering ? 'Crear Cuenta StarSeed OS' : 'Entrar a tu Cuenta StarSeed'}
                     </h4>
-                    <p className="text-xs text-gray-400 mt-1">Conexión cifrada a la red de identidad soberana StarSeed</p>
+                    <p className="text-xs text-slate-300 mt-1">
+                      Inicia sesión con tu correo o @usuario para sincronizar cerebros, folders y neuronas.
+                    </p>
                   </div>
+
+                  {authNotice && (
+                    <div className="p-3 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-200 text-xs">
+                      {authNotice}
+                    </div>
+                  )}
 
                   {authError && (
                     <div className="p-3 rounded-xl bg-red-500/20 border border-red-500/40 text-red-200 text-xs">
@@ -1423,19 +1652,21 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
 
                   <div className="space-y-3">
                     <div>
-                      <label className="text-xs text-gray-300 block mb-1">Correo Electrónico</label>
+                      <label className="text-xs text-slate-300 block mb-1">
+                        {isRegistering ? 'Correo Electrónico' : 'Usuario (@handle) o Correo Electrónico'}
+                      </label>
                       <input
-                        type="email"
+                        type={isRegistering ? 'email' : 'text'}
                         required
                         value={emailInput}
                         onChange={(e) => setEmailInput(e.target.value)}
-                        placeholder="tu@correo.com"
+                        placeholder={isRegistering ? 'tu@correo.com' : '@usuario o tu@correo.com'}
                         className="w-full bg-black/50 border border-white/15 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-gray-500 outline-none focus:border-cyan-400 transition-colors"
                       />
                     </div>
 
                     <div>
-                      <label className="text-xs text-gray-300 block mb-1">Contraseña</label>
+                      <label className="text-xs text-slate-300 block mb-1">Contraseña</label>
                       <input
                         type="password"
                         required
@@ -1450,55 +1681,28 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                   <button
                     type="submit"
                     disabled={authLoading}
-                    className="w-full py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-extrabold text-xs uppercase tracking-wider transition-all shadow-[0_0_20px_rgba(6,182,212,0.4)] disabled:opacity-50 mt-2 cursor-pointer"
+                    className="w-full py-3 rounded-xl morph-btn-primary font-extrabold text-xs uppercase tracking-wider disabled:opacity-50 mt-2 cursor-pointer"
                   >
                     {authLoading ? 'Conectando...' : isRegistering ? 'Registrarme' : 'Iniciar Sesión'}
                   </button>
 
-                  <div className="relative flex py-1 items-center">
-                    <div className="flex-grow border-t border-white/10"></div>
-                    <span className="flex-shrink mx-2 text-[10px] uppercase tracking-wider text-gray-400">O también</span>
-                    <div className="flex-grow border-t border-white/10"></div>
-                  </div>
-
                   <button
                     type="button"
-                    onClick={() => {
-                      const emailToUse = emailInput.trim() || 'soberano@star.seed';
-                      const cleanHandle = emailToUse.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '') || 'soberano';
-                      const sovSession = {
-                        id: 'starseed-' + cleanHandle,
-                        email: emailToUse,
-                        name: emailToUse.split('@')[0],
-                        handle: '@' + cleanHandle,
-                        plan: 'lifetime',
-                      };
-                      try {
-                        localStorage.setItem('starseed_sovereign_user', JSON.stringify({
-                          id: sovSession.id,
-                          email: sovSession.email,
-                          user_metadata: { full_name: sovSession.name, name: sovSession.name, handle: sovSession.handle },
-                          app_metadata: { provider: 'starseed_sovereign' },
-                          aud: 'authenticated',
-                          role: 'authenticated',
-                        }));
-                      } catch {}
-                      identity.linkStarSeed(sovSession);
-                      window.dispatchEvent(new CustomEvent('starseed:session-changed', { detail: sovSession }));
-                    }}
-                    className="w-full py-2.5 px-3 rounded-xl text-xs font-semibold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-[0_0_15px_rgba(16,185,129,0.15)]"
+                    onClick={() => openExternalUrl(STARSEED_OS_OFFICIAL_URL)}
+                    className="w-full py-2.5 px-3 rounded-xl morph-btn-glass text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer"
                   >
-                    <Sparkles size={14} className="text-emerald-400" />
-                    <span>Acceso Soberano Inmediato (Sin Restricciones)</span>
+                    <Globe size={14} />
+                    <span>Crear o gestionar cuenta en starseed-os.vercel.app</span>
+                    <ExternalLink size={12} />
                   </button>
 
-                  <div className="text-center pt-2">
+                  <div className="text-center pt-1">
                     <button
                       type="button"
                       onClick={() => setIsRegistering(!isRegistering)}
-                      className="text-xs text-cyan-300 hover:underline cursor-pointer"
+                      className="text-xs morph-accent-text hover:underline cursor-pointer"
                     >
-                      {isRegistering ? '¿Ya tienes cuenta? Inicia sesión' : '¿No tienes cuenta? Crear una gratis'}
+                      {isRegistering ? '¿Ya tienes cuenta? Inicia sesión' : '¿No tienes cuenta? Crear una aquí'}
                     </button>
                   </div>
                 </form>
