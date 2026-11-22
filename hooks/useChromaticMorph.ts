@@ -82,10 +82,16 @@ export function useChromaticMorph(
   freqRangeRef.current = freqRange;
 
   useEffect(() => {
-    if (typeof document === 'undefined') return;
+    if (typeof document === 'undefined' || typeof window === 'undefined') return;
     let rafId = 0;
     let lastCssSync = 0;
     const startTime = performance.now();
+    const isLowPowerOrMobile = Boolean(
+      window.matchMedia?.('(pointer: coarse)')?.matches ||
+        window.innerWidth < 768 ||
+        (typeof navigator !== 'undefined' && navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4)
+    );
+    const cssSyncIntervalMs = isLowPowerOrMobile ? 260 : 130;
 
     let smoothVol = 0.22;
     let smoothFreq = 0.3;
@@ -103,6 +109,7 @@ export function useChromaticMorph(
     };
 
     const applyCssVariables = (s: ChromaticState) => {
+      if (document.hidden) return;
       const hueDiff =
         Math.abs(((s.hue1 - lastWritten.hue1 + 540) % 360) - 180) +
         Math.abs(((s.hue2 - lastWritten.hue2 + 540) % 360) - 180);
@@ -111,7 +118,7 @@ export function useChromaticMorph(
         Math.abs(s.bass - lastWritten.bass) +
         Math.abs(s.treble - lastWritten.treble);
 
-      if (hueDiff < 0.08 && valDiff < 0.004) return;
+      if (hueDiff < 1.2 && valDiff < 0.025) return;
       lastWritten = { ...s };
 
       const root = document.documentElement.style;
@@ -134,7 +141,7 @@ export function useChromaticMorph(
       root.setProperty('--morph-text-l2', `${textL2}%`);
       root.setProperty('--morph-on-accent', onAccent);
       root.setProperty('--morph-glow-alpha', (0.24 + s.energy * 0.36).toFixed(3));
-      root.setProperty('--morph-accent-bg', `hsl(${h1} 86% 46%)`);
+      root.setProperty('--morph-accent-bg', `hsl(${h1}, 86%, 46%)`);
     };
 
     applyCssVariables(stateRef.current);
@@ -198,7 +205,7 @@ export function useChromaticMorph(
       };
       stateRef.current = next;
 
-      if (now - lastCssSync > 50) {
+      if (now - lastCssSync > cssSyncIntervalMs) {
         lastCssSync = now;
         applyCssVariables(next);
       }

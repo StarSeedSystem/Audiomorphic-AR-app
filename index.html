@@ -2,7 +2,7 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="mobile-web-app-capable" content="yes" />
@@ -67,7 +67,16 @@
 
         if (window.location.protocol === 'https:') {
           window.addEventListener('load', function () {
-            navigator.serviceWorker.register('./sw.js').catch(function () {});
+            var hadController = Boolean(navigator.serviceWorker.controller);
+            var reloading = false;
+            navigator.serviceWorker.addEventListener('controllerchange', function () {
+              if (!hadController || reloading) return;
+              reloading = true;
+              window.location.reload();
+            });
+            navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).then(function (reg) {
+              reg.update().catch(function () {});
+            }).catch(function () {});
           });
         }
       })();

@@ -24,10 +24,20 @@ export interface Menu3DTiltResult {
 
 const clamp = (v: number, min: number, max: number) => (v < min ? min : v > max ? max : v);
 
+const isCoarseOrNarrow = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  return Boolean(
+    window.matchMedia?.('(pointer: coarse)')?.matches ||
+      window.matchMedia?.('(hover: none)')?.matches ||
+      window.innerWidth < 768
+  );
+};
+
 /**
  * Motor 3D de inclinación para menús/tarjetas por giroscopio + puntero sin re-renders de React.
- * Escribe --menu-rx, --menu-ry, --menu-tx, --menu-ty, --menu-glare-x y --menu-glare-y
- * directamente en el elemento destino dentro de un loop rAF suavizado por resorte.
+ * En móviles/pantallas táctiles evita `matrix3d` sobre contenedores con scroll y backdrop-filter
+ * (causa de parpadeo del compositor en Chrome Android), moviendo solo `--glare-tx`/`--glare-ty`.
+ * En escritorio aplica transformación 3D directa únicamente cuando está activa y fuera de reposo.
  */
 export function useMenu3DTilt(options: Menu3DTiltOptions = {}): Menu3DTiltResult {
   const { maxDeg = 3.5, maxTranslatePx = 6, autoGyro = true } = options;
@@ -45,6 +55,7 @@ export function useMenu3DTilt(options: Menu3DTiltOptions = {}): Menu3DTiltResult
   const maxTranslateRef = useRef(maxTranslatePx);
   maxTranslateRef.current = maxTranslatePx;
   const pausedRef = useRef(false);
+  const coarseRef = useRef<boolean>(isCoarseOrNarrow());
   const gyroListenerAttachedRef = useRef(false);
   const gyroDetectedRef = useRef(false);
 
@@ -131,34 +142,68 @@ export function useMenu3DTilt(options: Menu3DTiltOptions = {}): Menu3DTiltResult
 
     let rafId = 0;
     let lastApplied = { rx: 999, ry: 999, tx: 999, ty: 999, gx: 999, gy: 999 };
+    let lastHadTransform = false;
 
-    const applyVars = (el: HTMLDivElement, s: typeof currentRef.current) => {
-      el.style.setProperty('--menu-rx', `${s.rx.toFixed(3)}deg`);
-      el.style.setProperty('--menu-ry', `${s.ry.toFixed(3)}deg`);
-      el.style.setProperty('--menu-tx', `${s.tx.toFixed(2)}px`);
-      el.style.setProperty('--menu-ty', `${s.ty.toFixed(2)}px`);
-      el.style.setProperty('--menu-glare-x', `${s.gx.toFixed(1)}%`);
-      el.style.setProperty('--menu-glare-y', `${s.gy.toFixed(1)}%`);
+    const updateCoarseState = () => {
+      const nextCoarse = isCoarseOrNarrow();
+      coarseRef.current = nextCoarse;
+      if (nextCoarse && surfaceRef.current?.style.transform) {
+        surfaceRef.current.style.transform = '';
+        lastHadTransform = false;
+      }
+    };
+    updateCoarseState();
+    window.addEventListener('resize', updateCoarseState);
+
+    const applyVars = (el: HTMLDivElement, s: typeof currentRef.current, isCoarse: boolean) => {
+      const glareTx = ((s.gx - 50) * 0.65).toFixed(1);
+      const glareTy = ((s.gy - 35) * 0.65).toFixed(1);
+      el.style.setProperty('--glare-tx', `${glareTx}px`);
+      el.style.setProperty('--glare-ty', `${glareTy}px`);
+
+      const active3D =
+        !isCoarse &&
+        tiltEnabledRef.current &&
+        !reducedMotionRef.current &&
+        (Math.abs(s.rx) > 0.025 ||
+          Math.abs(s.ry) > 0.025 ||
+          Math.abs(s.tx) > 0.06 ||
+          Math.abs(s.ty) > 0.06);
+
+      if (active3D) {
+        el.style.transform = `perspective(1400px) translate3d(${s.tx.toFixed(2)}px, ${s.ty.toFixed(2)}px, 0) rotateX(${s.rx.toFixed(3)}deg) rotateY(${s.ry.toFixed(3)}deg)`;
+      } else if (el.style.transform) {
+        el.style.transform = '';
+      }
     };
 
     const tick = () => {
       const el = surfaceRef.current;
+      const isCoarse = coarseRef.current;
       const disabled = !tiltEnabledRef.current || reducedMotionRef.current;
-      const paused = pausedRef.current;
+
+      if (pausedRef.current) {
+        if (el && (isCoarse || disabled) && el.style.transform) {
+          el.style.transform = '';
+          lastHadTransform = false;
+        }
+        rafId = requestAnimationFrame(tick);
+        return;
+      }
 
       const pt = pointerTargetRef.current;
       const gt = gyroTargetRef.current;
 
       const useGyro = gyroDetectedRef.current && !disabled;
-      const targetRx = disabled ? 0 : (useGyro ? gt.rx : 0) + (paused ? 0 : pt.rx * 0.72);
-      const targetRy = disabled ? 0 : (useGyro ? gt.ry : 0) + (paused ? 0 : pt.ry * 0.72);
-      const targetTx = disabled ? 0 : (useGyro ? gt.tx : 0) + (paused ? 0 : pt.tx * 0.7);
-      const targetTy = disabled ? 0 : (useGyro ? gt.ty : 0) + (paused ? 0 : pt.ty * 0.7);
-      const targetGx = disabled ? 50 : useGyro ? gt.gx : paused ? 50 : pt.gx;
-      const targetGy = disabled ? 35 : useGyro ? gt.gy : paused ? 35 : pt.gy;
+      const targetRx = disabled || isCoarse ? 0 : (useGyro ? gt.rx : 0) + pt.rx * 0.72;
+      const targetRy = disabled || isCoarse ? 0 : (useGyro ? gt.ry : 0) + pt.ry * 0.72;
+      const targetTx = disabled || isCoarse ? 0 : (useGyro ? gt.tx : 0) + pt.tx * 0.7;
+      const targetTy = disabled || isCoarse ? 0 : (useGyro ? gt.ty : 0) + pt.ty * 0.7;
+      const targetGx = disabled ? 50 : useGyro ? gt.gx : isCoarse ? 50 : pt.gx;
+      const targetGy = disabled ? 35 : useGyro ? gt.gy : isCoarse ? 35 : pt.gy;
 
       const cur = currentRef.current;
-      const alpha = paused ? 0.14 : 0.11;
+      const alpha = 0.11;
       cur.rx += (targetRx - cur.rx) * alpha;
       cur.ry += (targetRy - cur.ry) * alpha;
       cur.tx += (targetTx - cur.tx) * alpha;
@@ -166,17 +211,27 @@ export function useMenu3DTilt(options: Menu3DTiltOptions = {}): Menu3DTiltResult
       cur.gx += (targetGx - cur.gx) * alpha;
       cur.gy += (targetGy - cur.gy) * alpha;
 
+      const shouldHaveTransform =
+        !isCoarse &&
+        !disabled &&
+        (Math.abs(cur.rx) > 0.025 ||
+          Math.abs(cur.ry) > 0.025 ||
+          Math.abs(cur.tx) > 0.06 ||
+          Math.abs(cur.ty) > 0.06);
+
       if (
         el &&
-        (Math.abs(cur.rx - lastApplied.rx) > 0.015 ||
-          Math.abs(cur.ry - lastApplied.ry) > 0.015 ||
-          Math.abs(cur.tx - lastApplied.tx) > 0.04 ||
-          Math.abs(cur.ty - lastApplied.ty) > 0.04 ||
-          Math.abs(cur.gx - lastApplied.gx) > 0.12 ||
-          Math.abs(cur.gy - lastApplied.gy) > 0.12)
+        (shouldHaveTransform !== lastHadTransform ||
+          Math.abs(cur.rx - lastApplied.rx) > 0.02 ||
+          Math.abs(cur.ry - lastApplied.ry) > 0.02 ||
+          Math.abs(cur.tx - lastApplied.tx) > 0.05 ||
+          Math.abs(cur.ty - lastApplied.ty) > 0.05 ||
+          Math.abs(cur.gx - lastApplied.gx) > 0.2 ||
+          Math.abs(cur.gy - lastApplied.gy) > 0.2)
       ) {
         lastApplied = { ...cur };
-        applyVars(el, cur);
+        lastHadTransform = shouldHaveTransform;
+        applyVars(el, cur, isCoarse);
       }
 
       rafId = requestAnimationFrame(tick);
@@ -186,6 +241,7 @@ export function useMenu3DTilt(options: Menu3DTiltOptions = {}): Menu3DTiltResult
 
     return () => {
       cancelAnimationFrame(rafId);
+      window.removeEventListener('resize', updateCoarseState);
       mql?.removeEventListener?.('change', onMqlChange);
       (surfaceRef as any).__cleanupOrientation?.();
     };

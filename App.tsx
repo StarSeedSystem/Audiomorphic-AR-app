@@ -1083,7 +1083,7 @@ const App: React.FC = () => {
 
   return (
     <div 
-      className={`flex h-screen w-screen overflow-hidden bg-black text-white relative ${EMBED.bg ? 'pointer-events-none select-none' : ''}`}
+      className={`flex h-viewport-full w-screen overflow-hidden bg-black text-white relative ${EMBED.bg ? 'pointer-events-none select-none' : ''}`}
       onPointerDown={EMBED.bg ? undefined : () => {
         if (showTouchHint) setShowTouchHint(false);
         setControlsVisible(true);
@@ -1133,7 +1133,7 @@ const App: React.FC = () => {
             opacity: controlsVisible ? 1 : 0.78 
           }}
         >
-           <div className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full border text-[11px] sm:text-xs font-mono backdrop-blur-md transition-colors duration-300 pointer-events-none shrink-0
+           <div className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full border text-[11px] sm:text-xs font-mono pointer-events-none shrink-0
              ${isActive 
                ? 'bg-red-500/15 border-red-400/50 text-red-300 animate-pulse' 
                : 'quantum-glass text-slate-300'}
@@ -1143,7 +1143,7 @@ const App: React.FC = () => {
            </div>
            
            {params.autoPilot && (
-             <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full morph-pill text-[11px] sm:text-xs font-mono backdrop-blur-md shrink min-w-0">
+             <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full morph-pill text-[11px] sm:text-xs font-mono shrink min-w-0">
                 <Zap className="w-3 h-3 sm:w-3.5 sm:h-3.5 morph-accent-text shrink-0" />
                 <span className="font-bold tracking-wider hidden md:inline starseed-text-gradient">Audiomorphic</span>
                 <RotateCw size={10} className="animate-spin opacity-60 shrink-0 hidden xs:inline" /> 
@@ -1207,7 +1207,7 @@ const App: React.FC = () => {
         <>
           {/* Overlay to close menu when clicking outside */}
           <div 
-            className={`absolute inset-0 z-20 transition-opacity duration-500 ${controlsVisible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+            className={`absolute inset-0 z-20 transition-opacity duration-200 ${controlsVisible ? 'opacity-100 bg-black/40 desktop-backdrop-blur pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
             onPointerDown={(e) => {
               e.stopPropagation();
               setControlsVisible(false);
@@ -1218,15 +1218,15 @@ const App: React.FC = () => {
           />
           <div 
             className={`
-              fixed inset-0 z-30 flex items-center justify-center p-2 sm:p-5 menu-3d-stage pointer-events-none
-              transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]
-              ${controlsVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}
+              fixed inset-0 z-30 flex items-center justify-center p-1.5 sm:p-4 md:p-5 menu-3d-stage pointer-events-none
+              transition-opacity duration-200 ease-out
+              ${controlsVisible ? 'opacity-100 visible' : 'opacity-0 invisible'}
             `}
           >
             <div
               ref={menuTilt.surfaceRef}
               className={`
-                w-full max-w-6xl h-[94dvh] sm:h-[90vh] max-h-[920px] flex flex-col relative menu-3d-surface
+                w-full max-w-6xl h-[95vh] h-[95dvh] sm:h-[90vh] max-h-[920px] flex flex-col relative menu-3d-surface overflow-hidden rounded-[20px] sm:rounded-[28px] md:rounded-[36px]
                 ${controlsVisible ? 'pointer-events-auto' : 'pointer-events-none'}
               `}
               onPointerDownCapture={() => {
@@ -1255,7 +1255,7 @@ const App: React.FC = () => {
               onTouchMove={(e) => { e.stopPropagation(); resetHideTimer(); }}
               onWheel={(e) => { e.stopPropagation(); resetHideTimer(); }}
             >
-              <div className="menu-3d-glare rounded-[32px] md:rounded-[44px]" aria-hidden="true" />
+              <div className="menu-3d-glare rounded-[inherit]" aria-hidden="true" />
             <ControlPanel 
               params={params} 
               setParams={setParams} 

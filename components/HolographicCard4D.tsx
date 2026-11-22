@@ -251,6 +251,10 @@ const CardSceneContent: React.FC<CardSceneContentProps> = ({
         if (cancelled) return;
         const root = gltf.scene;
 
+        // Enderezar escultura horizontal de Blender (+Y frente, -Z arriba) a vertical (+Z frente, +Y arriba)
+        root.rotation.x = Math.PI / 2;
+        root.updateMatrixWorld(true);
+
         // Centrar pivote 3D exactamente en el origen
         const box = new THREE.Box3().setFromObject(root);
         const center = box.getCenter(new THREE.Vector3());
@@ -261,12 +265,16 @@ const CardSceneContent: React.FC<CardSceneContentProps> = ({
 
         root.traverse((obj) => {
           if (obj.name.includes('FlowerOfLifeLayer')) {
+            obj.userData.basePos = obj.position.clone();
             flowerLayerRef.current = obj;
           } else if (obj.name.includes('SacredGeometry4D')) {
+            obj.userData.basePos = obj.position.clone();
             sacredLayerRef.current = obj;
           } else if (obj.name.includes('OuterOrbit4D')) {
+            obj.userData.basePos = obj.position.clone();
             outerOrbitRef.current = obj;
           } else if (obj.name.includes('InnerChamber4D')) {
+            obj.userData.basePos = obj.position.clone();
             innerChamberRef.current = obj;
           }
 
@@ -356,29 +364,33 @@ const CardSceneContent: React.FC<CardSceneContentProps> = ({
       cardGroupRef.current.position.y = Math.sin(t * 1.15) * 0.012;
     }
 
-    // Paralaje 4D interno de las capas de geometría sagrada
+    // Paralaje 4D interno de las capas de geometría sagrada (ejes locales de root rotado +90° X)
     if (flowerLayerRef.current) {
-      flowerLayerRef.current.rotation.z = t * 0.05;
-      flowerLayerRef.current.position.x = -s.y * 0.014;
-      flowerLayerRef.current.position.y = s.x * 0.014;
+      const base = (flowerLayerRef.current.userData.basePos as THREE.Vector3) || flowerLayerRef.current.position;
+      flowerLayerRef.current.rotation.y = t * 0.05;
+      flowerLayerRef.current.position.x = base.x - s.y * 0.014;
+      flowerLayerRef.current.position.z = base.z - s.x * 0.014;
     }
     if (sacredLayerRef.current) {
-      sacredLayerRef.current.rotation.z = t * 0.085;
-      sacredLayerRef.current.position.x = -s.y * 0.016;
-      sacredLayerRef.current.position.y = s.x * 0.016;
+      const base = (sacredLayerRef.current.userData.basePos as THREE.Vector3) || sacredLayerRef.current.position;
+      sacredLayerRef.current.rotation.y = t * 0.085;
+      sacredLayerRef.current.position.x = base.x - s.y * 0.016;
+      sacredLayerRef.current.position.z = base.z - s.x * 0.016;
       const sc = 1 + audioLevel * 0.02;
-      sacredLayerRef.current.scale.set(sc, sc, 1);
+      sacredLayerRef.current.scale.set(sc, 1, sc);
     }
     if (outerOrbitRef.current) {
-      outerOrbitRef.current.rotation.z = -t * 0.06;
-      outerOrbitRef.current.position.x = -s.y * 0.020;
-      outerOrbitRef.current.position.y = s.x * 0.020;
+      const base = (outerOrbitRef.current.userData.basePos as THREE.Vector3) || outerOrbitRef.current.position;
+      outerOrbitRef.current.rotation.y = -t * 0.06;
+      outerOrbitRef.current.position.x = base.x - s.y * 0.020;
+      outerOrbitRef.current.position.z = base.z - s.x * 0.020;
       const scOrbit = 1 + audioBass * 0.025;
-      outerOrbitRef.current.scale.set(scOrbit, scOrbit, 1);
+      outerOrbitRef.current.scale.set(scOrbit, 1, scOrbit);
     }
     if (innerChamberRef.current) {
-      innerChamberRef.current.position.x = -s.y * 0.008;
-      innerChamberRef.current.position.y = s.x * 0.008;
+      const base = (innerChamberRef.current.userData.basePos as THREE.Vector3) || innerChamberRef.current.position;
+      innerChamberRef.current.position.x = base.x - s.y * 0.008;
+      innerChamberRef.current.position.z = base.z - s.x * 0.008;
     }
 
     // Reactividad luminosa de cámara real vs espectro autónomo/sonoro
@@ -455,7 +467,7 @@ const CardSceneContent: React.FC<CardSceneContentProps> = ({
         palette={palette}
       />
 
-      <group ref={cardGroupRef} scale={[1.28, 1.28, 1.28]} />
+      <group ref={cardGroupRef} scale={[1.14, 1.14, 1.14]} />
     </>
   );
 };
@@ -649,7 +661,7 @@ export const HolographicCard4D: React.FC<HolographicCard4DProps> = ({
           style={{
             background: cameraLight.active
               ? `radial-gradient(circle at ${50 + cameraLight.lightX * 35}% ${50 - cameraLight.lightY * 35}%, ${cameraLight.ambientHex}33 0%, rgba(4,7,18,0.92) 72%)`
-              : 'radial-gradient(circle at 50% 35%, hsla(var(--morph-hue-1) 88% 58% / 0.16) 0%, hsla(var(--morph-hue-2) 84% 55% / 0.12) 45%, rgba(4,7,18,0.94) 85%)',
+              : 'radial-gradient(circle at 50% 35%, hsla(var(--morph-hue-1), 88%, 58%, 0.16) 0%, hsla(var(--morph-hue-2), 84%, 55%, 0.12) 45%, rgba(4,7,18,0.94) 85%)',
           }}
         />
 
@@ -689,9 +701,9 @@ export const HolographicCard4D: React.FC<HolographicCard4DProps> = ({
 
         {/* Badges superiores discretos */}
         <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2 pointer-events-none z-10">
-          <span className="px-2.5 py-1 rounded-full bg-black/65 border border-amber-400/40 text-[10px] font-mono font-bold text-amber-200 flex items-center gap-1">
+          <span className="px-2.5 py-1 rounded-full bg-black/70 border border-amber-400/45 text-[10px] font-mono font-bold text-amber-200 flex items-center gap-1">
             <Sparkles className="w-3 h-3 text-amber-300" />
-            {serialLabel} · PIONEROS
+            NFT ÚNICO · {serialLabel} · PIONEROS
           </span>
           <span className="px-2.5 py-1 rounded-full bg-black/65 border border-cyan-400/40 text-[10px] font-mono text-cyan-200 flex items-center gap-1">
             <ShieldCheck className="w-3 h-3 text-emerald-400" />
@@ -786,18 +798,22 @@ export const HolographicCard4D: React.FC<HolographicCard4DProps> = ({
         </p>
       )}
 
-      {/* Placa de Autenticidad & Ficha Técnica */}
-      <div className="w-full max-w-[440px] rounded-2xl bg-black/50 border border-white/10 p-3 text-[11px] space-y-1.5">
-        <div className="flex items-center justify-between text-slate-200 font-semibold">
-          <span className="flex items-center gap-1.5">
-            <Volume2 className="w-3.5 h-3.5 text-cyan-300" />
-            {design.editionTitle} · #{String(design.cardNumber).padStart(3, '0')}
+      {/* Placa de Autenticidad & Proveniencia NFT Única */}
+      <div className="w-full max-w-[440px] rounded-2xl bg-black/55 border border-white/10 p-3.5 text-[11px] space-y-1.5">
+        <div className="flex items-center justify-between gap-2 text-slate-200 font-semibold">
+          <span className="flex items-center gap-1.5 truncate">
+            <Volume2 className="w-3.5 h-3.5 text-cyan-300 shrink-0" />
+            NFT 4D Único · Edición Limitada {design.cardNumber}/12
           </span>
-          <span className="font-mono text-amber-300">{card.amount} · {card.tierName}</span>
+          <span className="font-mono text-amber-300 shrink-0">{card.amount} · {card.tierName}</span>
         </div>
-        <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono">
-          <span>{design.phase}</span>
-          <span>{fingerprint}</span>
+        <div className="flex items-center justify-between gap-2 text-[10px] text-slate-300 font-mono">
+          <span className="truncate">{design.phase}</span>
+          <span className="text-emerald-300 shrink-0">Huella Única: {fingerprint}</span>
+        </div>
+        <div className="text-[10px] text-cyan-200/80 pt-1 border-t border-white/10 flex items-center justify-between gap-2">
+          <span>Valor Coleccionable Soberano · StarSeed OS</span>
+          <span className="font-mono text-slate-400 shrink-0">.GLB 4D Verificable</span>
         </div>
       </div>
     </div>

@@ -2,7 +2,7 @@
    - network-first para navegación (HTML): siempre intenta red, cae a caché offline
    - cache-first para estáticos del propio origen (js/css/img/fonts/wasm)
    - NUNCA cachea /api/, Supabase ni esquemas no HTTP(S) */
-const CACHE = 'audiomorphic-v1.4.0';
+const CACHE = 'audiomorphic-v1.4.1-web';
 const CORE = ['./', './index.html', './manifest.webmanifest', './favicon.ico'];
 
 self.addEventListener('install', (e) => {

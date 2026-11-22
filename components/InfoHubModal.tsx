@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   X,
   Globe,
@@ -14,6 +14,7 @@ import {
   LogOut,
   Folder,
   Layers,
+  ChevronLeft,
   ChevronRight,
   Star,
   Sprout,
@@ -50,7 +51,8 @@ import {
   Cpu,
   Wifi,
   WifiOff,
-  HardDrive
+  HardDrive,
+  Gem
 } from 'lucide-react';
 import { StarSeedIdentity } from '../hooks/useStarSeedIdentity';
 import { UseSubscriptionResult, PlanId } from '../hooks/useSubscription';
@@ -156,13 +158,49 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
   const [brainBusy, setBrainBusy] = useState(false);
   const [brainNotice, setBrainNotice] = useState<string | null>(null);
 
-  // Donations state: Tarjeta 3D/4D activa y selector de los 12 diseños Pioneros
+  // Donations state: Tarjeta NFT 3D/4D activa y slider dinámico de los 12 diseños Pioneros
   const [selectedDesignId, setSelectedDesignId] = useState<string>(() => {
     return sync.thankYouCards[0]?.designId || 'pioneros-01';
   });
   const [activeCard, setActiveCard] = useState<ThankYouCardRecord | null>(() => {
     return sync.thankYouCards.length > 0 ? sync.thankYouCards[0] : null;
   });
+  const sliderRef = useRef<HTMLDivElement | null>(null);
+  const cardSlideRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  const selectedIndex = Math.max(
+    0,
+    PIONEROS_12_CATALOG.findIndex((c) => c.designId === selectedDesignId)
+  );
+
+  const selectPionerosCard = (designId: string, scrollCard = true) => {
+    const item = getDesignById(designId);
+    setSelectedDesignId(item.designId);
+    if (activeCard) {
+      setActiveCard({
+        ...activeCard,
+        designId: item.designId,
+        cardNumber: item.cardNumber,
+        area: item.area,
+      });
+    }
+    if (scrollCard) {
+      const slideEl = cardSlideRefs.current[item.designId];
+      if (slideEl && typeof slideEl.scrollIntoView === 'function') {
+        slideEl.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
+    }
+  };
+
+  const goPrevCard = () => {
+    const prevIdx = (selectedIndex - 1 + PIONEROS_12_CATALOG.length) % PIONEROS_12_CATALOG.length;
+    selectPionerosCard(PIONEROS_12_CATALOG[prevIdx].designId, true);
+  };
+
+  const goNextCard = () => {
+    const nextIdx = (selectedIndex + 1) % PIONEROS_12_CATALOG.length;
+    selectPionerosCard(PIONEROS_12_CATALOG[nextIdx].designId, true);
+  };
 
   // Presets category filter & Community state
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -248,7 +286,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-2xl menu-3d-stage animate-in fade-in duration-300 overflow-y-auto"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-5 bg-black/85 desktop-backdrop-blur menu-3d-stage animate-in fade-in duration-300 overflow-y-auto"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -258,15 +296,19 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
         ref={cardTilt.surfaceRef}
         onPointerMove={cardTilt.onPointerMove}
         onPointerLeave={cardTilt.onPointerLeave}
-        className="info-hub-shell menu-3d-surface menu-audio-rim w-full sm:w-[95vw] md:w-[90vw] max-w-6xl h-[100dvh] sm:h-[94vh] max-h-[920px] rounded-none sm:rounded-[32px] flex flex-col relative overflow-hidden"
+        className="info-hub-shell menu-3d-surface menu-audio-rim w-full sm:w-[95vw] md:w-[90vw] max-w-6xl h-[100vh] h-[100dvh] sm:h-[92vh] max-h-[920px] rounded-none sm:rounded-[32px] flex flex-col relative overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="menu-3d-glare rounded-none sm:rounded-[32px]" aria-hidden="true" />
         {/* SLIM UNIFIED APP BAR */}
-        <div className="px-3 sm:px-6 py-2.5 sm:py-3.5 border-b border-white/10 flex justify-between items-center bg-black/45 backdrop-blur-md shrink-0 z-20">
+        <div className="px-3 sm:px-6 pt-safe py-2.5 sm:py-3.5 border-b border-white/10 flex justify-between items-center bg-black/55 shrink-0 z-20">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-9 h-9 rounded-xl morph-pill flex items-center justify-center p-1 shrink-0">
-              <StarSeedSymbol size="sm" glow />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 starseed-app-squircle p-0.5 flex items-center justify-center shrink-0">
+              <img
+                src="./starseed/app-icons/audiomorphic.png"
+                alt="Audiomorphic"
+                className="w-full h-full object-cover rounded-[20%]"
+              />
             </div>
             <div className="min-w-0">
               <h2 className="text-sm sm:text-base font-extrabold starseed-text-gradient tracking-wide truncate flex items-center gap-1.5">
@@ -305,7 +347,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
         </div>
 
         {/* NAVIGATION TABS */}
-        <div className="px-3 sm:px-6 py-2 bg-black/40 border-b border-white/10 flex gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar whitespace-nowrap shrink-0 z-10">
+        <div className="px-3 sm:px-6 py-2 bg-black/40 border-b border-white/10 flex justify-start scroll-px-3 gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar whitespace-nowrap shrink-0 z-10">
           {[
             { id: 'donations', label: 'Donaciones & Aportes', icon: <Heart size={14} /> },
             { id: 'guide', label: 'Sobre el Proyecto & Ciencia', icon: <BrainCircuit size={14} /> },
@@ -319,7 +361,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as InfoHubTab)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[11px] sm:text-xs font-bold whitespace-nowrap transition-all shrink-0 cursor-pointer ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[11px] sm:text-xs font-bold whitespace-nowrap transition-opacity shrink-0 cursor-pointer ${
                   isActive
                     ? 'morph-tab-active'
                     : 'text-gray-400 hover:text-gray-200 hover:bg-white/5 border border-transparent'
@@ -341,23 +383,32 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
               {/* HERO BANNER (Scrolls naturally inside overview, never covers other tabs) */}
               <div className="relative p-5 sm:p-7 rounded-2xl sm:rounded-3xl border border-white/15 text-center overflow-hidden bg-gradient-to-r from-cyan-950/40 via-purple-950/40 to-emerald-950/40 shadow-xl">
                 <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 via-purple-500/10 to-emerald-500/10 opacity-60 pointer-events-none"></div>
-                <h2 className="text-xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-300 to-emerald-300 mb-2 relative z-10 tracking-tight">
-                  Desbloquea el Universo Sinestésico
-                </h2>
+                <div className="relative z-10 flex flex-col items-center">
+                  <div className="w-11 h-11 starseed-app-squircle p-0.5 mb-2.5 flex items-center justify-center">
+                    <img
+                      src="./starseed/app-icons/audiomorphic.png"
+                      alt="Audiomorphic"
+                      className="w-full h-full object-cover rounded-[20%]"
+                    />
+                  </div>
+                  <h2 className="text-xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-300 to-emerald-300 mb-2 tracking-tight">
+                    Desbloquea el Universo Sinestésico
+                  </h2>
+                </div>
                 <p className="text-gray-300 max-w-2xl mx-auto text-xs sm:text-sm relative z-10 mb-3 sm:mb-4 leading-relaxed">
                   Experimenta la sinestesia completa con acceso a todas las geometrías sagradas, modos de realidad virtual y aumentada, y control total sobre la experiencia visual. <strong>100% Gratuito y Soberano.</strong>
                 </p>
                 <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 relative z-10">
                   <button 
                     onClick={() => setActiveTab('updates')}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/40 text-cyan-200 text-xs font-bold transition-all cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/40 text-cyan-200 text-xs font-bold transition-opacity cursor-pointer"
                   >
                     <Download size={13} className="text-cyan-400" />
                     <span>Descargas & Versión {updateSystem.currentVersion}</span>
                   </button>
                   <button 
                     onClick={() => setActiveTab('guide')}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-pink-500/20 to-orange-500/20 border border-pink-500/40 hover:border-pink-500/70 text-pink-200 text-xs font-bold transition-all group cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-pink-500/20 to-orange-500/20 border border-pink-500/40 hover:border-pink-500/70 text-pink-200 text-xs font-bold transition-opacity group cursor-pointer"
                   >
                     <Heart className="w-3.5 h-3.5 text-pink-400 group-hover:scale-125 transition-transform" fill="currentColor" />
                     <span>¿Cómo ayuda tu contribución? Fundación Starseed</span>
@@ -367,23 +418,28 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
               
               {/* Banner Fundación StarSeed & Aclaración 0% Paywalls */}
               <div className="p-6 sm:p-7 rounded-3xl bg-gradient-to-r from-pink-950/40 via-purple-950/30 to-black/50 border border-pink-500/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div className="space-y-1.5 max-w-2xl">
-                  <span className="text-[11px] font-mono uppercase tracking-widest text-pink-400 font-bold flex items-center gap-1.5">
-                    <Heart size={14} className="fill-pink-400" />
-                    Fundación StarSeed & Arte Soberano Libre
-                  </span>
-                  <h3 className="text-lg sm:text-xl font-bold text-white">
-                    Audiomorphic es 100% Gratuito y Libre de Suscripciones
-                  </h3>
-                  <p className="text-xs text-gray-300 leading-relaxed">
-                    Todas las funciones, geometrías y modos AR/VR están desbloqueados para todo el mundo. No hay muros de pago ni compras obligatorias. Los siguientes enlaces son <strong>donaciones voluntarias y opcionales</strong> que financian directamente a la <strong>Fundación StarSeed</strong> en educación, investigación de frecuencias sagradas y arte libre.
-                  </p>
+                <div className="flex items-start gap-4 max-w-2xl">
+                  <div className="w-12 h-12 rounded-2xl quantum-glass flex items-center justify-center p-1.5 shrink-0 hidden sm:flex">
+                    <StarSeedSymbol size="md" glow alt="Símbolo Fundación StarSeed" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <span className="text-[11px] font-mono uppercase tracking-widest text-pink-400 font-bold flex items-center gap-1.5">
+                      <Heart size={14} className="fill-pink-400" />
+                      Fundación StarSeed & Arte Soberano Libre
+                    </span>
+                    <h3 className="text-lg sm:text-xl font-bold text-white">
+                      Audiomorphic es 100% Gratuito y Libre de Suscripciones
+                    </h3>
+                    <p className="text-xs text-gray-300 leading-relaxed">
+                      Todas las funciones, geometrías y modos AR/VR están desbloqueados para todo el mundo. No hay muros de pago ni compras obligatorias. Los siguientes enlaces son <strong>donaciones voluntarias y opcionales</strong> que financian directamente a la <strong>Fundación StarSeed</strong> en educación, investigación de frecuencias sagradas y arte libre.
+                    </p>
+                  </div>
                 </div>
                 <a
                   href={FUNDACION_LINKTREE}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-4 py-2.5 rounded-xl bg-pink-500/20 hover:bg-pink-500/30 border border-pink-400/40 text-pink-200 text-xs font-bold flex items-center gap-2 whitespace-nowrap transition-all shadow-[0_0_15px_rgba(236,72,153,0.3)] shrink-0"
+                  className="px-4 py-2.5 rounded-xl bg-pink-500/20 hover:bg-pink-500/30 border border-pink-400/40 text-pink-200 text-xs font-bold flex items-center gap-2 whitespace-nowrap transition-opacity shadow-[0_0_15px_rgba(236,72,153,0.3)] shrink-0"
                 >
                   Conoce la Fundación <ExternalLink size={14} />
                 </a>
@@ -393,7 +449,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
                 
                 {/* 1. Explorador Libre (Gratis / $0 MXN) */}
-                <div className="bg-black/40 border border-white/10 rounded-2xl p-5 flex flex-col relative overflow-hidden group hover:border-white/25 transition-all">
+                <div className="bg-black/40 border border-white/10 rounded-2xl p-5 flex flex-col relative overflow-hidden group hover:border-white/25 transition-opacity">
                   <div className="mb-4">
                     <h4 className="text-lg font-bold text-gray-200 mb-1">Explorador</h4>
                     <div className="text-2xl sm:text-3xl font-bold text-white mb-1">
@@ -436,7 +492,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                 </div>
 
                 {/* 2. Creador ($369 MXN / año) - Popular */}
-                <div className="bg-gradient-to-b from-purple-950/50 to-black/50 border border-purple-500/50 rounded-2xl p-5 flex flex-col relative overflow-hidden group hover:border-purple-400 transition-all shadow-[0_5px_25px_rgba(168,85,247,0.15)]">
+                <div className="bg-gradient-to-b from-purple-950/50 to-black/50 border border-purple-500/50 rounded-2xl p-5 flex flex-col relative overflow-hidden group hover:border-purple-400 transition-opacity shadow-[0_5px_25px_rgba(168,85,247,0.15)]">
                   <div className="absolute top-0 right-0 bg-purple-500 text-white text-[10px] font-extrabold px-3 py-0.5 rounded-bl-lg uppercase tracking-wider font-mono">
                     Popular
                   </div>
@@ -477,7 +533,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => handleDonationAction('creator')}
-                    className="w-full py-2.5 rounded-xl font-bold transition-all shadow-[0_0_15px_rgba(168,85,247,0.4)] flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs cursor-pointer"
+                    className="w-full py-2.5 rounded-xl font-bold transition-opacity shadow-[0_0_15px_rgba(168,85,247,0.4)] flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs cursor-pointer"
                   >
                     <Heart size={14} className="fill-white" />
                     <span>Aportar $369 MXN (Stripe)</span>
@@ -486,7 +542,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                 </div>
 
                 {/* 3. Maestro ($963 MXN / Pago único de por vida) - Mecenas Pleno */}
-                <div className="bg-gradient-to-b from-amber-950/50 to-black/50 border border-amber-500/50 rounded-2xl p-5 flex flex-col relative overflow-hidden group hover:border-amber-400 transition-all shadow-[0_5px_25px_rgba(245,158,11,0.2)]">
+                <div className="bg-gradient-to-b from-amber-950/50 to-black/50 border border-amber-500/50 rounded-2xl p-5 flex flex-col relative overflow-hidden group hover:border-amber-400 transition-opacity shadow-[0_5px_25px_rgba(245,158,11,0.2)]">
                   <div className="absolute top-0 right-0 bg-gradient-to-r from-amber-500 to-orange-500 text-black text-[10px] font-black px-3 py-0.5 rounded-bl-lg uppercase tracking-wider font-mono">
                     Mecenas Pleno
                   </div>
@@ -527,7 +583,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => handleDonationAction('master')}
-                    className="w-full py-2.5 rounded-xl font-black transition-all shadow-[0_0_20px_rgba(245,158,11,0.4)] flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black text-xs cursor-pointer"
+                    className="w-full py-2.5 rounded-xl font-black transition-opacity shadow-[0_0_20px_rgba(245,158,11,0.4)] flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black text-xs cursor-pointer"
                   >
                     <Shield size={14} />
                     <span>Aportar $963 MXN (Stripe)</span>
@@ -536,7 +592,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                 </div>
 
                 {/* 4. StarSeed Ecosistema (Libre en OS) */}
-                <div className="bg-gradient-to-b from-cyan-950/40 to-black/40 border border-cyan-500/40 rounded-2xl p-5 flex flex-col relative overflow-hidden group hover:border-cyan-400 transition-all">
+                <div className="bg-gradient-to-b from-cyan-950/40 to-black/40 border border-cyan-500/40 rounded-2xl p-5 flex flex-col relative overflow-hidden group hover:border-cyan-400 transition-opacity">
                   <div className="absolute top-0 right-0 bg-cyan-500 text-black text-[10px] font-black px-3 py-0.5 rounded-bl-lg uppercase tracking-wider font-mono">
                     100% Gratis
                   </div>
@@ -572,7 +628,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                     href={OS_URL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full py-2.5 rounded-xl font-bold transition-all border border-cyan-400/50 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200 text-xs flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full py-2.5 rounded-xl font-bold transition-opacity border border-cyan-400/50 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200 text-xs flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <Globe size={14} />
                     <span>Abrir StarSeed OS</span>
@@ -592,61 +648,29 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                 </p>
               </div>
 
-              {/* Tarjeta Virtual 4D Interactiva & Colección Pioneros (12 Diseños Únicos) */}
-              <div className="p-5 sm:p-6 rounded-3xl bg-black/45 border border-white/10 flex flex-col items-center">
-                <div className="text-center mb-5 max-w-2xl">
+              {/* Tarjeta Virtual NFT 4D Interactiva & Colección Pioneros (Slider Dinámico 12 Diseños Únicos) */}
+              <div className="p-4 sm:p-6 rounded-3xl bg-black/45 border border-white/10 flex flex-col items-center">
+                <div className="text-center mb-4 max-w-2xl space-y-2">
                   <span className="text-xs font-bold uppercase tracking-wider text-amber-300 flex items-center justify-center gap-1.5 font-mono">
-                    <Sparkles className="w-4 h-4" /> Colección Pioneros StarSeed · 12 Reliquias 4D en Blender
+                    <Gem className="w-4 h-4 text-cyan-300" /> Colección NFT Pioneros 4D · 12 Obras Únicas con Valor Irrepetible
                   </span>
-                  <h4 className="text-xl font-bold text-white mt-1">Reconocimiento & Resonancia Soberana</h4>
-                  <p className="text-xs text-gray-400 mt-1">
-                    Explora los 12 diseños escultóricos únicos en tiempo real. Inclina tu dispositivo (giroscopio), activa Luz Cámara 4D o arrastra para inspeccionar su relieve y reverso.
+                  <h4 className="text-xl sm:text-2xl font-bold text-white">
+                    NFTs 4D Soberanos · Edición Fundacional Limitada
+                  </h4>
+                  <p className="text-xs text-gray-300 leading-relaxed">
+                    Cada una de las 12 esculturas modeladas en Blender 5.2 es un <strong>NFT 4D único e irrepetible</strong>: posee número de serie exclusivo (<code>#001/012</code> a <code>#012/012</code>), huella criptográfica verificable (<code>SS-PNR-…</code>), geometría 3D portátil <code>.glb</code> y vínculo directo con tu Cerebro en StarSeed OS como reliquia coleccionable con valor propio dentro de la historia fundacional del ecosistema.
                   </p>
-                </div>
-
-                {/* Galería selectora de los 12 diseños Pioneros */}
-                <div className="w-full max-w-4xl mb-6 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2.5">
-                  {PIONEROS_12_CATALOG.map((item) => {
-                    const isSelected = selectedDesignId === item.designId;
-                    return (
-                      <button
-                        key={item.designId}
-                        type="button"
-                        onClick={() => {
-                          setSelectedDesignId(item.designId);
-                          if (activeCard) {
-                            setActiveCard({
-                              ...activeCard,
-                              designId: item.designId,
-                              cardNumber: item.cardNumber,
-                              area: item.area,
-                            });
-                          }
-                        }}
-                        className={`group rounded-2xl p-1.5 text-left transition-colors border cursor-pointer flex flex-col ${
-                          isSelected
-                            ? 'bg-cyan-500/20 border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.28)]'
-                            : 'bg-black/50 border-white/10 hover:border-white/30'
-                        }`}
-                      >
-                        <div className="aspect-[3/4] w-full rounded-xl overflow-hidden bg-slate-950 mb-1.5 relative">
-                          {item.previewImage && (
-                            <img
-                              src={item.previewImage}
-                              alt={`#${String(item.cardNumber).padStart(3, '0')} ${item.title}`}
-                              className="w-full h-full object-cover"
-                              loading="lazy"
-                            />
-                          )}
-                          <span className="absolute top-1 left-1 px-1.5 py-0.5 rounded-full bg-black/75 border border-white/15 text-[9px] font-mono font-bold text-amber-300">
-                            #{String(item.cardNumber).padStart(3, '0')}
-                          </span>
-                        </div>
-                        <span className="text-[10px] font-bold text-white truncate px-0.5">{item.title}</span>
-                        <span className="text-[9px] font-mono text-cyan-300/80 truncate px-0.5">{item.area}</span>
-                      </button>
-                    );
-                  })}
+                  <div className="flex flex-wrap items-center justify-center gap-1.5 pt-1">
+                    <span className="px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-400/35 text-[10px] font-mono text-amber-200">
+                      NFT 4D Único &amp; Verificable
+                    </span>
+                    <span className="px-2.5 py-1 rounded-full bg-cyan-500/15 border border-cyan-400/35 text-[10px] font-mono text-cyan-200">
+                      Serie Limitada 12/12 · Valor Irrepetible
+                    </span>
+                    <span className="px-2.5 py-1 rounded-full bg-purple-500/15 border border-purple-400/35 text-[10px] font-mono text-purple-200">
+                      Portátil en StarSeed OS &amp; .GLB
+                    </span>
+                  </div>
                 </div>
 
                 {(() => {
@@ -663,8 +687,8 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                         id: `preview-${chosenDesign.designId}`,
                         donorName: identity.displayName || 'Explorador StarSeed',
                         tierId: 'pioneros',
-                        tierName: 'Edición Pioneros 4D',
-                        amount: 'Vista Previa 4D',
+                        tierName: 'Edición NFT Pioneros 4D',
+                        amount: 'NFT Único 1/12',
                         issuedAt: new Date().toISOString(),
                         folderPath: 'Biblioteca/Donaciones y Agradecimientos',
                         cardTheme: 'iridescent',
@@ -678,7 +702,102 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                       };
 
                   return (
-                    <div className="w-full flex flex-col items-center gap-3">
+                    <div className="w-full max-w-4xl flex flex-col items-center gap-4">
+                      {/* Barra superior del Slider Dinámico */}
+                      <div className="w-full flex items-center justify-between gap-2 px-2 py-2 rounded-2xl bg-black/50 border border-white/10">
+                        <button
+                          type="button"
+                          onClick={goPrevCard}
+                          aria-label="Tarjeta NFT anterior"
+                          className="w-9 h-9 rounded-full morph-btn-glass flex items-center justify-center shrink-0 cursor-pointer"
+                        >
+                          <ChevronLeft className="w-4 h-4 text-cyan-200" />
+                        </button>
+
+                        <div className="min-w-0 text-center flex-1">
+                          <div className="text-[11px] font-mono font-bold text-amber-300 truncate">
+                            NFT #{String(chosenDesign.cardNumber).padStart(2, '0')} / 12 · {chosenDesign.title}
+                          </div>
+                          <div className="text-[10px] text-cyan-200/80 truncate">
+                            {chosenDesign.area} · {chosenDesign.subtitle}
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={goNextCard}
+                          aria-label="Siguiente tarjeta NFT"
+                          className="w-9 h-9 rounded-full morph-btn-glass flex items-center justify-center shrink-0 cursor-pointer"
+                        >
+                          <ChevronRight className="w-4 h-4 text-cyan-200" />
+                        </button>
+                      </div>
+
+                      {/* Slider horizontal fluido interactivo de las 12 tarjetas NFT */}
+                      <div
+                        ref={sliderRef}
+                        className="w-full flex gap-3 overflow-x-auto snap-x snap-mandatory scroll-smooth px-4 sm:px-8 py-3 no-scrollbar"
+                        aria-label="Carrusel interactivo de los 12 NFTs Pioneros StarSeed"
+                      >
+                        {PIONEROS_12_CATALOG.map((item) => {
+                          const isSelected = selectedDesignId === item.designId;
+                          return (
+                            <button
+                              key={item.designId}
+                              ref={(el) => {
+                                cardSlideRefs.current[item.designId] = el;
+                              }}
+                              type="button"
+                              onClick={() => selectPionerosCard(item.designId, true)}
+                              className={`w-[132px] sm:w-[156px] shrink-0 snap-center rounded-2xl p-2 text-left border cursor-pointer flex flex-col transition-[transform,opacity,border-color] duration-200 ${
+                                isSelected
+                                  ? 'scale-[1.04] bg-cyan-500/20 border-cyan-400 shadow-[0_0_24px_rgba(34,211,238,0.32)] opacity-100'
+                                  : 'scale-[0.96] bg-black/55 border-white/10 hover:border-white/30 opacity-80 hover:opacity-100'
+                              }`}
+                            >
+                              <div className="aspect-[3/4] w-full rounded-xl overflow-hidden bg-slate-950 mb-1.5 relative">
+                                {item.previewImage && (
+                                  <img
+                                    src={item.previewImage}
+                                    alt={`#${String(item.cardNumber).padStart(3, '0')} ${item.title}`}
+                                    className="w-full h-full object-cover"
+                                    loading="lazy"
+                                  />
+                                )}
+                                <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-full bg-black/80 border border-amber-400/40 text-[9px] font-mono font-bold text-amber-300">
+                                  NFT #{String(item.cardNumber).padStart(3, '0')}
+                                </span>
+                              </div>
+                              <span className="text-[11px] font-bold text-white truncate px-0.5">{item.title}</span>
+                              <span className="text-[9px] font-mono text-cyan-300/85 truncate px-0.5">{item.area}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* Puntos de acceso directo #01..#12 */}
+                      <div className="flex flex-wrap items-center justify-center gap-1.5 px-2">
+                        {PIONEROS_12_CATALOG.map((item) => {
+                          const isSelected = selectedDesignId === item.designId;
+                          return (
+                            <button
+                              key={item.designId}
+                              type="button"
+                              onClick={() => selectPionerosCard(item.designId, true)}
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold cursor-pointer border transition-colors ${
+                                isSelected
+                                  ? 'morph-tab-active'
+                                  : 'bg-black/45 border-white/15 text-slate-400 hover:text-white'
+                              }`}
+                              title={`Ir a NFT #${String(item.cardNumber).padStart(3, '0')}: ${item.title}`}
+                            >
+                              {String(item.cardNumber).padStart(2, '0')}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* Escenario 3D/4D Sincronizado (Orientación Vertical Correcta) */}
                       <ThankYouCard3D
                         card={displayCard}
                         onUpdateFolder={(newFolder) => {
@@ -687,11 +806,17 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                           }
                         }}
                       />
-                      {!activeCard && (
-                        <p className="text-[11px] text-amber-200/90 text-center max-w-md font-mono">
-                          Vista previa interactiva #{String(chosenDesign.cardNumber).padStart(3, '0')} · Realiza un aporte voluntario arriba para emitir y guardar tu tarjeta personalizada en tu cuenta StarSeed OS.
+
+                      <div className="w-full max-w-xl rounded-2xl bg-black/45 border border-white/10 p-3 text-center space-y-1">
+                        <p className="text-[11px] font-mono text-cyan-200">
+                          Valor Único · Edición Fundacional Pioneros · {chosenDesign.materialsSummary}
                         </p>
-                      )}
+                        {!activeCard && (
+                          <p className="text-[11px] text-amber-200/90 font-mono">
+                            Vista previa NFT #{String(chosenDesign.cardNumber).padStart(3, '0')} · Realiza un aporte voluntario arriba para emitir y vincular tu NFT 4D irrepetible a tu cuenta StarSeed OS.
+                          </p>
+                        )}
+                      </div>
                     </div>
                   );
                 })()}
@@ -709,7 +834,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {SINESTESIA_PREVIEWS.map((p) => (
-                    <div key={p.key} className="bg-black/40 rounded-2xl overflow-hidden border border-white/10 hover:border-white/25 transition-all flex flex-col group">
+                    <div key={p.key} className="bg-black/40 rounded-2xl overflow-hidden border border-white/10 hover:border-white/25 transition-opacity flex flex-col group">
                       <div className="aspect-video relative flex items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_50%_50%,#11182f,#05060d)]">
                         {p.key === 'geo' && (
                           <svg viewBox="0 0 120 120" className="w-28 h-28" style={{ animation: 'ssSpin 18s linear infinite' }}>
@@ -763,7 +888,14 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
               {/* Sección 1: ¿Cómo Funciona? */}
               <section className="p-6 sm:p-8 rounded-3xl bg-black/40 border border-white/10 space-y-4">
                 <h3 className="text-2xl font-bold text-white flex items-center gap-3">
-                  <BrainCircuit className="text-cyan-400" /> ¿Cómo Funciona?
+                  <div className="w-9 h-9 starseed-app-squircle p-0.5 flex items-center justify-center shrink-0">
+                    <img
+                      src="./starseed/app-icons/audiomorphic.png"
+                      alt="Audiomorphic"
+                      className="w-full h-full object-cover rounded-[20%]"
+                    />
+                  </div>
+                  ¿Cómo Funciona Audiomorphic?
                 </h3>
                 <p className="text-gray-300 leading-relaxed text-sm sm:text-base">
                   Esta aplicación es un motor de visualización de audio en tiempo real que traduce las frecuencias sonoras en complejas estructuras geométricas 3D. Utilizando la <strong>Web Audio API</strong>, analizamos el espectro de audio capturado por tu micrófono o dispositivo, dividiéndolo en bandas de frecuencia continuas (bajos, medios y agudos). Estos datos alimentan un sistema de mallas paramétricas y shaders matemáticos en WebGL (a través de Three.js), creando una experiencia visual inmersiva y reactiva.
@@ -829,7 +961,8 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                 <div className="absolute top-0 right-0 w-64 h-64 bg-pink-500/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
                 
                 <h3 className="text-2xl font-bold text-pink-300 flex items-center gap-3 mb-4 relative z-10">
-                  <Heart className="text-pink-400" /> Fundación Starseed
+                  <StarSeedSymbol size="md" glow alt="Símbolo Fundación StarSeed" />
+                  Fundación StarSeed
                 </h3>
                 <p className="text-gray-200 leading-relaxed text-sm sm:text-base mb-6 relative z-10 max-w-3xl">
                   Tus donaciones y aportaciones voluntarias apoyan el desarrollo continuo de esta herramienta y financian directamente a la <strong>Fundación Starseed</strong>. Nuestra misión es promover la educación, la conciencia y la sanación a través del arte, la tecnología armónica y la conexión comunitaria. Creemos en el poder transformador de la frecuencia y la geometría sagrada para elevar el espíritu humano.
@@ -839,7 +972,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                   href={FUNDACION_LINKTREE} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-400 hover:to-rose-500 text-white font-bold transition-all shadow-[0_0_20px_rgba(236,72,153,0.4)] relative z-10 text-xs sm:text-sm"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-400 hover:to-rose-500 text-white font-bold transition-opacity shadow-[0_0_20px_rgba(236,72,153,0.4)] relative z-10 text-xs sm:text-sm"
                 >
                   Conoce más sobre la Fundación <ExternalLink size={16} />
                 </a>
@@ -854,29 +987,38 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
               
               {/* Header de Estado de Versión & Verificador */}
               <div className="p-6 sm:p-7 rounded-3xl bg-gradient-to-r from-cyan-950/50 via-indigo-950/40 to-black/60 border border-cyan-500/40 flex flex-col md:flex-row justify-between items-start md:items-center gap-5">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2.5 flex-wrap">
-                    <span className="text-xs font-mono uppercase tracking-wider px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 font-bold flex items-center gap-1.5">
-                      <CheckCircle2 size={14} className="text-cyan-400" />
-                      Versión Actual: v{updateSystem.currentVersion}
-                    </span>
-                    <span className="text-xs font-mono text-gray-400">
-                      Compilación {updateSystem.buildDate} · Motor Nativo v{updateSystem.nativeContainerVersion}
-                    </span>
+                <div className="flex items-start gap-3.5 sm:gap-4">
+                  <div className="w-12 h-12 starseed-app-squircle p-0.5 hidden sm:flex items-center justify-center shrink-0 mt-0.5">
+                    <img
+                      src="./starseed/app-icons/audiomorphic.png"
+                      alt="Audiomorphic"
+                      className="w-full h-full object-cover rounded-[20%]"
+                    />
                   </div>
-                  <h3 className="text-xl sm:text-2xl font-bold text-white">
-                    Centro Inteligente de Actualizaciones & Versiones
-                  </h3>
-                  <p className="text-xs text-gray-300 max-w-2xl leading-relaxed">
-                    {updateSystem.updateStatusMessage || 'El sistema comprueba y aplica automáticamente las mejoras internas de algoritmos y audio sin interrumpir tu experiencia.'}
-                  </p>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      <span className="text-xs font-mono uppercase tracking-wider px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 font-bold flex items-center gap-1.5">
+                        <CheckCircle2 size={14} className="text-cyan-400" />
+                        Versión Actual: v{updateSystem.currentVersion}
+                      </span>
+                      <span className="text-xs font-mono text-gray-400">
+                        Compilación {updateSystem.buildDate} · Motor Nativo v{updateSystem.nativeContainerVersion}
+                      </span>
+                    </div>
+                    <h3 className="text-xl sm:text-2xl font-bold text-white">
+                      Centro Inteligente de Actualizaciones & Versiones
+                    </h3>
+                    <p className="text-xs text-gray-300 max-w-2xl leading-relaxed">
+                      {updateSystem.updateStatusMessage || 'El sistema comprueba y aplica automáticamente las mejoras internas de algoritmos y audio sin interrumpir tu experiencia.'}
+                    </p>
+                  </div>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-2.5 shrink-0">
                   <button
                     onClick={() => updateSystem.checkForUpdates(true)}
                     disabled={updateSystem.isChecking}
-                    className="px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-[0_0_20px_rgba(6,182,212,0.4)] disabled:opacity-60 cursor-pointer"
+                    className="px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-opacity shadow-[0_0_20px_rgba(6,182,212,0.4)] disabled:opacity-60 cursor-pointer"
                   >
                     <RefreshCw size={14} className={updateSystem.isChecking ? 'animate-spin' : ''} />
                     <span>{updateSystem.isChecking ? 'Comprobando...' : 'Buscar Actualizaciones'}</span>
@@ -886,7 +1028,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                     <button
                       onClick={updateSystem.applyOtaUpdate}
                       disabled={updateSystem.isUpdating}
-                      className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-[0_0_20px_rgba(16,185,129,0.4)] cursor-pointer"
+                      className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-opacity shadow-[0_0_20px_rgba(16,185,129,0.4)] cursor-pointer"
                     >
                       <Sparkles size={14} />
                       <span>{updateSystem.isUpdating ? 'Actualizando...' : 'Instalar en Vivo (OTA)'}</span>
@@ -930,7 +1072,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-                  <label className="flex items-center gap-3 p-3 rounded-xl bg-black/30 border border-white/10 cursor-pointer hover:border-white/20 transition-all">
+                  <label className="flex items-center gap-3 p-3 rounded-xl bg-black/30 border border-white/10 cursor-pointer hover:border-white/20 transition-opacity">
                     <input
                       type="checkbox"
                       checked={updateSystem.settings.autoCheck}
@@ -940,7 +1082,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                     <span className="text-gray-200">Buscar al iniciar la app</span>
                   </label>
 
-                  <label className="flex items-center gap-3 p-3 rounded-xl bg-black/30 border border-white/10 cursor-pointer hover:border-white/20 transition-all">
+                  <label className="flex items-center gap-3 p-3 rounded-xl bg-black/30 border border-white/10 cursor-pointer hover:border-white/20 transition-opacity">
                     <input
                       type="checkbox"
                       checked={updateSystem.settings.autoApplyOta}
@@ -1112,7 +1254,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   
                   {/* 1. Windows */}
-                  <div className={`p-5 rounded-2xl border transition-all flex flex-col justify-between ${
+                  <div className={`p-5 rounded-2xl border transition-opacity flex flex-col justify-between ${
                     updateSystem.detectedOS === 'windows'
                       ? 'bg-cyan-950/40 border-cyan-400/60 shadow-[0_0_20px_rgba(6,182,212,0.2)]'
                       : 'bg-black/40 border-white/10 hover:border-white/20'
@@ -1135,7 +1277,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                         href={updateSystem.downloads.windows.installerUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-full py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all shadow-[0_0_15px_rgba(6,182,212,0.3)] cursor-pointer"
+                        className="w-full py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-extrabold text-xs flex items-center justify-center gap-1.5 transition-opacity shadow-[0_0_15px_rgba(6,182,212,0.3)] cursor-pointer"
                       >
                         <Download size={14} />
                         <span>Instalador (.exe)</span>
@@ -1152,7 +1294,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                   </div>
 
                   {/* 2. macOS */}
-                  <div className={`p-5 rounded-2xl border transition-all flex flex-col justify-between ${
+                  <div className={`p-5 rounded-2xl border transition-opacity flex flex-col justify-between ${
                     updateSystem.detectedOS === 'macos'
                       ? 'bg-purple-950/40 border-purple-400/60 shadow-[0_0_20px_rgba(168,85,247,0.2)]'
                       : 'bg-black/40 border-white/10 hover:border-white/20'
@@ -1175,7 +1317,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                         href={updateSystem.downloads.macos.arm64DmgUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all shadow-[0_0_15px_rgba(168,85,247,0.3)] cursor-pointer"
+                        className="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 transition-opacity shadow-[0_0_15px_rgba(168,85,247,0.3)] cursor-pointer"
                       >
                         <Download size={14} />
                         <span>Apple Silicon (.dmg)</span>
@@ -1192,7 +1334,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                   </div>
 
                   {/* 3. Android */}
-                  <div className={`p-5 rounded-2xl border transition-all flex flex-col justify-between ${
+                  <div className={`p-5 rounded-2xl border transition-opacity flex flex-col justify-between ${
                     updateSystem.detectedOS === 'android'
                       ? 'bg-emerald-950/40 border-emerald-400/60 shadow-[0_0_20px_rgba(16,185,129,0.2)]'
                       : 'bg-black/40 border-white/10 hover:border-white/20'
@@ -1215,7 +1357,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                         href={updateSystem.downloads.android.apkUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)] cursor-pointer"
+                        className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold text-xs flex items-center justify-center gap-1.5 transition-opacity shadow-[0_0_15px_rgba(16,185,129,0.3)] cursor-pointer"
                       >
                         <Download size={14} />
                         <span>Descargar APK (.apk)</span>
@@ -1225,7 +1367,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                   </div>
 
                   {/* 4. Linux */}
-                  <div className={`p-5 rounded-2xl border transition-all flex flex-col justify-between ${
+                  <div className={`p-5 rounded-2xl border transition-opacity flex flex-col justify-between ${
                     updateSystem.detectedOS === 'linux'
                       ? 'bg-amber-950/40 border-amber-400/60 shadow-[0_0_20px_rgba(245,158,11,0.2)]'
                       : 'bg-black/40 border-white/10 hover:border-white/20'
@@ -1252,7 +1394,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                         href={updateSystem.downloads.linux.x64Url || updateSystem.downloads.linux.tarGzUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all shadow-[0_0_15px_rgba(245,158,11,0.3)] cursor-pointer"
+                        className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs flex items-center justify-center gap-1.5 transition-opacity shadow-[0_0_15px_rgba(245,158,11,0.3)] cursor-pointer"
                       >
                         <Download size={14} />
                         <span>Linux x64 (.tar.gz)</span>
@@ -1352,7 +1494,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
               {/* Filtros por categoría centrados */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <h4 className="text-base font-bold text-white flex items-center justify-center sm:justify-start gap-2">
-                  <StarSeedSymbol size="sm" glow />
+                  <Globe size={17} className="morph-accent-text" />
                   <span>Aplicaciones del Ecosistema StarSeed ({STARSEED_ECOSYSTEM_APPS.length})</span>
                 </h4>
 
@@ -1534,7 +1676,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                           {handoffLoading ? (
                             <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                           ) : (
-                            <StarSeedSymbol size="xs" />
+                            <Rocket size={14} />
                           )}
                           <span>Abrir StarSeed OS</span>
                         </button>
@@ -1542,7 +1684,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                         <button
                           type="button"
                           onClick={() => identity.logout()}
-                          className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-red-500/20 text-gray-200 hover:text-red-300 border border-white/10 text-xs font-bold transition-all flex items-center gap-2 cursor-pointer"
+                          className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-red-500/20 text-gray-200 hover:text-red-300 border border-white/10 text-xs font-bold transition-opacity flex items-center gap-2 cursor-pointer"
                         >
                           <LogOut size={15} /> Cerrar Sesión
                         </button>
@@ -1608,7 +1750,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                             key={brain.id}
                             type="button"
                             onClick={() => presetsManager.selectBrain(brain.id)}
-                            className={`text-left p-4 rounded-2xl border transition-all cursor-pointer space-y-2 ${
+                            className={`text-left p-4 rounded-2xl border transition-opacity cursor-pointer space-y-2 ${
                               isSelected
                                 ? 'morph-tab-active'
                                 : 'bg-black/35 border-white/10 hover:border-white/25'
@@ -1735,8 +1877,18 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                 /* Formulario de Login / Registro */
                 <form onSubmit={handleAuthSubmit} className="max-w-md mx-auto p-6 sm:p-8 rounded-3xl quantum-glass space-y-4">
                   <div className="text-center mb-3">
-                    <div className="mx-auto mb-2.5 w-16 h-16 rounded-2xl quantum-glass flex items-center justify-center p-2">
-                      <StarSeedSymbol size="lg" glow />
+                    <div className="mx-auto mb-2.5 flex items-center justify-center gap-2.5">
+                      <div className="w-12 h-12 starseed-app-squircle p-0.5 flex items-center justify-center">
+                        <img
+                          src="./starseed/app-icons/audiomorphic.png"
+                          alt="Audiomorphic"
+                          className="w-full h-full object-cover rounded-[20%]"
+                        />
+                      </div>
+                      <ArrowRight size={14} className="text-cyan-300/80" />
+                      <div className="w-14 h-14 rounded-2xl quantum-glass flex items-center justify-center p-1.5">
+                        <StarSeedSymbol size="md" glow />
+                      </div>
                     </div>
                     <h4 className="text-lg font-bold starseed-text-gradient">
                       {isRegistering ? 'Crear Cuenta StarSeed OS' : 'Entrar a tu Cuenta StarSeed'}
@@ -1799,7 +1951,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                     onClick={() => openExternalUrl(STARSEED_OS_OFFICIAL_URL)}
                     className="w-full py-2.5 px-3 rounded-xl morph-btn-glass text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer"
                   >
-                    <StarSeedSymbol size="xs" glow />
+                    <Globe size={13} className="morph-accent-text" />
                     <span>Crear o gestionar cuenta en starseed-os.vercel.app</span>
                     <ExternalLink size={12} />
                   </button>
@@ -1832,7 +1984,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                     <button
                       type="button"
                       onClick={() => onClose()}
-                      className="px-3 py-1 bg-cyan-500/30 hover:bg-cyan-500/50 text-white rounded-lg text-[11px] font-bold transition-all cursor-pointer"
+                      className="px-3 py-1 bg-cyan-500/30 hover:bg-cyan-500/50 text-white rounded-lg text-[11px] font-bold transition-opacity cursor-pointer"
                     >
                       Ver en Pantalla
                     </button>
@@ -1912,7 +2064,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                         setInstallModalPreset(null);
                         setTimeout(() => setInstallSuccessMessage(null), 5000);
                       }}
-                      className="w-full sm:w-auto px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition-all shadow-[0_0_15px_rgba(168,85,247,0.4)] cursor-pointer shrink-0"
+                      className="w-full sm:w-auto px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition-opacity shadow-[0_0_15px_rgba(168,85,247,0.4)] cursor-pointer shrink-0"
                     >
                       Confirmar y Guardar
                     </button>
@@ -1923,8 +2075,14 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
               {/* Cabecera de la Librería */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-white/10 pb-4">
                 <div>
-                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-cyan-400" />
+                  <h3 className="text-lg font-bold text-white flex items-center gap-2.5">
+                    <div className="w-8 h-8 starseed-app-squircle p-0.5 flex items-center justify-center shrink-0">
+                      <img
+                        src="./starseed/app-icons/audiomorphic.png"
+                        alt="Audiomorphic"
+                        className="w-full h-full object-cover rounded-[20%]"
+                      />
+                    </div>
                     Librería Soberana de Presets
                   </h3>
                   <p className="text-xs text-gray-400">
@@ -1936,9 +2094,13 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                   type="button"
                   onClick={() => sync.syncWithCloud()}
                   disabled={sync.isSyncing}
-                  className="px-4 py-2 rounded-xl bg-cyan-500/20 border border-cyan-400/40 text-cyan-200 text-xs font-bold hover:bg-cyan-500/30 transition-all flex items-center gap-2 cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-cyan-500/20 border border-cyan-400/40 text-cyan-200 text-xs font-bold hover:bg-cyan-500/30 transition-opacity flex items-center gap-2 cursor-pointer"
                 >
-                  <RefreshCw className={`w-3.5 h-3.5 ${sync.isSyncing ? 'animate-spin' : ''}`} />
+                  {sync.isSyncing ? (
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <StarSeedSymbol size="xs" />
+                  )}
                   {sync.isSyncing ? 'Sincronizando...' : 'Sincronizar con StarSeed OS'}
                 </button>
               </div>
@@ -1960,7 +2122,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                     key={cat.id}
                     type="button"
                     onClick={() => setSelectedCategory(cat.id)}
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-opacity cursor-pointer ${
                       selectedCategory === cat.id
                         ? 'bg-cyan-500/30 text-cyan-200 border border-cyan-400/50 shadow-[0_0_10px_rgba(6,182,212,0.3)]'
                         : 'bg-white/5 text-gray-400 hover:text-white border border-transparent'
@@ -1990,7 +2152,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                     return (
                       <div
                         key={preset.id}
-                        className="p-4 sm:p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-cyan-400/40 transition-all flex flex-col justify-between space-y-4 min-w-0 overflow-hidden"
+                        className="p-4 sm:p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-cyan-400/40 transition-opacity flex flex-col justify-between space-y-4 min-w-0 overflow-hidden"
                       >
                         {/* Cabecera y descripción del preset */}
                         <div className="min-w-0">
@@ -2051,7 +2213,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                                   setAppliedNotification(`¡Preset "${preset.title}" seleccionado para tu espacio de trabajo!`);
                                   setTimeout(() => setAppliedNotification(null), 3500);
                                 }}
-                                className="px-3 py-1.5 rounded-xl bg-cyan-600/25 border border-cyan-400/40 text-cyan-200 font-semibold hover:bg-cyan-600/40 transition-all flex items-center gap-1.5 cursor-pointer shadow-[0_0_10px_rgba(6,182,212,0.2)]"
+                                className="px-3 py-1.5 rounded-xl bg-cyan-600/25 border border-cyan-400/40 text-cyan-200 font-semibold hover:bg-cyan-600/40 transition-opacity flex items-center gap-1.5 cursor-pointer shadow-[0_0_10px_rgba(6,182,212,0.2)]"
                                 title="Seleccionar preset para trabajar u organizar"
                               >
                                 <Check size={12} />
@@ -2065,7 +2227,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                                 setInstallModalPreset(preset);
                                 setInstallTargetFolder(presetsManager.folders[0] || '');
                               }}
-                              className="px-3 py-1.5 rounded-xl bg-purple-500/25 border border-purple-400/40 text-purple-200 font-semibold hover:bg-purple-500/40 transition-all flex items-center gap-1.5 cursor-pointer shadow-[0_0_10px_rgba(168,85,247,0.2)]"
+                              className="px-3 py-1.5 rounded-xl bg-purple-500/25 border border-purple-400/40 text-purple-200 font-semibold hover:bg-purple-500/40 transition-opacity flex items-center gap-1.5 cursor-pointer shadow-[0_0_10px_rgba(168,85,247,0.2)]"
                               title="Guardar y organizar en tu Biblioteca Personal"
                             >
                               <FolderPlus size={12} />
@@ -2084,7 +2246,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                                 [preset.id]: prev[preset.id] === 'music' ? 'none' : 'music',
                               }));
                             }}
-                            className={`flex-1 py-1 px-2.5 rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                            className={`flex-1 py-1 px-2.5 rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-opacity cursor-pointer ${
                               currentExpanded === 'music'
                                 ? 'bg-indigo-500/30 text-indigo-200 border border-indigo-500/40'
                                 : 'bg-white/5 text-gray-400 hover:text-gray-200'
@@ -2102,7 +2264,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                                 [preset.id]: prev[preset.id] === 'comments' ? 'none' : 'comments',
                               }));
                             }}
-                            className={`flex-1 py-1 px-2.5 rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                            className={`flex-1 py-1 px-2.5 rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-opacity cursor-pointer ${
                               currentExpanded === 'comments'
                                 ? 'bg-cyan-500/30 text-cyan-200 border border-cyan-500/40'
                                 : 'bg-white/5 text-gray-400 hover:text-gray-200'
@@ -2226,7 +2388,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                                       setRecDesc('');
                                       setShowRecFormFor(null);
                                     }}
-                                    className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-[11px] font-bold cursor-pointer transition-all"
+                                    className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-[11px] font-bold cursor-pointer transition-opacity"
                                   >
                                     Publicar Recomendación
                                   </button>

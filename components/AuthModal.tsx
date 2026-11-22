@@ -90,7 +90,7 @@ export const AuthModal: React.FC = () => {
       aria-labelledby="auth-modal-title"
     >
       <div
-        className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(20,18,45,0.92),rgba(3,6,15,0.96)_72%)] backdrop-blur-xl"
+        className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(20,18,45,0.92),rgba(3,6,15,0.96)_72%)] desktop-backdrop-blur"
         onClick={() => setAuthModalOpen(false)}
       />
 
@@ -98,7 +98,7 @@ export const AuthModal: React.FC = () => {
         ref={cardTilt.surfaceRef}
         onPointerMove={cardTilt.onPointerMove}
         onPointerLeave={cardTilt.onPointerLeave}
-        className="relative w-full max-w-[445px] my-auto max-h-[92dvh] overflow-y-auto art-nouveau-frame menu-3d-surface menu-audio-rim rounded-3xl p-5 sm:p-8 text-white"
+        className="relative w-full max-w-[445px] my-auto max-h-[92vh] max-h-[92dvh] overflow-y-auto overflow-x-hidden art-nouveau-frame menu-3d-surface menu-audio-rim rounded-3xl p-5 sm:p-8 text-white"
       >
         <div className="menu-3d-glare rounded-3xl" aria-hidden="true" />
         <button

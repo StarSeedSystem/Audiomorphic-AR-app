@@ -93,8 +93,8 @@ const LiquidSlider: React.FC<LiquidSliderProps> = ({
         style={{
           width: `${percentage}%`,
           background:
-            'linear-gradient(90deg, hsl(var(--morph-hue-1) 90% 56%), hsl(var(--morph-hue-2) 88% 60%), hsl(var(--morph-hue-3) 88% 60%))',
-          boxShadow: '0 0 12px hsla(var(--morph-hue-1) 92% 60% / 0.45)',
+            'linear-gradient(90deg, hsl(var(--morph-hue-1), 90%, 56%), hsl(var(--morph-hue-2), 88%, 60%), hsl(var(--morph-hue-3), 88%, 60%))',
+          boxShadow: '0 0 12px hsla(var(--morph-hue-1), 92%, 60%, 0.45)',
         }}
       />
 
@@ -107,8 +107,8 @@ const LiquidSlider: React.FC<LiquidSliderProps> = ({
         style={{
           left: `calc(${percentage}% - 8px)`,
           background:
-            'radial-gradient(circle at 30% 30%, #ffffff, hsl(var(--morph-hue-1) 92% 64%))',
-          boxShadow: '0 0 14px hsla(var(--morph-hue-1) 94% 64% / 0.65)',
+            'radial-gradient(circle at 30% 30%, #ffffff, hsl(var(--morph-hue-1), 92%, 64%))',
+          boxShadow: '0 0 14px hsla(var(--morph-hue-1), 94%, 64%, 0.65)',
         }}
       >
         {!disabled && (

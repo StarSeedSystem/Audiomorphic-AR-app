@@ -258,7 +258,7 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
                           e.stopPropagation();
                           deletePreset(preset.id);
                         }}
-                        className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-400 transition-all cursor-pointer"
+                        className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-400 transition-opacity cursor-pointer"
                       >
                         <Trash2 size={12} />
                       </button>

@@ -30,10 +30,7 @@ export const BackgroundLayer: React.FC<BackgroundLayerProps> = ({ params, getAud
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     };
-    window.addEventListener('resize', resize);
-    resize();
-
-    const render = () => {
+    const renderFrame = () => {
       const audioMetrics = getAudioMetrics(params.sensitivity, params.freqRange);
       timeRef.current += 0.01 * params.bgSpeed * (params.bgAnimatable ? 1 : 0);
       const t = timeRef.current;
@@ -136,14 +133,31 @@ export const BackgroundLayer: React.FC<BackgroundLayerProps> = ({ params, getAud
         ctx.fillStyle = vignette;
         ctx.fillRect(0, 0, w, h);
       }
-
-      reqRef.current = requestAnimationFrame(render);
     };
 
-    render();
+    const isStaticMode =
+      params.bgMode === 'solid' ||
+      (params.bgMode === 'gradient' && !params.bgAnimatable);
+
+    const handleResize = () => {
+      resize();
+      if (isStaticMode) renderFrame();
+    };
+    window.addEventListener('resize', handleResize);
+    resize();
+
+    if (isStaticMode) {
+      renderFrame();
+    } else {
+      const render = () => {
+        renderFrame();
+        reqRef.current = requestAnimationFrame(render);
+      };
+      render();
+    }
 
     return () => {
-      window.removeEventListener('resize', resize);
+      window.removeEventListener('resize', handleResize);
       if (reqRef.current) cancelAnimationFrame(reqRef.current);
     };
   }, [params.bgMode, params.bgColors, params.bgSpeed, params.bgAnimatable, params.bgVignette, params.bgVignetteIntensity, params.sensitivity, params.freqRange, getAudioMetrics]);

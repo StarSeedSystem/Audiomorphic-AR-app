@@ -248,7 +248,8 @@ const VisualizerCanvas: React.FC<VisualizerCanvasProps> = ({ params, liveParamsR
       const parent = canvas.parentElement;
       const width = w ?? (parent ? parent.clientWidth : window.innerWidth);
       const height = h ?? (parent ? parent.clientHeight : window.innerHeight);
-      const dpr = window.devicePixelRatio || 1;
+      const maxDpr = width < 768 ? 1.5 : 2;
+      const dpr = Math.min(window.devicePixelRatio || 1, maxDpr);
       
       canvas.width = width * dpr;
       canvas.height = height * dpr;

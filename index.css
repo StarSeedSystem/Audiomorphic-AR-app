@@ -4,13 +4,11 @@
 
 :root {
   color-scheme: dark;
-  --in-oklab: ;
-  --in-oklch: ;
   --neon-cyan: #06b6d4;
   --neon-purple: #a855f7;
   --neon-emerald: #10b981;
 
-  /* OmniFrecuencias + StarSeed OS Living Chromatic Morph Tokens (updated live by useChromaticMorph) */
+  /* OmniFrecuencias + StarSeed OS Living Chromatic Morph Tokens (updated adaptively by useChromaticMorph) */
   --morph-hue-1: 175;
   --morph-hue-2: 312.5;
   --morph-hue-3: 37;
@@ -21,24 +19,17 @@
   --morph-text-l2: 74%;
   --morph-on-accent: #f8fafc;
   --morph-glow-alpha: 0.30;
-  --morph-accent-bg: hsl(var(--morph-hue-1) 86% 46%);
+  --morph-accent-bg: hsl(var(--morph-hue-1), 86%, 46%);
 
-  --morph-accent-1: hsl(var(--morph-hue-1) 90% 60%);
-  --morph-accent-2: hsl(var(--morph-hue-2) 88% 62%);
-  --morph-accent-3: hsl(var(--morph-hue-3) 90% 62%);
-  --morph-text-accent: hsl(var(--morph-hue-1) 92% var(--morph-text-l1));
-  --morph-text-accent-2: hsl(var(--morph-hue-2) 90% var(--morph-text-l2));
-  --morph-surface: hsla(var(--morph-hue-1) 62% 14% / 0.80);
-  --morph-surface-deep: hsla(var(--morph-hue-3) 56% 10% / 0.88);
-  --morph-border: hsla(var(--morph-hue-1) 88% 68% / 0.48);
-  --morph-border-2: hsla(var(--morph-hue-2) 88% 70% / 0.44);
-}
-
-@supports (background: linear-gradient(in oklab, white, black)) {
-  :root {
-    --in-oklab: in oklab;
-    --in-oklch: in oklch;
-  }
+  --morph-accent-1: hsl(var(--morph-hue-1), 90%, 60%);
+  --morph-accent-2: hsl(var(--morph-hue-2), 88%, 62%);
+  --morph-accent-3: hsl(var(--morph-hue-3), 90%, 62%);
+  --morph-text-accent: hsl(var(--morph-hue-1), 92%, var(--morph-text-l1));
+  --morph-text-accent-2: hsl(var(--morph-hue-2), 90%, var(--morph-text-l2));
+  --morph-surface: hsla(var(--morph-hue-1), 62%, 14%, 0.80);
+  --morph-surface-deep: hsla(var(--morph-hue-3), 56%, 10%, 0.88);
+  --morph-border: hsla(var(--morph-hue-1), 88%, 68%, 0.48);
+  --morph-border-2: hsla(var(--morph-hue-2), 88%, 70%, 0.44);
 }
 
 body {
@@ -53,95 +44,103 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+button,
+a,
+[role="button"],
+[role="slider"] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.h-viewport-full {
+  height: 100vh;
+  height: 100dvh;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .desktop-backdrop-blur {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+}
+
 /* Custom Iridescent Scrollbar (static color to avoid 125+ scrollbar-color CSS transitions on chromatic morph ticks) */
 .liquid-scroll,
 .hub-scroll,
 .custom-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: rgba(56, 189, 248, 0.36) rgba(6, 9, 18, 0.72);
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: rgba(4, 7, 16, 0.7);
 }
+
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(
-    180deg,
-    hsla(var(--morph-hue-1) 86% 62% / 0.55),
-    hsla(var(--morph-hue-2) 86% 62% / 0.55),
-    hsla(var(--morph-hue-3) 86% 62% / 0.5)
-  );
+  background: linear-gradient(180deg,
+      hsla(var(--morph-hue-1), 86%, 62%, 0.55),
+      hsla(var(--morph-hue-2), 86%, 62%, 0.55),
+      hsla(var(--morph-hue-3), 86%, 62%, 0.5));
   border-radius: 9999px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(
-    180deg,
-    hsla(var(--morph-hue-1) 92% 68% / 0.85),
-    hsla(var(--morph-hue-2) 92% 68% / 0.85),
-    hsla(var(--morph-hue-3) 92% 68% / 0.8)
-  );
+  background: linear-gradient(180deg,
+      hsla(var(--morph-hue-1), 92%, 68%, 0.85),
+      hsla(var(--morph-hue-2), 92%, 68%, 0.85),
+      hsla(var(--morph-hue-3), 92%, 68%, 0.8));
 }
 
 /* Living Chromatic Gradients */
 .starseed-text-gradient {
-  background: linear-gradient(
-    115deg var(--in-oklab),
-    hsl(var(--morph-hue-1) 94% 76%) 0%,
-    #f8fafc 38%,
-    hsl(var(--morph-hue-2) 94% 78%) 70%,
-    hsl(var(--morph-hue-3) 92% 76%) 100%
-  );
+  background: linear-gradient(115deg,
+      hsl(var(--morph-hue-1), 94%, 76%) 0%,
+      #f8fafc 38%,
+      hsl(var(--morph-hue-2), 94%, 78%) 70%,
+      hsl(var(--morph-hue-3), 92%, 76%) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
 .starseed-gold-gradient {
-  background: linear-gradient(
-    120deg var(--in-oklab),
-    hsl(var(--morph-hue-3) 96% 84%) 0%,
-    hsl(var(--morph-hue-1) 90% 74%) 52%,
-    hsl(var(--morph-hue-2) 92% 76%) 100%
-  );
+  background: linear-gradient(120deg,
+      hsl(var(--morph-hue-3), 96%, 84%) 0%,
+      hsl(var(--morph-hue-1), 90%, 74%) 52%,
+      hsl(var(--morph-hue-2), 92%, 76%) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
-/* 3D Gyroscope + Pointer Parallax Stage (GPU accelerated, zero React re-renders) */
+/* 3D Gyroscope + Pointer Parallax Stage (desktop 3D on interaction only; mobile translates glare layer cleanly) */
 .menu-3d-stage {
-  perspective: 1500px;
+  position: relative;
 }
 
 .menu-3d-surface {
-  transform:
-    perspective(1400px)
-    translate3d(var(--menu-tx, 0px), var(--menu-ty, 0px), 0)
-    rotateX(var(--menu-rx, 0deg))
-    rotateY(var(--menu-ry, 0deg));
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
   isolation: isolate;
-  will-change: transform;
 }
 
 .menu-3d-glare {
   position: absolute;
-  inset: 0;
+  inset: -18%;
   pointer-events: none;
   border-radius: inherit;
   z-index: 4;
-  opacity: calc(0.14 + var(--morph-treble, 0.16) * 0.22);
-  background: radial-gradient(
-    460px circle at var(--menu-glare-x, 50%) var(--menu-glare-y, 28%),
-    hsla(var(--morph-hue-1) 96% 78% / 0.16) 0%,
-    hsla(var(--morph-hue-2) 92% 72% / 0.08) 42%,
-    transparent 74%
-  );
+  transform: translate3d(var(--glare-tx, 0px), var(--glare-ty, 0px), 0);
+  opacity: 0.22;
+  background: radial-gradient(380px circle at 50% 35%,
+      rgba(165, 243, 252, 0.14) 0%,
+      rgba(192, 132, 252, 0.08) 42%,
+      transparent 68%);
 }
 
 .menu-audio-rim {
@@ -159,29 +158,25 @@ body {
   pointer-events: none;
   z-index: 6;
   opacity: calc(0.32 + var(--morph-bass, 0.14) * 0.65);
-  background: linear-gradient(
-    90deg var(--in-oklab),
-    transparent 0%,
-    hsl(var(--morph-hue-1) 95% 74%) 28%,
-    hsl(var(--morph-hue-2) 95% 76%) 50%,
-    hsl(var(--morph-hue-3) 95% 74%) 72%,
-    transparent 100%
-  );
-  box-shadow: 0 0 calc(8px + var(--morph-bass, 0.14) * 16px) hsla(var(--morph-hue-1) 95% 68% / 0.68);
+  background: linear-gradient(90deg,
+      transparent 0%,
+      hsl(var(--morph-hue-1), 95%, 74%) 28%,
+      hsl(var(--morph-hue-2), 95%, 76%) 50%,
+      hsl(var(--morph-hue-3), 95%, 74%) 72%,
+      transparent 100%);
+  box-shadow: 0 0 calc(8px + var(--morph-bass, 0.14) * 16px) hsla(var(--morph-hue-1), 95%, 68%, 0.68);
 }
 
 /* Official StarSeed OS App Squircle */
 .starseed-app-squircle {
   border-radius: 24%;
-  background: linear-gradient(
-    145deg var(--in-oklab),
-    hsla(var(--morph-hue-1) 50% 18% / 0.65),
-    rgba(8, 12, 24, 0.86)
-  );
-  border: 1px solid hsla(var(--morph-hue-1) 88% 72% / 0.36);
+  background: linear-gradient(145deg,
+      hsla(var(--morph-hue-1), 50%, 18%, 0.65),
+      rgba(8, 12, 24, 0.86));
+  border: 1px solid hsla(var(--morph-hue-1), 88%, 72%, 0.36);
   box-shadow:
     0 10px 26px -10px rgba(0, 0, 0, 0.78),
-    inset 0 1px 0 hsla(0 0% 100% / 0.28);
+    inset 0 1px 0 hsla(0, 0%, 100%, 0.28);
   overflow: hidden;
 }
 
@@ -197,36 +192,26 @@ body {
 
 /* Solarpunk Liquid-Crystal Glass Surfaces
    IMPORTANT: No CSS transitions on properties referencing --morph-* variables
-   so 30fps chromatic morphing never resets/cancels transitions or flickers! */
+   so adaptive chromatic morphing never resets/cancels transitions or flickers! */
 .quantum-glass {
-  background: linear-gradient(
-    158deg var(--in-oklab),
-    hsla(var(--morph-hue-1) 66% 16% / 0.78) 0%,
-    hsla(var(--morph-hue-3) 58% 11% / 0.88) 100%
-  );
-  backdrop-filter: blur(22px) saturate(160%);
-  -webkit-backdrop-filter: blur(22px) saturate(160%);
-  border: 1px solid hsla(var(--morph-hue-1) 88% 66% / 0.42);
+  background: linear-gradient(158deg,
+      hsla(var(--morph-hue-1), 66%, 16%, 0.78) 0%,
+      hsla(var(--morph-hue-3), 58%, 11%, 0.88) 100%);
+  border: 1px solid hsla(var(--morph-hue-1), 88%, 66%, 0.42);
   box-shadow:
-    0 20px 50px -15px rgba(0, 0, 0, 0.78),
-    0 0 38px -10px hsla(var(--morph-hue-1) 92% 60% / var(--morph-glow-alpha)),
-    inset 0 1px 0 hsla(var(--morph-hue-2) 92% 85% / 0.22);
+    0 16px 40px -14px rgba(0, 0, 0, 0.72),
+    inset 0 1px 0 hsla(var(--morph-hue-2), 92%, 85%, 0.22);
 }
 
 .quantum-glass-gold {
-  background: linear-gradient(
-    155deg var(--in-oklab),
-    hsla(var(--morph-hue-2) 64% 17% / 0.82) 0%,
-    hsla(var(--morph-hue-1) 58% 12% / 0.88) 55%,
-    hsla(var(--morph-hue-3) 62% 14% / 0.86) 100%
-  );
-  backdrop-filter: blur(24px) saturate(165%);
-  -webkit-backdrop-filter: blur(24px) saturate(165%);
-  border: 1px solid hsla(var(--morph-hue-2) 90% 68% / 0.48);
+  background: linear-gradient(155deg,
+      hsla(var(--morph-hue-2), 64%, 17%, 0.82) 0%,
+      hsla(var(--morph-hue-1), 58%, 12%, 0.88) 55%,
+      hsla(var(--morph-hue-3), 62%, 14%, 0.86) 100%);
+  border: 1px solid hsla(var(--morph-hue-2), 90%, 68%, 0.48);
   box-shadow:
-    0 22px 55px -16px rgba(0, 0, 0, 0.84),
-    0 0 46px -10px hsla(var(--morph-hue-2) 92% 62% / var(--morph-glow-alpha)),
-    inset 0 1px 0 hsla(var(--morph-hue-1) 92% 82% / 0.24);
+    0 18px 46px -16px rgba(0, 0, 0, 0.78),
+    inset 0 1px 0 hsla(var(--morph-hue-1), 92%, 82%, 0.24);
 }
 
 /* Art Nouveau Retrofuturistic Iridescent Metallic Frame */
@@ -234,32 +219,28 @@ body {
   position: relative;
   border: 1px solid transparent;
   background:
-    linear-gradient(160deg var(--in-oklab), hsla(var(--morph-hue-1) 64% 14% / 0.88), hsla(var(--morph-hue-3) 56% 9% / 0.92)) padding-box,
-    linear-gradient(
-      135deg var(--in-oklab),
-      hsla(var(--morph-hue-1) 94% 68% / 0.82),
-      hsla(var(--morph-hue-2) 92% 72% / 0.72),
-      hsla(var(--morph-hue-3) 94% 68% / 0.82)
-    ) border-box;
+    linear-gradient(160deg, hsla(var(--morph-hue-1), 64%, 14%, 0.90), hsla(var(--morph-hue-3), 56%, 9%, 0.94)) padding-box,
+    linear-gradient(135deg,
+      hsla(var(--morph-hue-1), 94%, 68%, 0.82),
+      hsla(var(--morph-hue-2), 92%, 72%, 0.72),
+      hsla(var(--morph-hue-3), 94%, 68%, 0.82)) border-box;
   box-shadow:
     0 24px 64px -16px rgba(0, 0, 0, 0.85),
-    0 0 48px -12px hsla(var(--morph-hue-1) 95% 64% / var(--morph-glow-alpha)),
-    inset 0 1px 0 hsla(0 0% 100% / 0.2);
+    0 0 42px -14px hsla(var(--morph-hue-1), 95%, 64%, var(--morph-glow-alpha)),
+    inset 0 1px 0 hsla(0, 0%, 100%, 0.2);
 }
 
 /* Morphologic Interactive Buttons with Accessible Dynamic Contrast */
 .morph-btn-primary {
-  background: linear-gradient(
-    130deg var(--in-oklab),
-    hsl(var(--morph-hue-1) 86% 46%) 0%,
-    hsl(var(--morph-hue-2) 84% 48%) 100%
-  );
+  background: linear-gradient(130deg,
+      hsl(var(--morph-hue-1), 86%, 46%) 0%,
+      hsl(var(--morph-hue-2), 84%, 48%) 100%);
   color: var(--morph-on-accent);
-  border: 1px solid hsla(var(--morph-hue-1) 95% 78% / 0.65);
+  border: 1px solid hsla(var(--morph-hue-1), 95%, 78%, 0.65);
   box-shadow:
-    0 8px 28px -6px hsla(var(--morph-hue-1) 94% 56% / 0.52),
-    inset 0 1px 0 hsla(0 0% 100% / 0.30);
-  transition: transform 0.2s ease, filter 0.2s ease;
+    0 8px 24px -6px hsla(var(--morph-hue-1), 94%, 56%, 0.48),
+    inset 0 1px 0 hsla(0, 0%, 100%, 0.30);
+  transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
 @supports (color: contrast-color(red)) {
@@ -274,13 +255,13 @@ body {
 }
 
 .morph-btn-glass {
-  background: hsla(var(--morph-hue-1) 68% 20% / 0.82);
+  background: hsla(var(--morph-hue-1), 68%, 20%, 0.82);
   color: #f8fafc;
-  border: 1px solid hsla(var(--morph-hue-1) 90% 68% / 0.52);
+  border: 1px solid hsla(var(--morph-hue-1), 90%, 68%, 0.52);
   box-shadow:
-    0 4px 18px -6px hsla(var(--morph-hue-1) 90% 56% / 0.35),
-    inset 0 1px 0 hsla(var(--morph-hue-2) 90% 84% / 0.18);
-  transition: transform 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
+    0 4px 18px -6px hsla(var(--morph-hue-1), 90%, 56%, 0.35),
+    inset 0 1px 0 hsla(var(--morph-hue-2), 90%, 84%, 0.18);
+  transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
 .morph-btn-glass:hover {
@@ -289,16 +270,14 @@ body {
 }
 
 .morph-tab-active {
-  background: linear-gradient(
-    125deg var(--in-oklab),
-    hsla(var(--morph-hue-1) 82% 45% / 0.52) 0%,
-    hsla(var(--morph-hue-2) 82% 46% / 0.48) 100%
-  );
+  background: linear-gradient(125deg,
+      hsla(var(--morph-hue-1), 82%, 45%, 0.52) 0%,
+      hsla(var(--morph-hue-2), 82%, 46%, 0.48) 100%);
   color: #ffffff;
-  border: 1px solid hsla(var(--morph-hue-1) 94% 72% / 0.78);
+  border: 1px solid hsla(var(--morph-hue-1), 94%, 72%, 0.78);
   box-shadow:
-    0 0 28px -4px hsla(var(--morph-hue-1) 95% 62% / 0.56),
-    inset 0 1px 0 hsla(0 0% 100% / 0.26);
+    0 0 24px -4px hsla(var(--morph-hue-1), 95%, 62%, 0.52),
+    inset 0 1px 0 hsla(0, 0%, 100%, 0.26);
 }
 
 .morph-accent-text {
@@ -310,17 +289,17 @@ body {
 }
 
 .morph-pill {
-  background: hsla(var(--morph-hue-1) 68% 18% / 0.84);
+  background: hsla(var(--morph-hue-1), 68%, 18%, 0.84);
   color: var(--morph-text-accent);
-  border: 1px solid hsla(var(--morph-hue-1) 90% 68% / 0.52);
-  box-shadow: 0 0 16px -4px hsla(var(--morph-hue-1) 90% 60% / 0.32);
+  border: 1px solid hsla(var(--morph-hue-1), 90%, 68%, 0.52);
+  box-shadow: 0 0 16px -4px hsla(var(--morph-hue-1), 90%, 60%, 0.32);
 }
 
 .sacred-grid-aura {
   background-image:
-    radial-gradient(circle at center, hsla(var(--morph-hue-1) 90% 60% / 0.14) 0%, transparent 56%),
-    radial-gradient(circle at center, hsla(var(--morph-hue-2) 88% 64% / 0.10) 0%, transparent 40%),
-    radial-gradient(circle at center, hsla(var(--morph-hue-3) 86% 62% / 0.11) 0%, transparent 72%);
+    radial-gradient(circle at center, hsla(var(--morph-hue-1), 90%, 60%, 0.14) 0%, transparent 56%),
+    radial-gradient(circle at center, hsla(var(--morph-hue-2), 88%, 64%, 0.10) 0%, transparent 40%),
+    radial-gradient(circle at center, hsla(var(--morph-hue-3), 86%, 62%, 0.11) 0%, transparent 72%);
 }
 
 /* Native Modal Dialog Scroll Containment & Backdrop */
@@ -335,52 +314,47 @@ dialog.morph-dialog[open] {
 }
 
 dialog.morph-dialog::backdrop {
-  background: rgba(2, 5, 14, 0.82);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  background: rgba(2, 5, 14, 0.84);
   overflow: hidden;
   overscroll-behavior: contain;
 }
 
-/* Avoid nested backdrop-filter layers inside .liquid-panel (prevents compositor tile flicker during 3D motion) */
+/* Avoid nested backdrop-filter layers inside .liquid-panel */
 .liquid-panel .quantum-glass,
 .liquid-panel .quantum-glass-gold {
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-  background: rgba(10, 14, 26, 0.68);
+  background: rgba(10, 14, 26, 0.72);
 }
 
-/* Main Menu Liquid Panel, Sections & Controls (moved statically from ControlPanel inline <style>) */
+/* Main Menu Liquid Panel, Sections & Controls (compositor-safe across mobile & desktop browsers) */
 .liquid-panel {
   background:
-    radial-gradient(
-      115% 85% at 12% 0%,
-      hsla(var(--morph-hue-1, 185), 88%, 56%, calc(var(--menu-transparency, 0.5) * 0.16 * var(--morph-glow-alpha, 1))) 0%,
-      transparent 58%
-    ),
-    radial-gradient(
-      95% 85% at 92% 100%,
-      hsla(var(--morph-hue-2, 265), 88%, 58%, calc(var(--menu-transparency, 0.5) * 0.14 * var(--morph-glow-alpha, 1))) 0%,
-      transparent 60%
-    ),
-    rgba(10, 14, 24, calc(var(--menu-transparency, 0.5) * 0.34 + 0.34));
-  backdrop-filter: blur(calc(var(--menu-transparency, 0.5) * 18px + 8px)) saturate(150%);
-  -webkit-backdrop-filter: blur(calc(var(--menu-transparency, 0.5) * 18px + 8px)) saturate(150%);
-  border: 1px solid hsla(var(--morph-hue-1, 185), 85%, 72%, 0.28);
+    radial-gradient(115% 85% at 12% 0%,
+      hsla(var(--morph-hue-1, 185), 88%, 56%, calc(var(--menu-transparency, 0.8) * 0.14 * var(--morph-glow-alpha, 0.3))) 0%,
+      transparent 58%),
+    radial-gradient(95% 85% at 92% 100%,
+      hsla(var(--morph-hue-2, 265), 88%, 58%, calc(var(--menu-transparency, 0.8) * 0.12 * var(--morph-glow-alpha, 0.3))) 0%,
+      transparent 60%),
+    rgba(8, 12, 22, calc(var(--menu-transparency, 0.8) * 0.18 + 0.76));
+  border: 1px solid hsla(var(--morph-hue-1, 185), 85%, 72%, 0.32);
   box-shadow:
-    0 40px 100px rgba(0, 0, 0, 0.72),
-    0 0 48px hsla(var(--morph-hue-1, 185), 90%, 60%, calc(0.16 * var(--morph-glow-alpha, 1))),
-    inset 0 2px 4px rgba(255, 255, 255, 0.22),
-    inset 0 -10px 40px hsla(var(--morph-hue-2, 265), 75%, 65%, 0.08),
-    inset 0 20px 60px rgba(255, 255, 255, 0.03);
-  border-radius: 32px;
+    0 24px 60px rgba(0, 0, 0, 0.68),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  border-radius: 20px;
   overflow: hidden;
   position: relative;
 }
 
+@media (min-width: 640px) {
+  .liquid-panel {
+    border-radius: 28px;
+  }
+}
+
 @media (min-width: 768px) {
   .liquid-panel {
-    border-radius: 44px;
+    border-radius: 36px;
   }
 }
 
@@ -388,29 +362,27 @@ dialog.morph-dialog::backdrop {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0) 32%, rgba(255, 255, 255, 0) 70%, rgba(255, 255, 255, 0.08) 100%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 32%, rgba(255, 255, 255, 0) 72%, rgba(255, 255, 255, 0.06) 100%);
   pointer-events: none;
   z-index: 0;
 }
 
 .liquid-section {
   background:
-    linear-gradient(
-      148deg,
+    linear-gradient(148deg,
       hsla(var(--morph-hue-1, 185), 72%, 44%, 0.11) 0%,
       hsla(var(--morph-hue-2, 265), 68%, 42%, 0.08) 55%,
-      rgba(12, 16, 28, 0.62) 100%
-    );
+      rgba(12, 16, 28, 0.68) 100%);
   border: 1px solid hsla(var(--morph-hue-1, 185), 75%, 72%, 0.20);
   border-top: 1px solid hsla(var(--morph-hue-2, 265), 85%, 78%, 0.34);
-  border-radius: 24px;
+  border-radius: 22px;
   box-shadow:
-    inset 0 0 30px rgba(255, 255, 255, 0.04),
-    0 15px 35px rgba(0, 0, 0, 0.25),
-    inset 0 2px 4px rgba(255, 255, 255, 0.08);
+    0 12px 28px rgba(0, 0, 0, 0.25),
+    inset 0 1px 2px rgba(255, 255, 255, 0.08);
   position: relative;
   overflow: hidden;
   padding: 0.85rem;
+  contain: layout style paint;
 }
 
 @media (min-width: 768px) {
@@ -427,25 +399,23 @@ dialog.morph-dialog::backdrop {
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.09), transparent 50%);
+  background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.08), transparent 50%);
   pointer-events: none;
 }
 
 .liquid-bubble {
   position: relative;
-  background: linear-gradient(
-    135deg,
-    hsla(var(--morph-hue-1, 185), 82%, 52%, 0.18),
-    hsla(var(--morph-hue-2, 265), 80%, 52%, 0.14),
-    rgba(12, 16, 28, 0.62)
-  );
+  background: linear-gradient(135deg,
+      hsla(var(--morph-hue-1, 185), 82%, 52%, 0.18),
+      hsla(var(--morph-hue-2, 265), 80%, 52%, 0.14),
+      rgba(12, 16, 28, 0.68));
   border: 1px solid hsla(var(--morph-hue-1, 185), 86%, 72%, 0.30);
   border-radius: 9999px;
   overflow: hidden;
-  transition: transform 0.25s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.2s ease, filter 0.2s ease;
+  transition: transform 0.22s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.2s ease;
   box-shadow:
-    0 6px 20px rgba(0, 0, 0, 0.36),
-    inset 0 1px 2px rgba(255, 255, 255, 0.25);
+    0 6px 18px rgba(0, 0, 0, 0.34),
+    inset 0 1px 2px rgba(255, 255, 255, 0.22);
 }
 
 .liquid-bubble::before {
@@ -455,10 +425,9 @@ dialog.morph-dialog::backdrop {
   left: 10%;
   right: 10%;
   height: 36%;
-  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.32), transparent);
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.28), transparent);
   border-radius: 50%;
   pointer-events: none;
-  filter: blur(2px);
 }
 
 .liquid-bubble:hover {
@@ -546,26 +515,16 @@ dialog.morph-dialog::backdrop {
 }
 
 .neon-metal-text {
-  background: linear-gradient(
-    270deg,
-    #ff007f,
-    #7f00ff,
-    #00ffff,
-    #00ff7f,
-    #ffff00,
-    #ff007f
-  );
-  background-size: 400% 400%;
+  background: linear-gradient(135deg,
+      #ff007f,
+      #7f00ff,
+      #00ffff,
+      #00ff7f,
+      #ffff00,
+      #ff007f);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: morphing-colors 10s ease infinite;
-}
-
-@keyframes morphing-colors {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
 }
 
 .liquid-switch {
@@ -597,24 +556,22 @@ dialog.morph-dialog::backdrop {
   border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
   background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 1), rgba(200, 200, 200, 0.6));
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5), inset 0 2px 3px rgba(255, 255, 255, 1);
-  transition: left 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), border-radius 0.35s ease;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), border-radius 0.3s ease;
 }
 
 .liquid-switch.active {
-  background: linear-gradient(
-    135deg,
-    hsla(var(--morph-hue-1, 185), 90%, 56%, 0.72),
-    hsla(var(--morph-hue-2, 265), 88%, 60%, 0.72)
-  );
+  background: linear-gradient(135deg,
+      hsla(var(--morph-hue-1, 185), 90%, 56%, 0.72),
+      hsla(var(--morph-hue-2, 265), 88%, 60%, 0.72));
   border-color: hsla(var(--morph-hue-1, 185), 90%, 72%, 0.65);
-  box-shadow: 0 0 16px hsla(var(--morph-hue-1, 185), 90%, 62%, calc(0.42 * var(--morph-glow-alpha, 1)));
+  box-shadow: 0 0 16px hsla(var(--morph-hue-1, 185), 90%, 62%, calc(0.42 * var(--morph-glow-alpha, 0.3)));
 }
 
 .liquid-switch.active .liquid-switch-thumb {
-  left: 28px;
+  transform: translate3d(26px, 0, 0);
   border-radius: 50% 50% 40% 60% / 60% 40% 50% 50%;
   background: radial-gradient(circle at 30% 30%, #fff, #00f2fe);
-  box-shadow: 0 0 18px #00f2fe, inset 0 2px 3px rgba(255, 255, 255, 1);
+  box-shadow: 0 0 16px #00f2fe, inset 0 2px 3px rgba(255, 255, 255, 1);
 }
 
 .liquid-switch.active-emerald {
@@ -624,10 +581,10 @@ dialog.morph-dialog::backdrop {
 }
 
 .liquid-switch.active-emerald .liquid-switch-thumb {
-  left: 28px;
+  transform: translate3d(26px, 0, 0);
   border-radius: 50% 50% 40% 60% / 60% 40% 50% 50%;
   background: radial-gradient(circle at 30% 30%, #fff, #10b981);
-  box-shadow: 0 0 18px #10b981, inset 0 2px 3px rgba(255, 255, 255, 1);
+  box-shadow: 0 0 16px #10b981, inset 0 2px 3px rgba(255, 255, 255, 1);
 }
 
 .liquid-switch.active-purple {
@@ -637,10 +594,10 @@ dialog.morph-dialog::backdrop {
 }
 
 .liquid-switch.active-purple .liquid-switch-thumb {
-  left: 28px;
+  transform: translate3d(26px, 0, 0);
   border-radius: 50% 50% 40% 60% / 60% 40% 50% 50%;
   background: radial-gradient(circle at 30% 30%, #fff, #a855f7);
-  box-shadow: 0 0 18px #a855f7, inset 0 2px 3px rgba(255, 255, 255, 1);
+  box-shadow: 0 0 16px #a855f7, inset 0 2px 3px rgba(255, 255, 255, 1);
 }
 
 .liquid-switch.active-pink {
@@ -650,99 +607,184 @@ dialog.morph-dialog::backdrop {
 }
 
 .liquid-switch.active-pink .liquid-switch-thumb {
-  left: 28px;
+  transform: translate3d(26px, 0, 0);
   border-radius: 50% 50% 40% 60% / 60% 40% 50% 50%;
   background: radial-gradient(circle at 30% 30%, #fff, #ec4899);
-  box-shadow: 0 0 18px #ec4899, inset 0 2px 3px rgba(255, 255, 255, 1);
+  box-shadow: 0 0 16px #ec4899, inset 0 2px 3px rgba(255, 255, 255, 1);
 }
 
 .liquid-scroll::-webkit-scrollbar {
   width: 8px;
 }
+
 .liquid-scroll::-webkit-scrollbar-track {
   background: rgba(0, 0, 0, 0.25);
   border-radius: 10px;
   margin: 10px 0;
 }
+
 .liquid-scroll::-webkit-scrollbar-thumb {
-  background: hsla(var(--morph-hue-1, 185) 82% 64% / 0.38);
+  background: hsla(var(--morph-hue-1, 185), 82%, 64%, 0.38);
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.14);
 }
+
 .liquid-scroll::-webkit-scrollbar-thumb:hover {
-  background: hsla(var(--morph-hue-2, 265) 86% 68% / 0.58);
+  background: hsla(var(--morph-hue-2, 265), 86%, 68%, 0.58);
 }
 
 @keyframes shimmer {
-  100% { transform: translateX(100%); }
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 /* InfoHub sinestesia keyframes + shell */
-@keyframes ssSpin { to { transform: rotate(360deg); } }
-@keyframes ssSpinRev { to { transform: rotate(-360deg); } }
-@keyframes ssPulse { 0%, 100% { transform: scale(.82); opacity: .5; } 50% { transform: scale(1.05); opacity: 1; } }
-@keyframes ssDrift { 0% { transform: translate(0, 0) scale(1); } 33% { transform: translate(14%, -10%) scale(1.25); } 66% { transform: translate(-12%, 8%) scale(.85); } 100% { transform: translate(0, 0) scale(1); } }
-@keyframes ssHue { to { filter: hue-rotate(360deg); } }
-@keyframes ssTunnel { 0% { transform: scale(.2); opacity: 0; } 20% { opacity: .9; } 100% { transform: scale(2.4); opacity: 0; } }
+@keyframes ssSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes ssSpinRev {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+@keyframes ssPulse {
+
+  0%,
+  100% {
+    transform: scale(.82);
+    opacity: .5;
+  }
+
+  50% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+}
+
+@keyframes ssDrift {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  33% {
+    transform: translate(14%, -10%) scale(1.25);
+  }
+
+  66% {
+    transform: translate(-12%, 8%) scale(.85);
+  }
+
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+@keyframes ssHue {
+  to {
+    filter: hue-rotate(360deg);
+  }
+}
+
+@keyframes ssTunnel {
+  0% {
+    transform: scale(.2);
+    opacity: 0;
+  }
+
+  20% {
+    opacity: .9;
+  }
+
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
 
 .info-hub-shell {
-  background: linear-gradient(
-    158deg,
-    hsla(var(--morph-hue-1) 60% 11% / 0.94) 0%,
-    rgba(6, 9, 18, 0.96) 52%,
-    hsla(var(--morph-hue-3) 56% 10% / 0.94) 100%
-  );
-  backdrop-filter: blur(40px) saturate(190%);
-  -webkit-backdrop-filter: blur(40px) saturate(190%);
-  border: 1px solid hsla(var(--morph-hue-1) 88% 66% / 0.45);
+  background: linear-gradient(158deg,
+      hsla(var(--morph-hue-1), 60%, 11%, 0.96) 0%,
+      rgba(6, 9, 18, 0.96) 52%,
+      hsla(var(--morph-hue-3), 56%, 10%, 0.96) 100%);
+  border: 1px solid hsla(var(--morph-hue-1), 88%, 66%, 0.45);
   box-shadow:
-    0 40px 100px rgba(0, 0, 0, 0.88),
-    0 0 55px -12px hsla(var(--morph-hue-1) 92% 60% / var(--morph-glow-alpha)),
-    inset 0 1px 1px hsla(var(--morph-hue-2) 92% 85% / 0.25);
+    0 32px 80px rgba(0, 0, 0, 0.85),
+    0 0 42px -14px hsla(var(--morph-hue-1), 92%, 60%, var(--morph-glow-alpha)),
+    inset 0 1px 1px hsla(var(--morph-hue-2), 92%, 85%, 0.25);
   border-radius: 32px;
 }
 
-.hub-scroll::-webkit-scrollbar { width: 8px; }
-.hub-scroll::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.3); border-radius: 8px; }
-.hub-scroll::-webkit-scrollbar-thumb { background: hsla(var(--morph-hue-1) 82% 62% / 0.35); border-radius: 8px; }
-.hub-scroll::-webkit-scrollbar-thumb:hover { background: hsla(var(--morph-hue-2) 86% 68% / 0.55); }
+.hub-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.hub-scroll::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+}
+
+.hub-scroll::-webkit-scrollbar-thumb {
+  background: hsla(var(--morph-hue-1), 82%, 62%, 0.35);
+  border-radius: 8px;
+}
+
+.hub-scroll::-webkit-scrollbar-thumb:hover {
+  background: hsla(var(--morph-hue-2), 86%, 68%, 0.55);
+}
 
 /* Legacy helpers kept compatible & chromatically enhanced */
 .glass-morphism {
-  background: hsla(var(--morph-hue-1) 40% 12% / 0.55);
-  backdrop-filter: blur(14px) saturate(145%);
-  -webkit-backdrop-filter: blur(14px) saturate(145%);
-  border: 1px solid hsla(var(--morph-hue-1) 82% 68% / 0.28);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.42);
+  background: hsla(var(--morph-hue-1), 40%, 12%, 0.68);
+  border: 1px solid hsla(var(--morph-hue-1), 82%, 68%, 0.28);
+  box-shadow: 0 8px 28px 0 rgba(0, 0, 0, 0.42);
 }
 
 .neon-glow {
-  box-shadow: 0 0 18px hsla(var(--morph-hue-1) 90% 60% / 0.35), inset 0 0 6px hsla(var(--morph-hue-2) 90% 60% / 0.15);
+  box-shadow: 0 0 18px hsla(var(--morph-hue-1), 90%, 60%, 0.35), inset 0 0 6px hsla(var(--morph-hue-2), 90%, 60%, 0.15);
 }
 
 .premium-gradient-text {
-  background: linear-gradient(135deg, #fff 0%, hsl(var(--morph-hue-1) 90% 82%) 100%);
+  background: linear-gradient(135deg, #fff 0%, hsl(var(--morph-hue-1), 90%, 82%) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 @keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slide-in-top {
-  from { transform: translateY(-10px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .animate-in {
   animation-fill-mode: forwards;
 }
+
 .fade-in {
   animation: fade-in 0.3s ease-out;
 }
+
 .slide-in-from-top-2 {
   animation: slide-in-top 0.3s cubic-bezier(0.23, 1, 0.32, 1);
 }
@@ -756,8 +798,8 @@ dialog.morph-dialog::backdrop {
   border-radius: 10px !important;
   padding: 10px 35px 10px 12px !important;
   font-size: 14px !important;
-  border: 1px solid hsla(var(--morph-hue-1) 86% 64% / 0.4) !important;
-  box-shadow: 0 0 12px hsla(var(--morph-hue-1) 86% 64% / 0.14) !important;
+  border: 1px solid hsla(var(--morph-hue-1), 86%, 64%, 0.4) !important;
+  box-shadow: 0 0 12px hsla(var(--morph-hue-1), 86%, 64%, 0.14) !important;
   cursor: pointer;
   width: 100%;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='rgba(165, 243, 252, 0.85)' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
@@ -769,8 +811,8 @@ dialog.morph-dialog::backdrop {
 
 .liquid-select-native:focus {
   outline: none !important;
-  border-color: hsla(var(--morph-hue-1) 92% 70% / 0.85) !important;
-  box-shadow: 0 0 16px hsla(var(--morph-hue-1) 92% 70% / 0.28) !important;
+  border-color: hsla(var(--morph-hue-1), 92%, 70%, 0.85) !important;
+  box-shadow: 0 0 16px hsla(var(--morph-hue-1), 92%, 70%, 0.28) !important;
 }
 
 .liquid-select-native option {
@@ -787,6 +829,7 @@ dialog.morph-dialog::backdrop {
 .no-scrollbar::-webkit-scrollbar {
   display: none !important;
 }
+
 .no-scrollbar {
   -ms-overflow-style: none !important;
   scrollbar-width: none !important;
@@ -795,29 +838,53 @@ dialog.morph-dialog::backdrop {
 .pt-safe {
   padding-top: max(0.5rem, env(safe-area-inset-top));
 }
+
 .pb-safe {
   padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
 }
+
 .pl-safe {
   padding-left: max(0.5rem, env(safe-area-inset-left));
 }
+
 .pr-safe {
   padding-right: max(0.5rem, env(safe-area-inset-right));
 }
 
+@media (hover: none), (pointer: coarse) {
+  .liquid-bubble:hover,
+  .morph-btn-primary:hover,
+  .morph-btn-glass:hover,
+  .ecosystem-card-3d:hover {
+    transform: none;
+    filter: none;
+  }
+
+  .icon-neon,
+  .icon-neon-emerald,
+  .icon-neon-pink,
+  .icon-neon-indigo {
+    filter: none;
+  }
+}
+
 @media (max-height: 520px) and (orientation: landscape) {
   .info-hub-shell {
+    height: 100vh !important;
     height: 100dvh !important;
+    max-height: 100vh !important;
     max-height: 100dvh !important;
     border-radius: 0 !important;
   }
+
   .liquid-panel {
-    border-radius: 20px !important;
+    border-radius: 16px !important;
   }
 }
 
 /* High Contrast / Forced Colors Mode Fallbacks */
 @media (forced-colors: active) {
+
   .quantum-glass,
   .quantum-glass-gold,
   .art-nouveau-frame,
@@ -833,6 +900,7 @@ dialog.morph-dialog::backdrop {
     border: 1px solid ButtonBorder !important;
     box-shadow: none !important;
   }
+
   .morph-btn-primary,
   .liquid-switch.active {
     background: Highlight !important;
@@ -840,6 +908,7 @@ dialog.morph-dialog::backdrop {
     border: 1px solid ButtonBorder !important;
     box-shadow: none !important;
   }
+
   .starseed-text-gradient,
   .starseed-gold-gradient,
   .neon-metal-text,
@@ -855,17 +924,17 @@ dialog.morph-dialog::backdrop {
 @media (prefers-reduced-motion: reduce) {
   .menu-3d-surface {
     transform: none !important;
-    will-change: auto;
   }
+
   .ecosystem-card-3d,
   .ecosystem-card-3d:hover {
     transition: none;
     transform: none;
   }
+
   .animate-pulse,
   .animate-spin,
-  .animate-ping,
-  .neon-metal-text {
+  .animate-ping {
     animation-duration: 120s !important;
   }
 }

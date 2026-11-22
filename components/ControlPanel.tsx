@@ -2150,7 +2150,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                     : 'Activar menú 3D dinámico'
                 }
               >
-                <Compass size={15} className={gyroActive && tiltEnabled ? 'animate-pulse shrink-0' : 'shrink-0'} />
+                <Compass size={15} className="shrink-0" />
                 <span className="hidden xl:inline">
                   {needsGyroPermission ? 'Activar Gyro' : gyroActive ? 'Gyro 3D' : tiltEnabled ? '3D Vivo' : '3D Fijo'}
                 </span>
@@ -2193,10 +2193,10 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           </div>
         </div>
 
-        {/* ROW 2: CENTERED TOOLBAR & AUDIO ROUTING */}
-        <div className="px-3 sm:px-6 py-2 border-b border-white/10 bg-black/35 flex flex-wrap items-center justify-center lg:justify-between gap-2 shrink-0 relative z-10">
+        {/* ROW 2: RESPONSIVE TOOLBAR & AUDIO ROUTING (single scrollable row on mobile, wrapped on desktop) */}
+        <div className="px-2.5 sm:px-5 py-1.5 sm:py-2 border-b border-white/10 bg-black/35 flex flex-nowrap lg:flex-wrap items-center justify-start lg:justify-between gap-2 overflow-x-auto no-scrollbar shrink-0 relative z-10">
           {/* Quick Hub & Presets Buttons */}
-          <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 py-0.5">
+          <div className="flex flex-nowrap lg:flex-wrap items-center justify-start gap-1.5 sm:gap-2 py-0.5 shrink-0">
             {onOpenInfo && (
               <>
                 <button
@@ -2284,7 +2284,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           </div>
 
           {/* Audio Inputs, Outputs & Profile */}
-          <div className="flex items-center gap-2 flex-wrap justify-center">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-nowrap shrink-0">
             <div className="flex bg-black/60 rounded-full p-0.5 border border-white/10 shrink-0">
               <button
                 onClick={() => handleChange('audioSource', 'microphone')}
