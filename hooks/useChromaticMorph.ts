@@ -198,7 +198,7 @@ export function useChromaticMorph(
       };
       stateRef.current = next;
 
-      if (now - lastCssSync > 32) {
+      if (now - lastCssSync > 50) {
         lastCssSync = now;
         applyCssVariables(next);
       }

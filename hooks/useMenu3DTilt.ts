@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
 
 export interface Menu3DTiltOptions {
   /** Rotación máxima en grados (sutil para legibilidad profesional en menús grandes). */
@@ -253,16 +253,29 @@ export function useMenu3DTilt(options: Menu3DTiltOptions = {}): Menu3DTiltResult
     pointerTargetRef.current = { rx: 0, ry: 0, tx: 0, ty: 0, gx: 50, gy: 35 };
   }, []);
 
-  return {
-    surfaceRef,
-    gyroSupported,
-    gyroActive,
-    needsGyroPermission,
-    tiltEnabled,
-    requestGyroPermission,
-    toggleTilt,
-    setInteractionPaused,
-    onPointerMove,
-    onPointerLeave,
-  };
+  return useMemo(
+    () => ({
+      surfaceRef,
+      gyroSupported,
+      gyroActive,
+      needsGyroPermission,
+      tiltEnabled,
+      requestGyroPermission,
+      toggleTilt,
+      setInteractionPaused,
+      onPointerMove,
+      onPointerLeave,
+    }),
+    [
+      gyroSupported,
+      gyroActive,
+      needsGyroPermission,
+      tiltEnabled,
+      requestGyroPermission,
+      toggleTilt,
+      setInteractionPaused,
+      onPointerMove,
+      onPointerLeave,
+    ]
+  );
 }

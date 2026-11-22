@@ -342,14 +342,16 @@ const App: React.FC = () => {
   controlsVisibleRef.current = controlsVisible;
   const menuInteractingRef = useRef(false);
   const interactionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const menuHoveredRef = useRef(false);
   const lastUiSyncTimeRef = useRef(0);
 
   const menuTilt = useMenu3DTilt({ maxDeg: 3.5, maxTranslatePx: 6, autoGyro: true });
+  const { setInteractionPaused } = menuTilt;
 
   const setMenuInteracting = useCallback(
     (active: boolean) => {
       menuInteractingRef.current = active;
-      menuTilt.setInteractionPaused(active);
+      setInteractionPaused(active);
       if (interactionTimerRef.current) {
         clearTimeout(interactionTimerRef.current);
         interactionTimerRef.current = null;
@@ -357,11 +359,11 @@ const App: React.FC = () => {
       if (active) {
         interactionTimerRef.current = setTimeout(() => {
           menuInteractingRef.current = false;
-          menuTilt.setInteractionPaused(false);
+          setInteractionPaused(false);
         }, 3000);
       }
     },
-    [menuTilt]
+    [setInteractionPaused]
   );
 
   useEffect(() => {
@@ -383,26 +385,31 @@ const App: React.FC = () => {
 
   const resetHideTimer = useCallback(() => {
     if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
+    const closeSec =
+      Number.isFinite(paramsRef.current.menuAutoCloseTime) && paramsRef.current.menuAutoCloseTime > 0
+        ? paramsRef.current.menuAutoCloseTime
+        : 20;
     hideTimeoutRef.current = setTimeout(() => {
       setControlsVisible(false);
-    }, params.menuAutoCloseTime * 1000);
-  }, [params.menuAutoCloseTime]);
+    }, closeSec * 1000);
+  }, []);
 
   useEffect(() => {
     if (controlsVisible) {
-      if (showTouchHint) setShowTouchHint(false);
+      setShowTouchHint((prev) => (prev ? false : prev));
       if (paramsRef.current.autoPilot) {
         setParams({ ...paramsRef.current });
       }
       resetHideTimer();
     } else {
       if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
+      menuHoveredRef.current = false;
       setMenuInteracting(false);
     }
     return () => {
       if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
     };
-  }, [controlsVisible, showTouchHint, resetHideTimer, setMenuInteracting]);
+  }, [controlsVisible, resetHideTimer, setMenuInteracting]);
 
   // Logic Refs
   const animationFrameRef = useRef<number>(0);
@@ -917,7 +924,10 @@ const App: React.FC = () => {
       const shouldSyncUi =
         modesChanged ||
         needsVrSync ||
-        (controlsVisibleRef.current && !menuInteractingRef.current && now - lastUiSyncTimeRef.current >= 150);
+        (controlsVisibleRef.current &&
+          !menuInteractingRef.current &&
+          !menuHoveredRef.current &&
+          now - lastUiSyncTimeRef.current >= 600);
 
       if (shouldSyncUi) {
         lastUiSyncTimeRef.current = now;
@@ -1087,10 +1097,17 @@ const App: React.FC = () => {
                 w-full max-w-6xl h-[94dvh] sm:h-[90vh] max-h-[920px] flex flex-col relative menu-3d-surface
                 ${controlsVisible ? 'pointer-events-auto' : 'pointer-events-none'}
               `}
+              onPointerDownCapture={() => {
+                setMenuInteracting(true);
+                resetHideTimer();
+              }}
               onPointerDown={(e) => {
                 e.stopPropagation();
                 setMenuInteracting(true);
                 resetHideTimer();
+              }}
+              onPointerEnter={() => {
+                menuHoveredRef.current = true;
               }}
               onPointerUp={() => setMenuInteracting(false)}
               onPointerCancel={() => setMenuInteracting(false)}
@@ -1099,7 +1116,10 @@ const App: React.FC = () => {
                 resetHideTimer();
                 menuTilt.onPointerMove(e);
               }}
-              onPointerLeave={() => menuTilt.onPointerLeave()}
+              onPointerLeave={() => {
+                menuHoveredRef.current = false;
+                menuTilt.onPointerLeave();
+              }}
               onTouchMove={(e) => { e.stopPropagation(); resetHideTimer(); }}
               onWheel={(e) => { e.stopPropagation(); resetHideTimer(); }}
             >

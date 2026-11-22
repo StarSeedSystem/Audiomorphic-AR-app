@@ -113,15 +113,17 @@ body {
 /* 3D Gyroscope + Pointer Parallax Stage (GPU accelerated, zero React re-renders) */
 .menu-3d-stage {
   perspective: 1500px;
-  transform-style: preserve-3d;
 }
 
 .menu-3d-surface {
-  transform-style: preserve-3d;
   transform:
+    perspective(1400px)
     translate3d(var(--menu-tx, 0px), var(--menu-ty, 0px), 0)
     rotateX(var(--menu-rx, 0deg))
     rotateY(var(--menu-ry, 0deg));
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  isolation: isolate;
   will-change: transform;
 }
 
@@ -131,12 +133,11 @@ body {
   pointer-events: none;
   border-radius: inherit;
   z-index: 4;
-  mix-blend-mode: screen;
-  opacity: calc(0.14 + var(--morph-treble, 0.16) * 0.24);
+  opacity: calc(0.14 + var(--morph-treble, 0.16) * 0.22);
   background: radial-gradient(
     460px circle at var(--menu-glare-x, 50%) var(--menu-glare-y, 28%),
-    hsla(var(--morph-hue-1) 96% 78% / 0.20) 0%,
-    hsla(var(--morph-hue-2) 92% 72% / 0.10) 42%,
+    hsla(var(--morph-hue-1) 96% 78% / 0.16) 0%,
+    hsla(var(--morph-hue-2) 92% 72% / 0.08) 42%,
     transparent 74%
   );
 }
@@ -353,8 +354,8 @@ dialog.morph-dialog::backdrop {
       transparent 60%
     ),
     rgba(10, 14, 24, calc(var(--menu-transparency, 0.5) * 0.34 + 0.34));
-  backdrop-filter: blur(calc(var(--menu-transparency, 0.5) * 22px + 8px)) saturate(165%) contrast(110%);
-  -webkit-backdrop-filter: blur(calc(var(--menu-transparency, 0.5) * 22px + 8px)) saturate(165%) contrast(110%);
+  backdrop-filter: blur(calc(var(--menu-transparency, 0.5) * 18px + 8px)) saturate(150%);
+  -webkit-backdrop-filter: blur(calc(var(--menu-transparency, 0.5) * 18px + 8px)) saturate(150%);
   border: 1px solid hsla(var(--morph-hue-1, 185), 85%, 72%, 0.28);
   box-shadow:
     0 40px 100px rgba(0, 0, 0, 0.72),
@@ -386,12 +387,10 @@ dialog.morph-dialog::backdrop {
   background:
     linear-gradient(
       148deg,
-      hsla(var(--morph-hue-1, 185), 72%, 44%, 0.09) 0%,
-      hsla(var(--morph-hue-2, 265), 68%, 42%, 0.06) 55%,
-      rgba(12, 16, 26, 0.55) 100%
+      hsla(var(--morph-hue-1, 185), 72%, 44%, 0.11) 0%,
+      hsla(var(--morph-hue-2, 265), 68%, 42%, 0.08) 55%,
+      rgba(12, 16, 28, 0.62) 100%
     );
-  backdrop-filter: blur(12px) saturate(140%);
-  -webkit-backdrop-filter: blur(12px) saturate(140%);
   border: 1px solid hsla(var(--morph-hue-1, 185), 75%, 72%, 0.20);
   border-top: 1px solid hsla(var(--morph-hue-2, 265), 85%, 78%, 0.34);
   border-radius: 24px;
@@ -426,11 +425,10 @@ dialog.morph-dialog::backdrop {
   position: relative;
   background: linear-gradient(
     135deg,
-    hsla(var(--morph-hue-1, 185), 82%, 52%, 0.16),
-    hsla(var(--morph-hue-2, 265), 80%, 52%, 0.12)
+    hsla(var(--morph-hue-1, 185), 82%, 52%, 0.18),
+    hsla(var(--morph-hue-2, 265), 80%, 52%, 0.14),
+    rgba(12, 16, 28, 0.62)
   );
-  backdrop-filter: blur(14px) saturate(150%);
-  -webkit-backdrop-filter: blur(14px) saturate(150%);
   border: 1px solid hsla(var(--morph-hue-1, 185), 86%, 72%, 0.30);
   border-radius: 9999px;
   overflow: hidden;
