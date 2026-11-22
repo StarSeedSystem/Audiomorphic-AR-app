@@ -5,17 +5,21 @@ import VisualizerVR from './components/VisualizerVR';
 import { BackgroundLayer } from './components/BackgroundLayer';
 import { AuthModal } from './components/AuthModal';
 import { InfoHubModal, InfoHubTab } from './components/InfoHubModal';
+import { LiveTransmissionHub, LiveHubTab } from './components/LiveTransmissionHub';
+import LiveRoomOverlay from './components/LiveRoomOverlay';
 import { HolographicCard4D } from './components/HolographicCard4D';
 import { useStarSeedIdentity } from './hooks/useStarSeedIdentity';
 import { useSubscription } from './hooks/useSubscription';
 import { useStarSeedSync } from './hooks/useStarSeedSync';
+import { useLiveTransmission } from './hooks/useLiveTransmission';
+import { handleSpotifyOAuthCallback } from './lib/spotifyBridge';
 import { getDesignById } from './lib/starseedCards';
 import { VisualizerParams, DEFAULT_PARAMS, GeometryInfo, GeometryRegime, SacredGeometryMode, SubscriptionTier } from './types';
 import { useAudioAnalyzer } from './hooks/useAudioAnalyzer';
 import { useAuth } from './contexts/AuthContext';
 import ProfileMenu from './components/ProfileMenu';
 import StarSeedSymbol from './components/StarSeedSymbol';
-import { Zap, Activity, RotateCw, Star, Clock, Info, Heart, BrainCircuit } from 'lucide-react';
+import { Zap, Activity, RotateCw, Star, Clock, Info, Heart, BrainCircuit, Radio } from 'lucide-react';
 import { EMBED, getPresetParams, getSyntheticMetrics } from './utils/embedMode';
 import { useChromaticMorph } from './hooks/useChromaticMorph';
 import { useMenu3DTilt } from './hooks/useMenu3DTilt';
@@ -191,10 +195,27 @@ const App: React.FC = () => {
   });
 
   const [selectedLibraryPresetForFolder, setSelectedLibraryPresetForFolder] = useState<any | null>(null);
+  const [liveHubOpen, setLiveHubOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const sp = new URLSearchParams(window.location.search);
+      return sp.get('info') === 'live' || window.location.hash === '#envivo' || window.location.hash === '#transmisiones';
+    }
+    return false;
+  });
+  const [liveHubTab, setLiveHubTab] = useState<LiveHubTab>('discover');
+
+  const handleOpenLive = useCallback((tab: LiveHubTab = 'discover') => {
+    setLiveHubTab(tab);
+    setLiveHubOpen(true);
+  }, []);
 
   const handleOpenInfo = useCallback((tab: InfoHubTab = 'donations') => {
     setInfoHubTab(tab);
     setInfoHubOpen(true);
+  }, []);
+
+  useEffect(() => {
+    void handleSpotifyOAuthCallback();
   }, []);
 
   // Listen to URL query params (?info=donations, ?info=guide, ?info=updates) and hash (#donar, #info, #descargas)
@@ -202,8 +223,12 @@ const App: React.FC = () => {
     if (typeof window === 'undefined') return;
     const sp = new URLSearchParams(window.location.search);
     const info = sp.get('info');
-    if (info === 'donations' || info === 'guide' || info === 'updates' || info === 'ecosystem' || info === 'account' || info === 'presets') {
+    if (info === 'live') {
+      handleOpenLive('discover');
+    } else if (info === 'donations' || info === 'guide' || info === 'updates' || info === 'ecosystem' || info === 'account' || info === 'presets') {
       handleOpenInfo(info as InfoHubTab);
+    } else if (window.location.hash === '#envivo' || window.location.hash === '#transmisiones') {
+      handleOpenLive('discover');
     } else if (window.location.hash === '#donar' || window.location.hash === '#donaciones' || window.location.hash === '#aportes') {
       handleOpenInfo('donations');
     } else if (window.location.hash === '#descargas' || window.location.hash === '#descargar' || window.location.hash === '#updates' || window.location.hash === '#versiones') {
@@ -211,7 +236,7 @@ const App: React.FC = () => {
     } else if (window.location.hash === '#info' || window.location.hash === '#about' || window.location.hash === '#ciencia') {
       handleOpenInfo('guide');
     }
-  }, [handleOpenInfo]);
+  }, [handleOpenInfo, handleOpenLive]);
 
   // ── AUDIOMORPHIC ES LIBRE Y COMPLETO ───────────────────────────────────────
   // Decision del autor (Alex Bordon Garrigos, 2026-07-13): la app deja de tener
@@ -261,6 +286,7 @@ const App: React.FC = () => {
   const handleSubscribe = async (tier: SubscriptionTier, trialDurationMs?: number) => {
     handleOpenInfo('donations');
   };
+  const audioAnalyzer = useAudioAnalyzer();
   const { 
     isActive, 
     error, 
@@ -273,7 +299,16 @@ const App: React.FC = () => {
     startAudio, 
     stopAudio, 
     getAudioMetrics 
-  } = useAudioAnalyzer();
+  } = audioAnalyzer;
+
+  const live = useLiveTransmission({
+    params,
+    setParams,
+    paramsRef,
+    identity,
+    sync,
+    audioAnalyzer,
+  });
 
   // --- EMBED: autonomous fallback metrics ---
   // In StarSeed OS background mode the visualizer must ALWAYS move, even when
@@ -1171,6 +1206,20 @@ const App: React.FC = () => {
 
            <button
              type="button"
+             onClick={() => handleOpenLive(live.session ? 'room' : 'discover')}
+             className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-mono pointer-events-auto cursor-pointer shrink-0 border ${
+               live.session
+                 ? 'bg-rose-500/20 border-rose-400/50 text-rose-200'
+                 : 'morph-btn-glass text-cyan-200'
+             }`}
+             title="Transmisiones En Vivo: Estaciones & Canales P2P StarSeed"
+           >
+             <Radio size={12} className={live.session ? 'animate-pulse text-rose-300' : 'text-cyan-300'} />
+             <span className="hidden xs:inline font-semibold">{live.session ? 'EN VIVO' : 'Transmitir'}</span>
+           </button>
+
+           <button
+             type="button"
              onClick={() => handleOpenInfo('guide')}
              className="flex items-center gap-1 px-2.5 sm:px-3 py-1 rounded-full morph-btn-glass text-[11px] sm:text-xs font-mono pointer-events-auto cursor-pointer shrink-0"
              title="Centro de Información, Cerebros & Red StarSeed"
@@ -1217,16 +1266,17 @@ const App: React.FC = () => {
             onWheel={(e) => e.stopPropagation()}
           />
           <div 
+            aria-hidden={!controlsVisible}
             className={`
-              fixed inset-0 z-30 flex items-center justify-center p-1.5 sm:p-4 md:p-5 menu-3d-stage pointer-events-none
+              fixed inset-0 z-30 flex items-center justify-center p-2 sm:p-4 md:p-5 overflow-hidden menu-3d-stage pointer-events-none
               transition-opacity duration-200 ease-out
-              ${controlsVisible ? 'opacity-100 visible' : 'opacity-0 invisible'}
+              ${controlsVisible ? 'opacity-100' : 'opacity-0'}
             `}
           >
             <div
               ref={menuTilt.surfaceRef}
               className={`
-                w-full max-w-6xl h-[95vh] h-[95dvh] sm:h-[90vh] max-h-[920px] flex flex-col relative menu-3d-surface overflow-hidden rounded-[20px] sm:rounded-[28px] md:rounded-[36px]
+                w-full max-w-6xl h-full sm:h-[92vh] max-h-[920px] flex flex-col relative menu-3d-surface overflow-hidden rounded-[20px] sm:rounded-[28px] md:rounded-[36px]
                 ${controlsVisible ? 'pointer-events-auto' : 'pointer-events-none'}
               `}
               onPointerDownCapture={() => {
@@ -1277,6 +1327,9 @@ const App: React.FC = () => {
               selectedLibraryPreset={selectedLibraryPresetForFolder}
               onSelectLibraryPreset={setSelectedLibraryPresetForFolder}
               sync={sync}
+              onOpenLive={handleOpenLive}
+              liveSession={live.session}
+              liveTelemetry={live.telemetry}
               gyroSupported={menuTilt.gyroSupported}
               gyroActive={menuTilt.gyroActive}
               needsGyroPermission={menuTilt.needsGyroPermission}
@@ -1287,6 +1340,16 @@ const App: React.FC = () => {
             </div>
           </div>
         </>
+      )}
+
+      {!EMBED.bg && (
+        <LiveRoomOverlay
+          live={live}
+          getSpectrumSnapshot={audioAnalyzer.getSpectrumSnapshot}
+          onOpenHub={handleOpenLive}
+          vrActive={params.vrMode}
+          onToggleVr={() => setParams((p) => ({ ...p, vrMode: !p.vrMode }))}
+        />
       )}
 
       {!EMBED.bg && (
@@ -1303,6 +1366,26 @@ const App: React.FC = () => {
             setSelectedLibraryPresetForFolder(preset);
             setInfoHubOpen(false);
           }}
+          onOpenLive={(tab) => {
+            setInfoHubOpen(false);
+            handleOpenLive(tab || 'discover');
+          }}
+        />
+      )}
+
+      {!EMBED.bg && (
+        <LiveTransmissionHub
+          open={liveHubOpen}
+          onClose={() => setLiveHubOpen(false)}
+          initialTab={liveHubTab}
+          live={live}
+          identity={identity}
+          sync={sync}
+          neurons={presetsStore.neurons}
+          currentNeuron={presetsStore.currentNeuron}
+          params={params}
+          setParams={setParams}
+          getSpectrumSnapshot={audioAnalyzer.getSpectrumSnapshot}
         />
       )}
 

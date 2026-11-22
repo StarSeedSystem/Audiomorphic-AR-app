@@ -59,7 +59,6 @@ import { UseSubscriptionResult, PlanId } from '../hooks/useSubscription';
 import { UseStarSeedSyncResult } from '../hooks/useStarSeedSync';
 import { usePresetCommunity, MusicRecommendationType } from '../hooks/usePresetCommunity';
 import { usePresets } from '../hooks/usePresets';
-import { ThankYouCard3D } from './ThankYouCard3D';
 import { ThankYouCardRecord, AudiomorphicPresetRecord } from '../lib/starseedDb';
 import { VisualizerParams } from '../types';
 import { useAppUpdate } from '../hooks/useAppUpdate';
@@ -68,7 +67,7 @@ import { openExternalUrl, buildStarSeedOsHandoffUrl } from '../utils/platform';
 import { STARSEED_OS_OFFICIAL_URL } from '../lib/supabaseClient';
 import StarSeedSymbol from './StarSeedSymbol';
 import { STARSEED_ECOSYSTEM_APPS, EcosystemCategory } from '../lib/starseedEcosystem';
-import { PIONEROS_12_CATALOG, getDesignById } from '../lib/starseedCards';
+import { PIONEROS_12_CATALOG, getDesignById, computeCardFingerprint } from '../lib/starseedCards';
 
 export type InfoHubTab = 'donations' | 'guide' | 'updates' | 'ecosystem' | 'account' | 'presets';
 
@@ -82,6 +81,7 @@ interface InfoHubModalProps {
   onApplyPreset?: (preset: AudiomorphicPresetRecord) => void;
   currentParams?: VisualizerParams;
   onSelectLibraryPreset?: (preset: AudiomorphicPresetRecord) => void;
+  onOpenLive?: (tab?: 'discover' | 'create' | 'audio' | 'room' | 'mesh') => void;
 }
 
 const OS_URL = 'https://starseed-os.vercel.app';
@@ -120,6 +120,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
   sync,
   onApplyPreset,
   onSelectLibraryPreset,
+  onOpenLive,
 }) => {
   const [activeTab, setActiveTab] = useState<InfoHubTab>(initialTab);
   const [ecosystemCategory, setEcosystemCategory] = useState<'all' | EcosystemCategory>('all');
@@ -286,7 +287,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-5 bg-black/85 desktop-backdrop-blur menu-3d-stage animate-in fade-in duration-300 overflow-y-auto"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 md:p-6 bg-black/85 desktop-backdrop-blur overflow-hidden menu-3d-stage animate-in fade-in duration-300"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -296,7 +297,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
         ref={cardTilt.surfaceRef}
         onPointerMove={cardTilt.onPointerMove}
         onPointerLeave={cardTilt.onPointerLeave}
-        className="info-hub-shell menu-3d-surface menu-audio-rim w-full sm:w-[95vw] md:w-[90vw] max-w-6xl h-[100vh] h-[100dvh] sm:h-[92vh] max-h-[920px] rounded-none sm:rounded-[32px] flex flex-col relative overflow-hidden"
+        className="info-hub-shell menu-3d-surface menu-audio-rim w-full sm:w-[95vw] md:w-[90vw] max-w-6xl h-full sm:h-[92vh] max-h-[920px] rounded-none sm:rounded-[32px] flex flex-col relative overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="menu-3d-glare rounded-none sm:rounded-[32px]" aria-hidden="true" />
@@ -675,31 +676,25 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
 
                 {(() => {
                   const chosenDesign = getDesignById(selectedDesignId);
-                  const displayCard: ThankYouCardRecord = activeCard
-                    ? {
-                        ...activeCard,
-                        designId: chosenDesign.designId,
-                        cardNumber: chosenDesign.cardNumber,
-                        editionSize: 12,
-                        area: activeCard.area || chosenDesign.area,
-                      }
-                    : {
-                        id: `preview-${chosenDesign.designId}`,
-                        donorName: identity.displayName || 'Explorador StarSeed',
-                        tierId: 'pioneros',
-                        tierName: 'Edición NFT Pioneros 4D',
-                        amount: 'NFT Único 1/12',
-                        issuedAt: new Date().toISOString(),
-                        folderPath: 'Biblioteca/Donaciones y Agradecimientos',
-                        cardTheme: 'iridescent',
-                        editionId: 'pioneros',
-                        cardNumber: chosenDesign.cardNumber,
-                        editionSize: 12,
-                        designId: chosenDesign.designId,
-                        phase: chosenDesign.phase,
-                        area: chosenDesign.area,
-                        message: chosenDesign.environment4D,
-                      };
+                  const matchingIssued =
+                    activeCard && activeCard.designId === chosenDesign.designId ? activeCard : activeCard;
+                  const donorDisplay = matchingIssued?.donorName || identity.displayName || 'Pionero StarSeed';
+                  const issuedFingerprint = computeCardFingerprint(
+                    `${chosenDesign.designId}|${donorDisplay}|${matchingIssued?.amount || 'NFT'}|${matchingIssued?.id || 'pioneros'}`
+                  );
+
+                  const handleOpenPortableLink = () => {
+                    try {
+                      const url = new URL(window.location.href);
+                      url.searchParams.set('card', chosenDesign.designId);
+                      url.searchParams.set('donor', donorDisplay);
+                      url.searchParams.set('serial', `#${String(chosenDesign.cardNumber).padStart(3, '0')}`);
+                      url.hash = '';
+                      openExternalUrl(url.toString());
+                    } catch {
+                      openExternalUrl(`?card=${chosenDesign.designId}`);
+                    }
+                  };
 
                   return (
                     <div className="w-full max-w-4xl flex flex-col items-center gap-4">
@@ -715,7 +710,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                         </button>
 
                         <div className="min-w-0 text-center flex-1">
-                          <div className="text-[11px] font-mono font-bold text-amber-300 truncate">
+                          <div className="text-[11px] sm:text-xs font-mono font-bold text-amber-300 truncate">
                             NFT #{String(chosenDesign.cardNumber).padStart(2, '0')} / 12 · {chosenDesign.title}
                           </div>
                           <div className="text-[10px] text-cyan-200/80 truncate">
@@ -733,10 +728,10 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                         </button>
                       </div>
 
-                      {/* Slider horizontal fluido interactivo de las 12 tarjetas NFT */}
+                      {/* Slider horizontal fluido interactivo único de las 12 tarjetas NFT en Blender Cycles */}
                       <div
                         ref={sliderRef}
-                        className="w-full flex gap-3 overflow-x-auto snap-x snap-mandatory scroll-smooth px-4 sm:px-8 py-3 no-scrollbar"
+                        className="w-full flex gap-3 sm:gap-5 overflow-x-auto snap-x snap-mandatory scroll-smooth px-6 sm:px-14 py-4 no-scrollbar"
                         aria-label="Carrusel interactivo de los 12 NFTs Pioneros StarSeed"
                       >
                         {PIONEROS_12_CATALOG.map((item) => {
@@ -749,27 +744,30 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                               }}
                               type="button"
                               onClick={() => selectPionerosCard(item.designId, true)}
-                              className={`w-[132px] sm:w-[156px] shrink-0 snap-center rounded-2xl p-2 text-left border cursor-pointer flex flex-col transition-[transform,opacity,border-color] duration-200 ${
+                              className={`w-[220px] sm:w-[270px] md:w-[300px] shrink-0 snap-center rounded-[24px] p-2.5 text-left border cursor-pointer flex flex-col transition-[transform,opacity,border-color] duration-200 ${
                                 isSelected
-                                  ? 'scale-[1.04] bg-cyan-500/20 border-cyan-400 shadow-[0_0_24px_rgba(34,211,238,0.32)] opacity-100'
-                                  : 'scale-[0.96] bg-black/55 border-white/10 hover:border-white/30 opacity-80 hover:opacity-100'
+                                  ? 'scale-100 bg-cyan-500/15 border-cyan-400/80 shadow-[0_18px_46px_rgba(34,211,238,0.28)] opacity-100'
+                                  : 'scale-[0.9] bg-black/60 border-white/10 hover:border-white/30 opacity-65 hover:opacity-95'
                               }`}
                             >
-                              <div className="aspect-[3/4] w-full rounded-xl overflow-hidden bg-slate-950 mb-1.5 relative">
+                              <div className="aspect-[3/4] w-full rounded-[18px] overflow-hidden bg-slate-950 mb-2.5 relative">
                                 {item.previewImage && (
                                   <img
                                     src={item.previewImage}
-                                    alt={`#${String(item.cardNumber).padStart(3, '0')} ${item.title}`}
+                                    alt={`NFT #${String(item.cardNumber).padStart(3, '0')} ${item.title}`}
                                     className="w-full h-full object-cover"
                                     loading="lazy"
                                   />
                                 )}
-                                <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-full bg-black/80 border border-amber-400/40 text-[9px] font-mono font-bold text-amber-300">
+                                <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-black/80 border border-amber-400/50 text-[10px] font-mono font-bold text-amber-300">
                                   NFT #{String(item.cardNumber).padStart(3, '0')}
                                 </span>
+                                <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-black/80 border border-cyan-400/40 text-[10px] font-mono text-cyan-200">
+                                  {item.cardNumber} / 12
+                                </span>
                               </div>
-                              <span className="text-[11px] font-bold text-white truncate px-0.5">{item.title}</span>
-                              <span className="text-[9px] font-mono text-cyan-300/85 truncate px-0.5">{item.area}</span>
+                              <span className="text-xs sm:text-sm font-extrabold text-white truncate px-1">{item.title}</span>
+                              <span className="text-[10px] font-mono text-cyan-300/90 truncate px-1">{item.area}</span>
                             </button>
                           );
                         })}
@@ -797,25 +795,45 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                         })}
                       </div>
 
-                      {/* Escenario 3D/4D Sincronizado (Orientación Vertical Correcta) */}
-                      <ThankYouCard3D
-                        card={displayCard}
-                        onUpdateFolder={(newFolder) => {
-                          if (activeCard) {
-                            sync.updateCardFolder(activeCard.id, newFolder);
-                          }
-                        }}
-                      />
+                      {/* Ficha NFT Única (sin duplicar tarjeta aparte) */}
+                      <div className="w-full max-w-2xl rounded-2xl bg-black/55 border border-white/15 p-4 sm:p-5 space-y-2.5 text-left">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div>
+                            <h5 className="text-sm sm:text-base font-extrabold text-white flex items-center gap-2">
+                              <Gem className="w-4 h-4 text-amber-300 shrink-0" />
+                              <span>{chosenDesign.title}</span>
+                            </h5>
+                            <p className="text-[11px] font-mono text-cyan-300/90">
+                              {chosenDesign.editionTitle} · #{String(chosenDesign.cardNumber).padStart(3, '0')} / 012 · {chosenDesign.phase}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={handleOpenPortableLink}
+                            className="px-3 py-1.5 rounded-full morph-btn-glass text-[11px] font-bold flex items-center gap-1.5 cursor-pointer shrink-0"
+                            title="Abrir tarjeta portátil en escena 4D independiente"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5 text-cyan-300" />
+                            <span>Abrir Vista Portátil 4D</span>
+                          </button>
+                        </div>
 
-                      <div className="w-full max-w-xl rounded-2xl bg-black/45 border border-white/10 p-3 text-center space-y-1">
-                        <p className="text-[11px] font-mono text-cyan-200">
-                          Valor Único · Edición Fundacional Pioneros · {chosenDesign.materialsSummary}
+                        <p className="text-xs text-gray-300 leading-relaxed">
+                          <strong>Valor Coleccionable Único:</strong> {chosenDesign.symbolicMotif}. Escultura iridiscente elaborada con {chosenDesign.materialsSummary}.
                         </p>
-                        {!activeCard && (
-                          <p className="text-[11px] text-amber-200/90 font-mono">
-                            Vista previa NFT #{String(chosenDesign.cardNumber).padStart(3, '0')} · Realiza un aporte voluntario arriba para emitir y vincular tu NFT 4D irrepetible a tu cuenta StarSeed OS.
-                          </p>
-                        )}
+
+                        <div className="pt-2 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 text-[10px] font-mono">
+                          <span className="text-emerald-300">Huella NFT: {issuedFingerprint}</span>
+                          {matchingIssued ? (
+                            <span className="text-amber-300 flex items-center gap-1">
+                              <Folder className="w-3 h-3" /> {matchingIssued.donorName} · {matchingIssued.folderPath}
+                            </span>
+                          ) : (
+                            <span className="text-amber-200/90">
+                              Realiza un aporte voluntario arriba para emitirla y vincularla a tu Cerebro StarSeed OS.
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );
@@ -1597,15 +1615,32 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                         <span className="line-clamp-2">{app.connection}</span>
                       </p>
                       {!app.isCurrentApp && (
-                        <a
-                          href={app.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="morph-btn-primary px-3 py-1.5 rounded-xl text-[11px] font-bold shrink-0 inline-flex items-center gap-1"
-                        >
-                          <span>Abrir</span>
-                          <ArrowRight size={12} />
-                        </a>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {onOpenLive &&
+                            (app.id === 'omnifrecuencias' || app.id === 'radio' || app.id === 'starseed-os') && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  onClose();
+                                  onOpenLive('discover');
+                                }}
+                                className="px-2.5 py-1.5 rounded-xl text-[11px] font-bold shrink-0 inline-flex items-center gap-1 bg-emerald-500/20 hover:bg-emerald-500/35 border border-emerald-400/35 text-emerald-100 transition-colors cursor-pointer"
+                                title="Abrir Transmisiones En Vivo, Estaciones y Canales P2P"
+                              >
+                                <Radio size={12} />
+                                <span>En Vivo</span>
+                              </button>
+                            )}
+                          <a
+                            href={app.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="morph-btn-primary px-3 py-1.5 rounded-xl text-[11px] font-bold shrink-0 inline-flex items-center gap-1"
+                          >
+                            <span>Abrir</span>
+                            <ArrowRight size={12} />
+                          </a>
+                        </div>
                       )}
                     </div>
                   </div>

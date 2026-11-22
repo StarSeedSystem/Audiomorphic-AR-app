@@ -121,10 +121,7 @@ a,
 }
 
 /* 3D Gyroscope + Pointer Parallax Stage (desktop 3D on interaction only; mobile translates glare layer cleanly) */
-.menu-3d-stage {
-  position: relative;
-}
-
+/* Nota: No fijar `position` en .menu-3d-stage para preservar `fixed inset-0` en modales y menús */
 .menu-3d-surface {
   isolation: isolate;
 }

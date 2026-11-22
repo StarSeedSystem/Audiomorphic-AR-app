@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { VisualizerParams, SacredGeometryMode, SacredGeometrySettings, DEFAULT_PARAMS, AutoPilotMode, BackgroundMode, GeometryInfo, SubscriptionTier } from '../types';
-import { Activity, Zap, Maximize, Minimize, RotateCw, Palette, Target, Music, BrainCircuit, Wind, Droplets, Waves, Shuffle, Sprout, Glasses, Download, X, RotateCcw, Save, Upload, Heart, Lock, Unlock, LogIn, LogOut, User, Star, Cloud, Trash2, Info, ChevronUp, ChevronDown, Volume2, Folder, FolderPlus, FolderOpen, Filter, ArrowUpDown, Plus, Bookmark, ExternalLink, Search, Sparkles, Check, Play, Cpu, RefreshCw, HardDrive, WifiOff, Compass, Globe } from 'lucide-react';
+import { Activity, Zap, Maximize, Minimize, RotateCw, Palette, Target, Music, BrainCircuit, Wind, Droplets, Waves, Shuffle, Sprout, Glasses, Download, X, RotateCcw, Save, Upload, Heart, Lock, Unlock, LogIn, LogOut, User, Star, Cloud, Trash2, Info, ChevronUp, ChevronDown, Volume2, Folder, FolderPlus, FolderOpen, Filter, ArrowUpDown, Plus, Bookmark, ExternalLink, Search, Sparkles, Check, Play, Cpu, RefreshCw, HardDrive, WifiOff, Compass, Globe, Radio } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { isInstalledApp } from '../utils/platform';
 import { DEFAULT_PRESETS } from '../lib/defaultPresets';
@@ -47,6 +47,9 @@ interface ControlPanelProps {
   selectedLibraryPreset?: any;
   onSelectLibraryPreset?: (preset: any) => void;
   sync?: UseStarSeedSyncResult;
+  onOpenLive?: (tab?: 'discover' | 'create' | 'audio' | 'room' | 'mesh') => void;
+  liveSession?: any;
+  liveTelemetry?: any;
   gyroSupported?: boolean;
   gyroActive?: boolean;
   needsGyroPermission?: boolean;
@@ -99,6 +102,9 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   selectedLibraryPreset,
   onSelectLibraryPreset,
   sync,
+  onOpenLive,
+  liveSession,
+  liveTelemetry,
   gyroSupported = false,
   gyroActive = false,
   needsGyroPermission = false,
@@ -2197,6 +2203,21 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         <div className="px-2.5 sm:px-5 py-1.5 sm:py-2 border-b border-white/10 bg-black/35 flex flex-nowrap lg:flex-wrap items-center justify-start lg:justify-between gap-2 overflow-x-auto no-scrollbar shrink-0 relative z-10">
           {/* Quick Hub & Presets Buttons */}
           <div className="flex flex-nowrap lg:flex-wrap items-center justify-start gap-1.5 sm:gap-2 py-0.5 shrink-0">
+            {onOpenLive && (
+              <button
+                type="button"
+                onClick={() => onOpenLive(liveSession ? 'room' : 'discover')}
+                className={`liquid-bubble px-3 py-1.5 flex items-center gap-1.5 text-xs font-bold shrink-0 cursor-pointer ${
+                  liveSession
+                    ? 'text-rose-200 border-rose-400/50 bg-rose-500/15'
+                    : 'text-cyan-200 hover:text-white'
+                }`}
+                title="Transmisiones En Vivo: Estaciones y Canales P2P (StarSeed + Omnifrecuencias)"
+              >
+                <Radio size={14} className={liveSession ? 'text-rose-400 animate-pulse' : 'text-cyan-300'} />
+                <span>{liveSession ? 'En Vivo ●' : 'En Vivo'}</span>
+              </button>
+            )}
             {onOpenInfo && (
               <>
                 <button
@@ -2345,6 +2366,35 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         </div>
 
         <div className="p-2.5 md:p-4 overflow-y-auto flex-1 min-h-0 liquid-scroll relative z-10">
+          {liveSession && onOpenLive && (
+            <div className="max-w-6xl mx-auto mb-3 px-3 py-2 rounded-2xl border border-cyan-400/40 bg-black/55 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse shrink-0" />
+                <span className="font-bold text-white truncate">
+                  {liveSession.kind === 'station' ? 'Estación:' : 'Canal Interactivo:'} {liveSession.title}
+                </span>
+                <span className="text-[11px] font-mono text-cyan-200 shrink-0">
+                  {liveTelemetry?.clockPrecisionMs != null ? `±${liveTelemetry.clockPrecisionMs}ms` : 'Mesh P2P'}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => onOpenLive('audio')}
+                  className="liquid-bubble px-2.5 py-1 text-[11px] font-semibold text-cyan-200 cursor-pointer"
+                >
+                  Audio & Cola
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onOpenLive('room')}
+                  className="morph-btn-primary px-2.5 py-1 rounded-full text-[11px] font-bold cursor-pointer"
+                >
+                  Abrir Sala
+                </button>
+              </div>
+            </div>
+          )}
           <div className="grid grid-cols-1 lg:grid-cols-2 items-start gap-3 md:gap-4 max-w-6xl mx-auto">
             <div className="space-y-4 min-w-0">
             

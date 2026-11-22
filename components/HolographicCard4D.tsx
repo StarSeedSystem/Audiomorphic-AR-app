@@ -72,6 +72,7 @@ const IridescentStudioEnvironment: React.FC<{
     }> = [
       { pos: [-4.5, 4.2, 4.0], scale: [4.2, 1.6, 0.2], color: '#fde68a', intensity: 3.4 },
       { pos: [4.5, 3.8, 4.2], scale: [2.8, 3.6, 0.2], color: '#ffffff', intensity: 4.4 },
+      { pos: [0.0, 0.8, 5.2], scale: [5.5, 4.2, 0.2], color: '#f8fafc', intensity: 2.6 },
       { pos: [5.0, -1.2, 2.8], scale: [1.6, 5.2, 0.2], color: '#22d3ee', intensity: 3.2 },
       { pos: [-5.0, -1.5, 2.5], scale: [1.6, 5.0, 0.2], color: '#e879f9', intensity: 3.0 },
       { pos: [0.0, -5.2, 2.2], scale: [5.5, 1.4, 0.2], color: '#34d399', intensity: 2.0 },
@@ -286,6 +287,22 @@ const CardSceneContent: React.FC<CardSceneContentProps> = ({
               const phys = m as THREE.MeshPhysicalMaterial;
               if ('envMapIntensity' in phys) {
                 phys.envMapIntensity = 1.65;
+              }
+              if (obj.name.includes('UpperTrinity') || obj.name.includes('LowerTrinity')) {
+                phys.transmission = 0;
+                phys.side = THREE.DoubleSide;
+                phys.roughness = 0.14;
+                phys.clearcoat = 1.0;
+                phys.needsUpdate = true;
+              }
+              if (obj.name.includes('VesicaUpper') || obj.name.includes('Back_VesicaTop')) {
+                phys.metalness = 0.45;
+                phys.roughness = 0.22;
+                phys.emissive = new THREE.Color('#dce7ff');
+                phys.emissiveIntensity = 0.24;
+                phys.side = THREE.DoubleSide;
+                phys.envMapIntensity = 2.0;
+                phys.needsUpdate = true;
               }
               if (
                 obj.name.includes('UpperTrinity') ||

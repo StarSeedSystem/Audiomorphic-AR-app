@@ -69,9 +69,9 @@ export interface HardwarePermissionsState {
   fullscreen: boolean;  // Fullscreen API available
 }
 
-export const CURRENT_APP_VERSION = '1.4.0';
+export const CURRENT_APP_VERSION = '1.5.0';
 export const CURRENT_BUILD_DATE = '2026-11-21';
-export const CURRENT_NATIVE_CONTAINER = '1.4.0';
+export const CURRENT_NATIVE_CONTAINER = '1.5.0';
 
 const GITHUB_REPO_URL = 'https://github.com/StarSeedSystem/Audiomorphic-AR-app';
 const GOOGLE_DRIVE_MIRROR = 'https://drive.google.com/drive/folders/1bZ8yvbWr7r3eJUdKIQCSSuu-p398mAkn?usp=sharing';
@@ -82,7 +82,7 @@ export const OFFICIAL_DOWNLOADS: PlatformDownloads = {
     version: CURRENT_APP_VERSION,
     installerUrl: `${GITHUB_REPO_URL}/releases/download/v${CURRENT_APP_VERSION}/Audiomorphic_v${CURRENT_APP_VERSION}_Windows.zip`,
     portableUrl: `${GITHUB_REPO_URL}/releases/download/v${CURRENT_APP_VERSION}/Audiomorphic_v${CURRENT_APP_VERSION}_Windows.zip`,
-    size: '~142 MB',
+    size: '~148 MB',
     arch: 'x64 & ARM64 Universal',
   },
   macos: {
@@ -101,14 +101,14 @@ export const OFFICIAL_DOWNLOADS: PlatformDownloads = {
     arm64Url: `${GITHUB_REPO_URL}/releases/download/v${CURRENT_APP_VERSION}/Audiomorphic_v${CURRENT_APP_VERSION}_Linux_arm64.tar.gz`,
     appImageUrl: `${GITHUB_REPO_URL}/releases/download/v${CURRENT_APP_VERSION}/Audiomorphic_v${CURRENT_APP_VERSION}_Linux_x64.tar.gz`,
     debUrl: `${GITHUB_REPO_URL}/releases/download/v${CURRENT_APP_VERSION}/Audiomorphic_v${CURRENT_APP_VERSION}_Linux_x64.tar.gz`,
-    size: '~130 MB (x64 & arm64)',
+    size: '~125 MB (x64 & arm64)',
     arch: 'x64 & ARM64 (ALSA, Pulse & PipeWire)',
   },
   android: {
     name: 'Android (APK Nativo)',
     version: CURRENT_APP_VERSION,
     apkUrl: `${GITHUB_REPO_URL}/releases/download/v${CURRENT_APP_VERSION}/Audiomorphic_v${CURRENT_APP_VERSION}.apk`,
-    size: '~19 MB',
+    size: '~13 MB',
     minSdk: 'Android 8.0+ (Oreo o superior)',
   },
   web: {
@@ -120,6 +120,19 @@ export const OFFICIAL_DOWNLOADS: PlatformDownloads = {
 };
 
 export const CHANGELOG_HISTORY: VersionChangelog[] = [
+  {
+    version: '1.5.0',
+    date: '2026-11-21',
+    type: 'native_required',
+    title: 'Transmisiones En Vivo StarSeed OS (Estaciones y Canales P2P), Audio Sincronizado y Spotify',
+    notes: [
+      'Nuevo Centro de Transmisiones En Vivo StarSeed OS: Estaciones unidireccionales de solo recepción y Canales Interactivos P2P Mesh configurables como servidores multi-usuario con neuronas host y respaldo.',
+      '4 formatos en vivo: Presets Exactos (solo parámetros, sin video), Presets Relativos con calibración local, Espejo Literal de Pantalla + Audio y Sala Mixta Interactiva con chat, voz/videollamada WebRTC y Sala VR/AR, además de permisos configurables en tiempo real.',
+      'Integración nativa con Omnifrecuencias (síntesis WebAudio sincronizada por fase y puente BroadcastChannel `omni_quantum_mesh`), Capas de Conciencia (`local`, `mesh`, `nube`, `colectiva`), capacidades de neurona apagadas por defecto, enlace offline SSL1 y Web Serial LoRa.',
+      'Motor de Audio Sincronizado por Reloj Común con cola colaborativa: archivos temporales o guardados en biblioteca, Bibliotecas Privadas con autorización explícita, Bibliotecas Públicas StarSeed y Spotify (URL/oEmbed, OAuth PKCE y puente HTTP MCP), visualizador de espectro en menús y telemetría RTT/Reloj/Deriva/Mesh.',
+      'Menús sin parpadeos en Android Chrome y todas las proporciones de pantalla, 12 tarjetas NFT 4D Pioneros en slider fluido e identidad visual Audiomorphic Hub.',
+    ],
+  },
   {
     version: '1.4.0',
     date: '2026-11-21',
@@ -225,7 +238,7 @@ export const useAppUpdate = () => {
     try {
       const saved = localStorage.getItem(SETTINGS_KEY);
       if (saved) return JSON.parse(saved);
-    } catch {}
+    } catch { }
     return {
       autoCheck: true,
       autoApplyOta: true,
@@ -343,7 +356,7 @@ export const useAppUpdate = () => {
       const updated = { ...prev, ...newSettings };
       try {
         localStorage.setItem(SETTINGS_KEY, JSON.stringify(updated));
-      } catch {}
+      } catch { }
       return updated;
     });
   };
