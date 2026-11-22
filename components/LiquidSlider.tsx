@@ -113,7 +113,7 @@ const LiquidSlider: React.FC<LiquidSliderProps> = ({
       >
         {!disabled && (
           <div
-            className={`absolute -top-8 left-1/2 -translate-x-1/2 bg-black/85 backdrop-blur-md px-1.5 py-0.5 rounded text-[10px] font-mono morph-accent-text border pointer-events-none transition-[opacity,transform] duration-150 ${
+            className={`absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-950/95 px-1.5 py-0.5 rounded text-[10px] font-mono morph-accent-text border pointer-events-none transition-[opacity,transform] duration-150 ${
               isDragging ? 'opacity-100 scale-110' : 'opacity-0 scale-95 group-hover:opacity-100'
             }`}
             style={{ borderColor: 'var(--morph-border)' }}

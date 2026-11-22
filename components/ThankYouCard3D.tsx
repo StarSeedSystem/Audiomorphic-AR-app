@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { Sparkles, RotateCw, Folder, Check, ShieldCheck, Heart, Award } from 'lucide-react';
+import { Sparkles, RotateCw, Folder, Check, ShieldCheck, Heart, Award, Layers } from 'lucide-react';
 import { useDeviceTilt } from '../hooks/useDeviceTilt';
 import { ThankYouCardRecord } from '../lib/starseedDb';
+import { HolographicCard4D } from './HolographicCard4D';
 
 interface ThankYouCard3DProps {
   card: ThankYouCardRecord;
   onUpdateFolder?: (newFolder: string) => void;
   availableFolders?: string[];
+  audioLevel?: number;
+  audioBass?: number;
 }
 
 export const ThankYouCard3D: React.FC<ThankYouCard3DProps> = ({
@@ -18,7 +21,10 @@ export const ThankYouCard3D: React.FC<ThankYouCard3DProps> = ({
     'Biblioteca/Colección Especial',
     'Biblioteca/Perfil/Insignias',
   ],
+  audioLevel = 0.24,
+  audioBass = 0.18,
 }) => {
+  const [useBlender4D, setUseBlender4D] = useState(true);
   const [isFlipped, setIsFlipped] = useState(false);
   const [isEditingFolder, setIsEditingFolder] = useState(false);
   const [selectedFolder, setSelectedFolder] = useState(card.folderPath);
@@ -58,7 +64,46 @@ export const ThankYouCard3D: React.FC<ThankYouCard3DProps> = ({
   const cardTransform = `rotateX(${rotateX}deg) rotateY(${rotateY + (isFlipped ? 180 : 0)}deg)`;
 
   return (
-    <div className="flex flex-col items-center w-full max-w-sm mx-auto select-none">
+    <div className="flex flex-col items-center w-full max-w-md mx-auto select-none">
+      {useBlender4D ? (
+        <HolographicCard4D
+          card={card}
+          audioLevel={audioLevel}
+          audioBass={audioBass}
+          extraToolbarSlot={
+            <>
+              <button
+                type="button"
+                onClick={() => setIsEditingFolder((v) => !v)}
+                className="px-3 py-1.5 rounded-full morph-btn-glass text-xs font-semibold flex items-center gap-1.5 cursor-pointer text-amber-200"
+              >
+                <Folder className="w-3.5 h-3.5 text-amber-300" />
+                <span className="truncate max-w-[140px]">{isEditingFolder ? 'Cerrar Carpeta' : selectedFolder.split('/').pop()}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setUseBlender4D(false)}
+                className="px-3 py-1.5 rounded-full morph-btn-glass text-xs font-semibold flex items-center gap-1.5 cursor-pointer text-slate-300"
+                title="Comparar con vista laminar clásica"
+              >
+                <Layers className="w-3.5 h-3.5 text-cyan-300" />
+                <span>Vista Clásica</span>
+              </button>
+            </>
+          }
+        />
+      ) : (
+        <>
+          <div className="mb-1 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setUseBlender4D(true)}
+              className="px-3 py-1 rounded-full morph-btn-primary text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Activar Escena 4D Blender</span>
+            </button>
+          </div>
       {/* 3D Scene viewport */}
       <div
         className="w-full relative py-4 flex items-center justify-center cursor-pointer"
@@ -241,6 +286,8 @@ export const ThankYouCard3D: React.FC<ThankYouCard3DProps> = ({
           <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
           Giroscopio activo (mueve tu dispositivo)
         </div>
+      )}
+        </>
       )}
 
       {/* Folder Assignment Drawer (if user clicks "Cambiar carpeta") */}

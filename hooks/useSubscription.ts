@@ -160,7 +160,13 @@ export interface UseSubscriptionResult {
   tier: TierDefinition;
   tiers: TierDefinition[];
   hasStarSeed: boolean;
-  makeDonation: (plan: PlanId, donorName?: string, userEmail?: string, userId?: string) => ThankYouCardRecord;
+  makeDonation: (
+    plan: PlanId,
+    donorName?: string,
+    userEmail?: string,
+    userId?: string,
+    designOverride?: { designId?: string; cardNumber?: number; area?: string }
+  ) => ThankYouCardRecord;
   resetToFree: () => void;
   getStripeUrlForPlan: (plan: PlanId, userEmail?: string, userId?: string) => string | null;
 }
@@ -195,7 +201,11 @@ export const useSubscription = (
   }, []);
 
   const createCardForPlan = useCallback(
-    (plan: PlanId, donorName: string = 'Viajero Cósmico'): ThankYouCardRecord => {
+    (
+      plan: PlanId,
+      donorName: string = 'Viajero Cósmico',
+      designOverride?: { designId?: string; cardNumber?: number; area?: string }
+    ): ThankYouCardRecord => {
       const t = getTier(plan);
       const cardDraft = {
         donorName,
@@ -204,6 +214,12 @@ export const useSubscription = (
         amount: t.price,
         folderPath: 'Biblioteca/Donaciones y Agradecimientos',
         cardTheme: t.cardTheme,
+        editionId: 'pioneros',
+        cardNumber: designOverride?.cardNumber || 1,
+        editionSize: 12,
+        designId: designOverride?.designId || 'pioneros-01',
+        phase: 'Fase I · Génesis del Micelio',
+        area: designOverride?.area || 'Audio & Sinestesia',
         message:
           plan === 'master'
             ? 'Gracias infinitas por tu donación de Maestro a la Fundación StarSeed. Tu aporte hace posible la investigación y el arte libre.'
@@ -228,7 +244,13 @@ export const useSubscription = (
   );
 
   const makeDonation = useCallback(
-    (plan: PlanId, donorName?: string, userEmail?: string, userId?: string): ThankYouCardRecord => {
+    (
+      plan: PlanId,
+      donorName?: string,
+      userEmail?: string,
+      userId?: string,
+      designOverride?: { designId?: string; cardNumber?: number; area?: string }
+    ): ThankYouCardRecord => {
       const t = getTier(plan);
       const next: SubscriptionState = {
         ...state,
@@ -244,7 +266,7 @@ export const useSubscription = (
         window.open(stripeUrl, '_blank', 'noopener,noreferrer');
       }
 
-      return createCardForPlan(plan, donorName);
+      return createCardForPlan(plan, donorName, designOverride);
     },
     [state, persist, getStripeUrlForPlan, createCardForPlan]
   );

@@ -1941,7 +1941,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
     };
 
     return (
-      <div className={`mb-3 transition-all duration-500 ${isParamLocked ? 'bg-indigo-900/40 border border-indigo-500/50 p-2 rounded-lg' : ''} ${isAutoActive ? 'opacity-70' : 'opacity-100'} ${isPremiumLocked ? 'opacity-80' : 'opacity-100'}`}>
+      <div className={`mb-3 transition-colors duration-500 ${isParamLocked ? 'bg-indigo-900/40 border border-indigo-500/50 p-2 rounded-lg' : ''} ${isAutoActive ? 'opacity-70' : 'opacity-100'} ${isPremiumLocked ? 'opacity-80' : 'opacity-100'}`}>
         <div className="flex justify-between items-center mb-1.5 gap-2">
           <label className="text-[10px] sm:text-xs uppercase tracking-wider text-gray-300 flex items-center gap-1 sm:gap-2 font-semibold truncate flex-1 cursor-pointer">
             {icon && <span className="text-cyan-300 drop-shadow-[0_0_5px_rgba(0,242,254,0.8)] shrink-0">{icon}</span>}
@@ -1961,7 +1961,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               step="any"
               value={typeof params[key] === 'number' ? Number(params[key]).toFixed(3) : params[key] as unknown as number}
               onChange={(e) => handleManualChange(parseFloat(e.target.value))}
-              className="font-mono text-xs text-cyan-200 bg-black/30 border border-white/10 rounded-lg px-2 py-1 focus:border-cyan-400 outline-none text-right w-16 sm:w-20 hover:border-white/30 transition-all shadow-inner shrink-0"
+              className="font-mono text-xs text-cyan-200 bg-black/30 border border-white/10 rounded-lg px-2 py-1 focus:border-cyan-400 outline-none text-right w-16 sm:w-20 hover:border-white/30 transition-colors shadow-inner shrink-0"
               readOnly={isPremiumLocked}
               onClick={isPremiumLocked ? onShowSubscription : undefined}
             />
@@ -1993,7 +1993,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
     const value = params.sgSettings[selectedSgEditMode][key];
     const isPremiumLocked = needsPremium && isLocked;
     return (
-      <div className={`mb-3 transition-all duration-500 ${isPremiumLocked ? 'opacity-60' : 'opacity-100'}`}>
+      <div className={`mb-3 transition-colors duration-500 ${isPremiumLocked ? 'opacity-60' : 'opacity-100'}`}>
         <div className="flex justify-between items-center mb-1.5 gap-2">
           <label className="text-[10px] sm:text-xs uppercase tracking-wider text-gray-300 flex items-center gap-1 sm:gap-2 font-semibold truncate flex-1">
             <span className="truncate flex items-center gap-1">
@@ -2023,7 +2023,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 }
               }));
             }}
-            className="font-mono text-xs text-emerald-200 bg-black/30 border border-white/10 rounded-lg px-2 py-1 focus:border-emerald-400 outline-none text-right w-16 sm:w-20 hover:border-white/30 transition-all shadow-inner shrink-0"
+            className="font-mono text-xs text-emerald-200 bg-black/30 border border-white/10 rounded-lg px-2 py-1 focus:border-emerald-400 outline-none text-right w-16 sm:w-20 hover:border-white/30 transition-colors shadow-inner shrink-0"
             readOnly={isPremiumLocked}
             onClick={isPremiumLocked ? onShowSubscription : undefined}
           />
@@ -2360,7 +2360,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                <div className="space-y-4">
                   {/* Estado y Control del Modo Automático Activo */}
                   <div className="space-y-2 mb-4">
-                    <div className={`p-2.5 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 ${
+                    <div className={`p-2.5 rounded-xl border transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 ${
                       isAutoModeActive || selectedPresetInfo
                         ? 'bg-gradient-to-r from-purple-950/60 via-slate-900/60 to-black/80 border-cyan-500/40 shadow-[0_0_15px_rgba(6,182,212,0.15)]'
                         : 'bg-black/40 border-white/10'
@@ -2426,7 +2426,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                               setActiveSelectedLibraryPreset(selectedPresetInfo.raw);
                               handleSaveSelectedLibraryPresetToFolder();
                             }}
-                            className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-purple-600/40 to-cyan-600/40 hover:from-purple-600/60 hover:to-cyan-600/60 text-white border border-cyan-400/50 text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-[0_0_10px_rgba(6,182,212,0.2)]"
+                            className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-purple-600/40 to-cyan-600/40 hover:from-purple-600/60 hover:to-cyan-600/60 text-white border border-cyan-400/50 text-[10px] font-bold transition-colors cursor-pointer flex items-center gap-1 shadow-[0_0_10px_rgba(6,182,212,0.2)]"
                             title="Guardar este preset de la librería a tu biblioteca"
                           >
                             <Bookmark size={11} className="text-cyan-300" />
@@ -2437,7 +2437,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                         <button
                           type="button"
                           onClick={() => setSelectedFolder(ESSENTIALS_FOLDER_NAME)}
-                          className="px-2.5 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 text-[10px] font-semibold transition-all cursor-pointer flex items-center gap-1"
+                          className="px-2.5 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 text-[10px] font-semibold transition-colors cursor-pointer flex items-center gap-1"
                           title="Abrir carpeta Audiomorphic Essentials"
                         >
                           <FolderOpen size={11} />
@@ -2453,7 +2453,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                               handleToggleAutoMode();
                             }
                           }}
-                          className={`p-2 sm:p-2.5 rounded-xl border transition-all flex items-center justify-center cursor-pointer ${
+                          className={`p-2 sm:p-2.5 rounded-xl border transition-colors flex items-center justify-center cursor-pointer ${
                             isAutoModeActive 
                               ? 'bg-purple-500/20 border-purple-500/50 text-purple-300 hover:bg-purple-500/40 shadow-[0_0_15px_rgba(168,85,247,0.3)]' 
                               : 'bg-cyan-500/20 border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/30'
@@ -2810,7 +2810,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                                        setTargetFolderForSelectedLibraryPreset(selectedFolder === 'all' || selectedFolder === 'none' ? '' : selectedFolder);
                                        setShowLibraryPicker(false);
                                      }}
-                                     className="px-2.5 py-1 rounded-lg bg-cyan-600/30 hover:bg-cyan-600/50 text-cyan-200 border border-cyan-400/30 text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer"
+                                     className="px-2.5 py-1 rounded-lg bg-cyan-600/30 hover:bg-cyan-600/50 text-cyan-200 border border-cyan-400/30 text-[10px] font-bold transition-colors flex items-center gap-1 cursor-pointer"
                                      title="Seleccionar preset para colocar sobre la barra de folders"
                                    >
                                      <Check size={11} />
@@ -2825,7 +2825,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                                        setTimeout(() => setLibraryAddSuccessMessage(null), 3000);
                                        setShowLibraryPicker(false);
                                      }}
-                                     className="px-2.5 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-[10px] font-bold transition-all shadow-[0_0_10px_rgba(168,85,247,0.4)] flex items-center gap-1 cursor-pointer"
+                                     className="px-2.5 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-[10px] font-bold transition-colors shadow-[0_0_10px_rgba(168,85,247,0.4)] flex items-center gap-1 cursor-pointer"
                                      title="Agregar este preset a tu carpeta"
                                    >
                                      <FolderPlus size={11} />
@@ -2895,7 +2895,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                             <button
                               type="button"
                               onClick={handleSaveSelectedLibraryPresetToFolder}
-                              className="px-3.5 py-1.5 rounded bg-purple-600 hover:bg-purple-500 text-white text-[11px] font-bold transition-all shadow-[0_0_12px_rgba(168,85,247,0.4)] flex items-center gap-1.5 cursor-pointer"
+                              className="px-3.5 py-1.5 rounded bg-purple-600 hover:bg-purple-500 text-white text-[11px] font-bold transition-colors shadow-[0_0_12px_rgba(168,85,247,0.4)] flex items-center gap-1.5 cursor-pointer"
                             >
                               <FolderPlus size={12} />
                               <span>Agregar a carpeta</span>
@@ -2975,7 +2975,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                           value={folderSearch}
                           onChange={(e) => setFolderSearch(e.target.value)}
                           placeholder="Buscar carpeta..."
-                          className="w-full pl-6 pr-5 py-0.5 bg-black/50 border border-white/10 rounded-full text-[10px] text-white placeholder-gray-500 outline-none focus:border-cyan-400 transition-all"
+                          className="w-full pl-6 pr-5 py-0.5 bg-black/50 border border-white/10 rounded-full text-[10px] text-white placeholder-gray-500 outline-none focus:border-cyan-400 transition-colors"
                         />
                         {folderSearch && (
                           <button
@@ -2995,7 +2995,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                         <button
                           type="button"
                           onClick={() => setSelectedFolder('all')}
-                          className={`px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all shrink-0 cursor-pointer flex items-center gap-1 ${
+                          className={`px-2.5 py-1 rounded-full text-[10px] font-semibold transition-colors shrink-0 cursor-pointer flex items-center gap-1 ${
                             selectedFolder === 'all'
                               ? 'bg-cyan-500/30 text-cyan-200 border border-cyan-400/60 shadow-[0_0_10px_rgba(6,182,212,0.25)]'
                               : 'bg-black/40 text-gray-400 hover:text-white border border-white/10 hover:border-white/20'
@@ -3010,7 +3010,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                         <button
                           type="button"
                           onClick={() => setSelectedFolder('none')}
-                          className={`px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all shrink-0 cursor-pointer flex items-center gap-1 ${
+                          className={`px-2.5 py-1 rounded-full text-[10px] font-semibold transition-colors shrink-0 cursor-pointer flex items-center gap-1 ${
                             selectedFolder === 'none'
                               ? 'bg-cyan-500/30 text-cyan-200 border border-cyan-400/60 shadow-[0_0_10px_rgba(6,182,212,0.25)]'
                               : 'bg-black/40 text-gray-400 hover:text-white border border-white/10 hover:border-white/20'
@@ -3029,7 +3029,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                             <button
                               type="button"
                               onClick={() => setSelectedFolder(f)}
-                              className={`px-2.5 py-1 ${isEssentials ? 'rounded-full' : 'rounded-l-full'} text-[10px] font-semibold transition-all cursor-pointer flex items-center gap-1 ${
+                              className={`px-2.5 py-1 ${isEssentials ? 'rounded-full' : 'rounded-l-full'} text-[10px] font-semibold transition-colors cursor-pointer flex items-center gap-1 ${
                                 isActive
                                   ? (isEssentials 
                                       ? 'bg-gradient-to-r from-purple-500/40 to-cyan-500/40 text-cyan-200 border border-cyan-400/60 shadow-[0_0_12px_rgba(6,182,212,0.3)]' 
@@ -3075,7 +3075,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                       <button
                         type="button"
                         onClick={() => setShowCreateFolderInput(!showCreateFolderInput)}
-                        className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-gradient-to-r from-purple-500/10 to-cyan-500/10 hover:from-purple-500/20 hover:to-cyan-500/20 text-cyan-300 border border-cyan-500/40 shrink-0 flex items-center gap-1 cursor-pointer transition-all"
+                        className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-gradient-to-r from-purple-500/10 to-cyan-500/10 hover:from-purple-500/20 hover:to-cyan-500/20 text-cyan-300 border border-cyan-500/40 shrink-0 flex items-center gap-1 cursor-pointer transition-colors"
                       >
                         <FolderPlus size={11} />
                         <span>+ Carpeta</span>
@@ -3091,7 +3091,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                           value={presetSearch}
                           onChange={(e) => setPresetSearch(e.target.value)}
                           placeholder="Buscar presets por nombre..."
-                          className="w-full pl-7 pr-6 py-1.5 bg-black/50 border border-white/10 rounded-lg text-[11px] text-white placeholder-gray-500 outline-none focus:border-cyan-400 transition-all"
+                          className="w-full pl-7 pr-6 py-1.5 bg-black/50 border border-white/10 rounded-lg text-[11px] text-white placeholder-gray-500 outline-none focus:border-cyan-400 transition-colors"
                         />
                         {presetSearch && (
                           <button
@@ -3162,7 +3162,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                           return (
                             <div
                               key={preset.id}
-                              className={`group relative rounded-xl p-2.5 sm:p-3 transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border ${
+                              className={`group relative rounded-xl p-2.5 sm:p-3 transition-colors duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border ${
                                 isSelected
                                   ? 'bg-gradient-to-r from-cyan-950/60 via-slate-900/70 to-purple-950/60 border-cyan-400/60 shadow-[0_0_18px_rgba(6,182,212,0.2)]'
                                   : 'bg-black/45 hover:bg-white/[0.04] border-white/10 hover:border-white/20'
@@ -3223,7 +3223,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                                 <button
                                   type="button"
                                   onClick={() => setInspectingPreset(preset)}
-                                  className="p-1.5 rounded-lg bg-white/5 hover:bg-cyan-500/20 text-cyan-300 hover:text-cyan-200 border border-white/10 hover:border-cyan-400/40 transition-all cursor-pointer shadow-sm flex items-center justify-center shrink-0"
+                                  className="p-1.5 rounded-lg bg-white/5 hover:bg-cyan-500/20 text-cyan-300 hover:text-cyan-200 border border-white/10 hover:border-cyan-400/40 transition-colors cursor-pointer shadow-sm flex items-center justify-center shrink-0"
                                   title="Ver comentarios, música recomendada, ajustes e información completa"
                                 >
                                   <Info size={13} />
@@ -3233,7 +3233,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                                 <button
                                   type="button"
                                   onClick={() => handleApplyPresetItem(preset)}
-                                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-colors flex items-center gap-1.5 cursor-pointer ${
                                     isSelected
                                       ? 'bg-cyan-500/25 hover:bg-cyan-500/35 text-cyan-200 border border-cyan-400/50 shadow-[0_0_12px_rgba(6,182,212,0.25)]'
                                       : 'bg-gradient-to-r from-cyan-600/30 to-purple-600/30 hover:from-cyan-600/50 hover:to-purple-600/50 text-white border border-cyan-400/40 hover:border-cyan-400 shadow-[0_0_10px_rgba(6,182,212,0.15)]'
@@ -3266,7 +3266,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                                         deleteCloudPresetFromServer(preset.id);
                                       }
                                     }}
-                                    className="p-1.5 rounded-lg bg-white/5 hover:bg-red-500/20 text-gray-400 hover:text-red-300 border border-white/5 hover:border-red-500/30 transition-all cursor-pointer"
+                                    className="p-1.5 rounded-lg bg-white/5 hover:bg-red-500/20 text-gray-400 hover:text-red-300 border border-white/5 hover:border-red-500/30 transition-colors cursor-pointer"
                                     title="Eliminar preset"
                                   >
                                     <Trash2 size={12} />
@@ -3578,7 +3578,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                >
                   <label className="text-[10px] sm:text-xs uppercase tracking-wider text-gray-300 font-semibold truncate flex-1 cursor-pointer flex items-center gap-2">
                     Mostrar Indicadores
-                    {isLocked && <Lock size={12} className="text-yellow-500 group-hover:scale-110 transition-all font-bold" />}
+                    {isLocked && <Lock size={12} className="text-yellow-500 group-hover:scale-110 transition-colors font-bold" />}
                   </label>
                   <div className={`liquid-switch shrink-0 ${params.showIndicators ? 'active' : ''} ${isLocked ? 'opacity-50' : ''}`}>
                     <div className="liquid-switch-thumb"></div>
@@ -3619,7 +3619,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                             }
                             handleChange('autoPilotMode', 'drift');
                           }}
-                          className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-xs uppercase font-bold rounded-xl transition-all ${
+                          className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-xs uppercase font-bold rounded-xl transition-colors ${
                             params.autoPilotMode === 'drift' 
                               ? 'liquid-bubble text-cyan-300 shadow-[0_0_15px_rgba(34,211,238,0.3)]' 
                               : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
@@ -3632,7 +3632,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                           onClick={() => {
                             handleChange('autoPilotMode', 'harmonic');
                           }}
-                          className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-xs uppercase font-bold rounded-xl transition-all ${
+                          className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-xs uppercase font-bold rounded-xl transition-colors ${
                             params.autoPilotMode === 'harmonic' 
                               ? 'liquid-bubble text-cyan-300' 
                               : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
@@ -3659,7 +3659,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                               sgAutoResonance: true
                             }));
                           }}
-                          className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-xs uppercase font-bold rounded-xl transition-all ${
+                          className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-xs uppercase font-bold rounded-xl transition-colors ${
                             params.autoPilotMode === 'genesis' 
                               ? 'liquid-bubble text-emerald-300 shadow-[0_0_20px_rgba(10,185,129,0.3)]' 
                               : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
@@ -3724,7 +3724,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 </div>
               </div>
               {params.sgAutoResonance && renderSaturationLeveler()}
-              <div className={`grid grid-cols-1 sm:grid-cols-2 gap-2 bg-black/40 p-1.5 rounded-2xl border border-emerald-500/20 shadow-inner transition-all duration-500`}>
+              <div className={`grid grid-cols-1 sm:grid-cols-2 gap-2 bg-black/40 p-1.5 rounded-2xl border border-emerald-500/20 shadow-inner transition-colors duration-500`}>
                 {SACRED_GEOMETRY_OPTIONS.map(mode => {
                   const isActive = params.spiralResonanceModes?.includes(mode.id as any);
                   const isLocked = params.lockedParams?.includes(`spiralMode_${mode.id}`);
@@ -3741,7 +3741,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                           }
                           handleChange('spiralResonanceModes', newModes);
                         }}
-                        className={`flex-1 py-2.5 px-2 text-[10px] sm:text-xs uppercase font-bold rounded-xl transition-all ${
+                        className={`flex-1 py-2.5 px-2 text-[10px] sm:text-xs uppercase font-bold rounded-xl transition-colors ${
                           isActive 
                             ? 'liquid-bubble text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.4)]' 
                             : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
@@ -3760,7 +3760,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                             return { ...p, lockedParams: newLocked };
                           });
                         }}
-                        className={`absolute top-1 right-1 p-1 rounded-full transition-all ${
+                        className={`absolute top-1 right-1 p-1 rounded-full transition-colors ${
                           isLocked ? 'bg-amber-500/20 text-amber-400' : 'opacity-0 group-hover:opacity-100 text-gray-500 hover:text-gray-300 hover:bg-white/10'
                         }`}
                         title={isLocked ? "Desbloquear" : "Bloquear"}
@@ -3811,7 +3811,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                         Tipos de Geometría
                       </label>
                     </div>
-                    <div className={`grid grid-cols-1 sm:grid-cols-2 gap-2 bg-black/40 p-1.5 rounded-2xl border border-emerald-500/20 shadow-inner transition-all duration-500`}>
+                    <div className={`grid grid-cols-1 sm:grid-cols-2 gap-2 bg-black/40 p-1.5 rounded-2xl border border-emerald-500/20 shadow-inner transition-colors duration-500`}>
                       {SACRED_GEOMETRY_OPTIONS.map(mode => {
                         const isActive = params.sacredGeometryModes?.includes(mode.id as any);
                         const isLocked = params.lockedParams?.includes(`sacredMode_${mode.id}`);
@@ -3828,7 +3828,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                                 }
                                 handleChange('sacredGeometryModes', newModes);
                               }}
-                              className={`flex-1 py-2.5 px-2 text-[10px] sm:text-xs uppercase font-bold rounded-xl transition-all ${
+                              className={`flex-1 py-2.5 px-2 text-[10px] sm:text-xs uppercase font-bold rounded-xl transition-colors ${
                                 isActive 
                                   ? 'liquid-bubble text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.4)]' 
                                   : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
@@ -3847,7 +3847,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                                   return { ...p, lockedParams: newLocked };
                                 });
                               }}
-                              className={`absolute top-1 right-1 p-1 rounded-full transition-all ${
+                              className={`absolute top-1 right-1 p-1 rounded-full transition-colors ${
                                 isLocked ? 'bg-amber-500/20 text-amber-400' : 'opacity-0 group-hover:opacity-100 text-gray-500 hover:text-gray-300 hover:bg-white/10'
                               }`}
                               title={isLocked ? "Desbloquear" : "Bloquear"}
@@ -3870,7 +3870,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                         if (isGenesisLocked) { onShowSubscription(); return; }
                         handleChange('sgDrawMode', 'layers');
                       }}
-                      className={`py-2.5 px-2 text-xs uppercase font-bold rounded-xl transition-all ${
+                      className={`py-2.5 px-2 text-xs uppercase font-bold rounded-xl transition-colors ${
                         params.sgDrawMode === 'layers' 
                           ? 'liquid-bubble text-emerald-300' 
                           : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
@@ -3883,7 +3883,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                         if (isGenesisLocked) { onShowSubscription(); return; }
                         handleChange('sgDrawMode', 'both');
                       }}
-                      className={`py-2.5 px-2 text-xs uppercase font-bold rounded-xl transition-all ${
+                      className={`py-2.5 px-2 text-xs uppercase font-bold rounded-xl transition-colors ${
                         params.sgDrawMode === 'both' 
                           ? 'liquid-bubble text-emerald-300' 
                           : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
@@ -3896,7 +3896,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                         if (isGenesisLocked) { onShowSubscription(); return; }
                         handleChange('sgDrawMode', 'nodes');
                       }}
-                      className={`py-2.5 px-2 text-xs uppercase font-bold rounded-xl transition-all ${
+                      className={`py-2.5 px-2 text-xs uppercase font-bold rounded-xl transition-colors ${
                         params.sgDrawMode === 'nodes' 
                           ? 'liquid-bubble text-emerald-300' 
                           : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
@@ -3949,7 +3949,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                         if (isGenesisLocked) { onShowSubscription(); return; }
                         handleChange('sgTheme', 'light');
                       }}
-                      className={`py-2.5 px-2 text-xs uppercase font-bold rounded-xl transition-all ${
+                      className={`py-2.5 px-2 text-xs uppercase font-bold rounded-xl transition-colors ${
                         params.sgTheme === 'light' 
                           ? 'liquid-bubble text-emerald-300' 
                           : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
@@ -3962,7 +3962,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                         if (isGenesisLocked) { onShowSubscription(); return; }
                         handleChange('sgTheme', 'dark');
                       }}
-                      className={`py-2.5 px-2 text-xs uppercase font-bold rounded-xl transition-all ${
+                      className={`py-2.5 px-2 text-xs uppercase font-bold rounded-xl transition-colors ${
                         params.sgTheme === 'dark' 
                           ? 'liquid-bubble text-emerald-300' 
                           : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
@@ -4009,7 +4009,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                           <button
                             key={`edit-${mode.id}`}
                             onClick={() => setSelectedSgEditMode(mode.id as SacredGeometryMode)}
-                            className={`py-2.5 px-2 text-xs uppercase font-bold rounded-xl transition-all ${
+                            className={`py-2.5 px-2 text-xs uppercase font-bold rounded-xl transition-colors ${
                               selectedSgEditMode === mode.id 
                                 ? 'liquid-bubble text-emerald-300' 
                                 : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
@@ -4055,7 +4055,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                     </div>
                     
                     {params.sgSettings[selectedSgEditMode].colored && (
-                      <div className="mb-3 transition-all duration-500 opacity-100">
+                      <div className="mb-3 transition-colors duration-500 opacity-100">
                         <div className="flex justify-between items-center mb-1.5 gap-2">
                           <label className="text-[10px] sm:text-xs uppercase tracking-wider text-gray-300 flex items-center gap-1 sm:gap-2 font-semibold truncate flex-1">
                             <span className="truncate">Tono Personalizado</span>

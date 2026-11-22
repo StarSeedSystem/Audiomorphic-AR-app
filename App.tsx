@@ -5,6 +5,7 @@ import VisualizerVR from './components/VisualizerVR';
 import { BackgroundLayer } from './components/BackgroundLayer';
 import { AuthModal } from './components/AuthModal';
 import { InfoHubModal, InfoHubTab } from './components/InfoHubModal';
+import { HolographicCard4D } from './components/HolographicCard4D';
 import { useStarSeedIdentity } from './hooks/useStarSeedIdentity';
 import { useSubscription } from './hooks/useSubscription';
 import { useStarSeedSync } from './hooks/useStarSeedSync';
@@ -154,6 +155,12 @@ const App: React.FC = () => {
 
   const [showSubscription, setShowSubscription] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
+  const [portableCardParam, setPortableCardParam] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return new URLSearchParams(window.location.search).get('card');
+    }
+    return null;
+  });
   const paramsRef = useRef<VisualizerParams>(params);
 
   // Integración viva StarSeed OS: identidad, cerebros, neuronas, donaciones y presets
@@ -345,7 +352,7 @@ const App: React.FC = () => {
   const menuHoveredRef = useRef(false);
   const lastUiSyncTimeRef = useRef(0);
 
-  const menuTilt = useMenu3DTilt({ maxDeg: 3.5, maxTranslatePx: 6, autoGyro: true });
+  const menuTilt = useMenu3DTilt({ maxDeg: 2.6, maxTranslatePx: 5, autoGyro: true });
   const { setInteractionPaused } = menuTilt;
 
   const setMenuInteracting = useCallback(
@@ -388,8 +395,12 @@ const App: React.FC = () => {
     const closeSec =
       Number.isFinite(paramsRef.current.menuAutoCloseTime) && paramsRef.current.menuAutoCloseTime > 0
         ? paramsRef.current.menuAutoCloseTime
-        : 20;
+        : 25;
     hideTimeoutRef.current = setTimeout(() => {
+      if (menuHoveredRef.current || menuInteractingRef.current) {
+        resetHideTimer();
+        return;
+      }
       setControlsVisible(false);
     }, closeSec * 1000);
   }, []);
@@ -921,13 +932,7 @@ const App: React.FC = () => {
       paramsRef.current = next;
 
       const needsVrSync = Boolean(base.vrMode || base.arPortalMode);
-      const shouldSyncUi =
-        modesChanged ||
-        needsVrSync ||
-        (controlsVisibleRef.current &&
-          !menuInteractingRef.current &&
-          !menuHoveredRef.current &&
-          now - lastUiSyncTimeRef.current >= 600);
+      const shouldSyncUi = modesChanged || needsVrSync;
 
       if (shouldSyncUi) {
         lastUiSyncTimeRef.current = now;
@@ -948,6 +953,131 @@ const App: React.FC = () => {
     isActive,
     getAudioMetrics
   ]); 
+
+  // --- STANDALONE PORTABLE 4D CARD STAGE (?card=pioneros-01) ---
+  if (portableCardParam) {
+    const sp = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const donorFromUrl = sp?.get('donor') || identity.displayName || 'Pionero StarSeed';
+    const existingSaved = sync.thankYouCards.find((c) => c.designId === portableCardParam) || sync.thankYouCards[0];
+    const portableCardRecord = existingSaved || {
+      id: `portable-${portableCardParam}`,
+      donorName: donorFromUrl,
+      tierId: 'pioneros',
+      tierName: 'Pionero Fundacional',
+      amount: 'Aporte Libre',
+      issuedAt: new Date().toISOString(),
+      folderPath: 'Biblioteca/Donaciones y Agradecimientos',
+      cardTheme: 'iridescent' as const,
+      editionId: 'pioneros',
+      cardNumber: 1,
+      editionSize: 12,
+      designId: portableCardParam,
+      phase: 'Fase I · Génesis del Micelio',
+      area: 'Fundación & Arquitectura',
+      message: 'Reliquia 4D interactiva StarSeed OS · Portátil y vinculable a tu Cerebro.',
+    };
+    const liveMetrics = getVisualMetrics(params.sensitivity, params.freqRange);
+
+    const handleExitPortable = () => {
+      if (typeof window !== 'undefined') {
+        const cleanUrl = new URL(window.location.href);
+        cleanUrl.searchParams.delete('card');
+        cleanUrl.searchParams.delete('donor');
+        cleanUrl.searchParams.delete('serial');
+        window.history.replaceState({}, '', cleanUrl.toString());
+      }
+      setPortableCardParam(null);
+    };
+
+    const handleSavePortableToBrain = () => {
+      if (!identity.isLoggedIn) {
+        setAuthModalOpen(true);
+        return;
+      }
+      sync.addThankYouCard({
+        donorName: portableCardRecord.donorName,
+        tierId: portableCardRecord.tierId,
+        tierName: portableCardRecord.tierName,
+        amount: portableCardRecord.amount,
+        folderPath: portableCardRecord.folderPath,
+        cardTheme: portableCardRecord.cardTheme,
+        editionId: portableCardRecord.editionId,
+        cardNumber: portableCardRecord.cardNumber,
+        editionSize: portableCardRecord.editionSize,
+        designId: portableCardRecord.designId,
+        phase: portableCardRecord.phase,
+        area: portableCardRecord.area,
+        message: portableCardRecord.message,
+      });
+      handleOpenInfo('donations');
+    };
+
+    return (
+      <div className="min-h-screen w-screen overflow-y-auto bg-[#030612] text-white relative flex flex-col items-center justify-between p-4 sm:p-6">
+        <div className="fixed inset-0 z-0 opacity-60 pointer-events-none">
+          <BackgroundLayer params={params} getAudioMetrics={getVisualMetrics} />
+        </div>
+
+        <header className="relative z-10 w-full max-w-4xl flex flex-wrap items-center justify-between gap-3 art-nouveau-frame rounded-2xl px-4 py-2.5">
+          <div className="flex items-center gap-2.5">
+            <StarSeedSymbol size="sm" glow />
+            <div>
+              <h1 className="text-sm sm:text-base font-extrabold starseed-text-gradient">
+                Tarjeta Holográfica 4D · StarSeed OS
+              </h1>
+              <p className="text-[10px] sm:text-xs font-mono text-slate-300">
+                Archivo 3D Portátil (.glb Offline) · Giroscopio & Luz Ambiental Viva
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={toggleAudio}
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 cursor-pointer border ${
+                isActive
+                  ? 'bg-red-500/20 border-red-400/50 text-red-200 animate-pulse'
+                  : 'morph-btn-glass text-cyan-200'
+              }`}
+            >
+              <Activity className="w-3.5 h-3.5" />
+              <span>{isActive ? 'Sonido Activo' : 'Activar Sonido'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleSavePortableToBrain}
+              className="px-3 py-1.5 rounded-full morph-btn-glass text-xs font-semibold flex items-center gap-1.5 cursor-pointer text-amber-200"
+            >
+              <BrainCircuit className="w-3.5 h-3.5 text-amber-300" />
+              <span>{identity.isLoggedIn ? 'Guardar en Cerebro' : 'Vincular StarSeed OS'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleExitPortable}
+              className="px-3 py-1.5 rounded-full morph-btn-primary text-xs font-bold cursor-pointer"
+            >
+              Abrir Audiomorphic
+            </button>
+          </div>
+        </header>
+
+        <main className="relative z-10 w-full max-w-2xl my-auto py-4">
+          <HolographicCard4D
+            card={portableCardRecord}
+            audioLevel={liveMetrics.volume}
+            audioBass={liveMetrics.bass}
+          />
+        </main>
+
+        <footer className="relative z-10 text-[11px] font-mono text-slate-400 text-center">
+          Mueve el dispositivo (giroscopio) · Activa Luz Cámara 4D · Escultura creada en Blender 5.2
+        </footer>
+
+        <AuthModal />
+      </div>
+    );
+  }
 
   return (
     <div 

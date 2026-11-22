@@ -53,6 +53,13 @@ export interface ThankYouCardRecord {
   folderPath: string;
   cardTheme: 'gold' | 'iridescent' | 'holographic' | 'celestial';
   message?: string;
+  editionId?: string;
+  cardNumber?: number;
+  editionSize?: number;
+  designId?: string;
+  phase?: string;
+  area?: string;
+  verificationHash?: string;
 }
 
 export interface AudiomorphicPresetRecord {

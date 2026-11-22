@@ -287,7 +287,7 @@ export const DEFAULT_PARAMS: VisualizerParams = {
   
   showIndicators: true,
   menuTransparency: 0.8,
-  menuAutoCloseTime: 5,
+  menuAutoCloseTime: 25,
   audioSource: 'microphone'
 };
 

@@ -66,6 +66,7 @@ import { openExternalUrl, buildStarSeedOsHandoffUrl } from '../utils/platform';
 import { STARSEED_OS_OFFICIAL_URL } from '../lib/supabaseClient';
 import StarSeedSymbol from './StarSeedSymbol';
 import { STARSEED_ECOSYSTEM_APPS, EcosystemCategory } from '../lib/starseedEcosystem';
+import { PIONEROS_12_CATALOG, getDesignById } from '../lib/starseedCards';
 
 export type InfoHubTab = 'donations' | 'guide' | 'updates' | 'ecosystem' | 'account' | 'presets';
 
@@ -155,7 +156,10 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
   const [brainBusy, setBrainBusy] = useState(false);
   const [brainNotice, setBrainNotice] = useState<string | null>(null);
 
-  // Donations state: Tarjeta 3D activa
+  // Donations state: Tarjeta 3D/4D activa y selector de los 12 diseños Pioneros
+  const [selectedDesignId, setSelectedDesignId] = useState<string>(() => {
+    return sync.thankYouCards[0]?.designId || 'pioneros-01';
+  });
   const [activeCard, setActiveCard] = useState<ThankYouCardRecord | null>(() => {
     return sync.thankYouCards.length > 0 ? sync.thankYouCards[0] : null;
   });
@@ -216,7 +220,12 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
     const donorName = identity.displayName || (identity.user?.email ? identity.user.email.split('@')[0] : 'Mecenas Soberano');
     const userEmail = identity.user?.email;
     const userId = identity.user?.id;
-    const card = subscription.makeDonation(planId, donorName, userEmail, userId);
+    const design = getDesignById(selectedDesignId);
+    const card = subscription.makeDonation(planId, donorName, userEmail, userId, {
+      designId: design.designId,
+      cardNumber: design.cardNumber,
+      area: design.area,
+    });
     sync.addThankYouCard(card);
     setActiveCard(card);
   };
@@ -583,31 +592,109 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                 </p>
               </div>
 
-              {/* Tarjeta Virtual 3D Interactiva */}
-              <div className="p-6 rounded-3xl bg-black/40 border border-white/10 flex flex-col items-center">
-                <div className="text-center mb-6 max-w-xl">
+              {/* Tarjeta Virtual 4D Interactiva & Colección Pioneros (12 Diseños Únicos) */}
+              <div className="p-5 sm:p-6 rounded-3xl bg-black/45 border border-white/10 flex flex-col items-center">
+                <div className="text-center mb-5 max-w-2xl">
                   <span className="text-xs font-bold uppercase tracking-wider text-amber-300 flex items-center justify-center gap-1.5 font-mono">
-                    <Sparkles className="w-4 h-4" /> Tarjeta Virtual 3D Interactiva
+                    <Sparkles className="w-4 h-4" /> Colección Pioneros StarSeed · 12 Reliquias 4D en Blender
                   </span>
                   <h4 className="text-xl font-bold text-white mt-1">Reconocimiento & Resonancia Soberana</h4>
                   <p className="text-xs text-gray-400 mt-1">
-                    Mueve el cursor o inclina tu dispositivo móvil para observar los reflejos especulares sobre el grabado geométrico sagrado.
+                    Explora los 12 diseños escultóricos únicos en tiempo real. Inclina tu dispositivo (giroscopio), activa Luz Cámara 4D o arrastra para inspeccionar su relieve y reverso.
                   </p>
                 </div>
 
-                {activeCard ? (
-                  <ThankYouCard3D
-                    card={activeCard}
-                    onUpdateFolder={(newFolder) => sync.updateCardFolder(activeCard.id, newFolder)}
-                  />
-                ) : (
-                  <div className="w-[310px] h-[460px] rounded-[28px] border border-dashed border-white/20 flex flex-col items-center justify-center text-center p-6 text-gray-400 space-y-3 bg-black/30">
-                    <Heart className="w-12 h-12 text-pink-500/60 animate-pulse" />
-                    <p className="text-xs leading-relaxed">
-                      Haz clic en cualquiera de los botones de aporte o emite tu tarjeta libre arriba para generar e interactuar con tu Tarjeta Holográfica 3D personalizada.
-                    </p>
-                  </div>
-                )}
+                {/* Galería selectora de los 12 diseños Pioneros */}
+                <div className="w-full max-w-4xl mb-6 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2.5">
+                  {PIONEROS_12_CATALOG.map((item) => {
+                    const isSelected = selectedDesignId === item.designId;
+                    return (
+                      <button
+                        key={item.designId}
+                        type="button"
+                        onClick={() => {
+                          setSelectedDesignId(item.designId);
+                          if (activeCard) {
+                            setActiveCard({
+                              ...activeCard,
+                              designId: item.designId,
+                              cardNumber: item.cardNumber,
+                              area: item.area,
+                            });
+                          }
+                        }}
+                        className={`group rounded-2xl p-1.5 text-left transition-colors border cursor-pointer flex flex-col ${
+                          isSelected
+                            ? 'bg-cyan-500/20 border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.28)]'
+                            : 'bg-black/50 border-white/10 hover:border-white/30'
+                        }`}
+                      >
+                        <div className="aspect-[3/4] w-full rounded-xl overflow-hidden bg-slate-950 mb-1.5 relative">
+                          {item.previewImage && (
+                            <img
+                              src={item.previewImage}
+                              alt={`#${String(item.cardNumber).padStart(3, '0')} ${item.title}`}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                          )}
+                          <span className="absolute top-1 left-1 px-1.5 py-0.5 rounded-full bg-black/75 border border-white/15 text-[9px] font-mono font-bold text-amber-300">
+                            #{String(item.cardNumber).padStart(3, '0')}
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-bold text-white truncate px-0.5">{item.title}</span>
+                        <span className="text-[9px] font-mono text-cyan-300/80 truncate px-0.5">{item.area}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {(() => {
+                  const chosenDesign = getDesignById(selectedDesignId);
+                  const displayCard: ThankYouCardRecord = activeCard
+                    ? {
+                        ...activeCard,
+                        designId: chosenDesign.designId,
+                        cardNumber: chosenDesign.cardNumber,
+                        editionSize: 12,
+                        area: activeCard.area || chosenDesign.area,
+                      }
+                    : {
+                        id: `preview-${chosenDesign.designId}`,
+                        donorName: identity.displayName || 'Explorador StarSeed',
+                        tierId: 'pioneros',
+                        tierName: 'Edición Pioneros 4D',
+                        amount: 'Vista Previa 4D',
+                        issuedAt: new Date().toISOString(),
+                        folderPath: 'Biblioteca/Donaciones y Agradecimientos',
+                        cardTheme: 'iridescent',
+                        editionId: 'pioneros',
+                        cardNumber: chosenDesign.cardNumber,
+                        editionSize: 12,
+                        designId: chosenDesign.designId,
+                        phase: chosenDesign.phase,
+                        area: chosenDesign.area,
+                        message: chosenDesign.environment4D,
+                      };
+
+                  return (
+                    <div className="w-full flex flex-col items-center gap-3">
+                      <ThankYouCard3D
+                        card={displayCard}
+                        onUpdateFolder={(newFolder) => {
+                          if (activeCard) {
+                            sync.updateCardFolder(activeCard.id, newFolder);
+                          }
+                        }}
+                      />
+                      {!activeCard && (
+                        <p className="text-[11px] text-amber-200/90 text-center max-w-md font-mono">
+                          Vista previa interactiva #{String(chosenDesign.cardNumber).padStart(3, '0')} · Realiza un aporte voluntario arriba para emitir y guardar tu tarjeta personalizada en tu cuenta StarSeed OS.
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Feature Previews (Descubre el Poder en Movimiento) */}

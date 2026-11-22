@@ -761,7 +761,7 @@ export const usePresets = () => {
 
     const payload = {
       schema: 'audiomorphic.library.v2',
-      version: '1.3.0',
+      version: '1.4.0',
       exportedAt: new Date().toISOString(),
       brainName: storeState.selectedBrain?.name || 'Dispositivo Local',
       folders: folderFilter && folderFilter !== 'all' ? [folderFilter] : storeState.folders,

@@ -48,7 +48,7 @@ export interface PlatformDownloads {
 export interface VersionChangelog {
   version: string;
   date: string;
-  type: 'ota' | 'native_required';
+  type: 'ota' | 'native_required' | 'major';
   title: string;
   notes: string[];
 }
@@ -69,9 +69,9 @@ export interface HardwarePermissionsState {
   fullscreen: boolean;  // Fullscreen API available
 }
 
-export const CURRENT_APP_VERSION = '1.3.1';
+export const CURRENT_APP_VERSION = '1.4.0';
 export const CURRENT_BUILD_DATE = '2026-11-21';
-export const CURRENT_NATIVE_CONTAINER = '1.3.1';
+export const CURRENT_NATIVE_CONTAINER = '1.4.0';
 
 const GITHUB_REPO_URL = 'https://github.com/StarSeedSystem/Audiomorphic-AR-app';
 const GOOGLE_DRIVE_MIRROR = 'https://drive.google.com/drive/folders/1bZ8yvbWr7r3eJUdKIQCSSuu-p398mAkn?usp=sharing';
@@ -99,9 +99,9 @@ export const OFFICIAL_DOWNLOADS: PlatformDownloads = {
     tarGzUrl: `${GITHUB_REPO_URL}/releases/download/v${CURRENT_APP_VERSION}/Audiomorphic_v${CURRENT_APP_VERSION}_Linux_x64.tar.gz`,
     x64Url: `${GITHUB_REPO_URL}/releases/download/v${CURRENT_APP_VERSION}/Audiomorphic_v${CURRENT_APP_VERSION}_Linux_x64.tar.gz`,
     arm64Url: `${GITHUB_REPO_URL}/releases/download/v${CURRENT_APP_VERSION}/Audiomorphic_v${CURRENT_APP_VERSION}_Linux_arm64.tar.gz`,
-    appImageUrl: `${GITHUB_REPO_URL}/releases/download/v${CURRENT_APP_VERSION}/Audiomorphic_v${CURRENT_APP_VERSION}_Linux.tar.gz`,
-    debUrl: `${GITHUB_REPO_URL}/releases/download/v${CURRENT_APP_VERSION}/Audiomorphic_v${CURRENT_APP_VERSION}_Linux.tar.gz`,
-    size: '~118 MB (x64 & arm64)',
+    appImageUrl: `${GITHUB_REPO_URL}/releases/download/v${CURRENT_APP_VERSION}/Audiomorphic_v${CURRENT_APP_VERSION}_Linux_x64.tar.gz`,
+    debUrl: `${GITHUB_REPO_URL}/releases/download/v${CURRENT_APP_VERSION}/Audiomorphic_v${CURRENT_APP_VERSION}_Linux_x64.tar.gz`,
+    size: '~125 MB (x64 & arm64)',
     arch: 'x64 & ARM64 (ALSA, Pulse & PipeWire)',
   },
   android: {
@@ -120,6 +120,18 @@ export const OFFICIAL_DOWNLOADS: PlatformDownloads = {
 };
 
 export const CHANGELOG_HISTORY: VersionChangelog[] = [
+  {
+    version: '1.4.0',
+    date: '2026-11-21',
+    type: 'native_required',
+    title: 'Colección Pioneros 4D (12 Diseños Únicos Blender), Estabilidad Total del Menú e Instaladores v1.4.0',
+    notes: [
+      'Nueva colección oficial de 12 tarjetas holográficas 4D únicas de la Edición Fundacional "Pioneros StarSeed", esculpidas en Blender 5.2 con geometría sagrada 4D interactiva, película delgada tornasol, giroscopio y reactividad a luz ambiental por cámara.',
+      'Corrección definitiva de parpadeos del menú web: eliminación de scrollbar-color animado global, aislamiento de backdrop-filter anidado y pausa total de re-renders de React durante la interacción.',
+      'Nueva galería interactiva de los 12 diseños y vista portátil independiente (?card=pioneros-01..12) vinculable a tu cuenta y Cerebros StarSeed OS.',
+      'Actualización integral de todos los instaladores nativos y enlaces de descarga oficiales para macOS, Windows, Linux y Android.',
+    ],
+  },
   {
     version: '1.3.1',
     date: '2026-11-21',
