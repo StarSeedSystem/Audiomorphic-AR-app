@@ -9,6 +9,7 @@ import { HolographicCard4D } from './components/HolographicCard4D';
 import { useStarSeedIdentity } from './hooks/useStarSeedIdentity';
 import { useSubscription } from './hooks/useSubscription';
 import { useStarSeedSync } from './hooks/useStarSeedSync';
+import { getDesignById } from './lib/starseedCards';
 import { VisualizerParams, DEFAULT_PARAMS, GeometryInfo, GeometryRegime, SacredGeometryMode, SubscriptionTier } from './types';
 import { useAudioAnalyzer } from './hooks/useAudioAnalyzer';
 import { useAuth } from './contexts/AuthContext';
@@ -958,9 +959,10 @@ const App: React.FC = () => {
   if (portableCardParam) {
     const sp = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
     const donorFromUrl = sp?.get('donor') || identity.displayName || 'Pionero StarSeed';
-    const existingSaved = sync.thankYouCards.find((c) => c.designId === portableCardParam) || sync.thankYouCards[0];
+    const resolvedDesign = getDesignById(portableCardParam);
+    const existingSaved = sync.thankYouCards.find((c) => c.designId === resolvedDesign.designId);
     const portableCardRecord = existingSaved || {
-      id: `portable-${portableCardParam}`,
+      id: `portable-${resolvedDesign.designId}`,
       donorName: donorFromUrl,
       tierId: 'pioneros',
       tierName: 'Pionero Fundacional',
@@ -968,12 +970,12 @@ const App: React.FC = () => {
       issuedAt: new Date().toISOString(),
       folderPath: 'Biblioteca/Donaciones y Agradecimientos',
       cardTheme: 'iridescent' as const,
-      editionId: 'pioneros',
-      cardNumber: 1,
-      editionSize: 12,
-      designId: portableCardParam,
-      phase: 'Fase I · Génesis del Micelio',
-      area: 'Fundación & Arquitectura',
+      editionId: resolvedDesign.editionId,
+      cardNumber: resolvedDesign.cardNumber,
+      editionSize: resolvedDesign.editionSize,
+      designId: resolvedDesign.designId,
+      phase: resolvedDesign.phase,
+      area: resolvedDesign.area,
       message: 'Reliquia 4D interactiva StarSeed OS · Portátil y vinculable a tu Cerebro.',
     };
     const liveMetrics = getVisualMetrics(params.sensitivity, params.freqRange);
