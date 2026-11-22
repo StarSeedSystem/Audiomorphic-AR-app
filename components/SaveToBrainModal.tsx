@@ -18,6 +18,7 @@ import { VisualizerParams } from '../types';
 import { usePresets, ESSENTIALS_FOLDER_NAME } from '../hooks/usePresets';
 import { canWriteBrain } from '../lib/starseedBrains';
 import StarSeedSymbol from './StarSeedSymbol';
+import { safeFixed } from '../utils/sanitizeParams';
 
 interface SaveToBrainModalProps {
   isOpen: boolean;
@@ -479,7 +480,7 @@ export const SaveToBrainModal: React.FC<SaveToBrainModalProps> = ({
               </strong>
             </span>
             <span className="font-mono text-[10px] text-slate-400 truncate">
-              k={Number(currentParams.k).toFixed(3)} · ψ={Number(currentParams.psi).toFixed(2)}
+              k={safeFixed(currentParams?.k, 3, 1.008)} · ψ={safeFixed(currentParams?.psi, 2, 2.399)}
             </span>
           </div>
 

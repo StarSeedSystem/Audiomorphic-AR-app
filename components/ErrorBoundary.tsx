@@ -10,6 +10,7 @@ interface State {
 }
 
 export class ErrorBoundary extends Component<Props, State> {
+  declare readonly props: Readonly<Props>;
   public state: State = {
     hasError: false,
     error: null
@@ -42,12 +43,27 @@ export class ErrorBoundary extends Component<Props, State> {
           <div className="bg-red-900/20 border border-red-500/50 p-6 rounded-2xl max-w-md w-full text-center">
             <h2 className="text-2xl font-bold text-red-400 mb-4">¡Ups! Algo salió mal</h2>
             <p className="text-gray-300 mb-6">{errorMessage}</p>
-            <button
-              className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-full transition-colors"
-              onClick={() => window.location.reload()}
-            >
-              Recargar Aplicación
-            </button>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <button
+                className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-5 rounded-full transition-colors cursor-pointer"
+                onClick={() => window.location.reload()}
+              >
+                Recargar Aplicación
+              </button>
+              <button
+                className="bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold py-2 px-5 rounded-full transition-colors cursor-pointer"
+                onClick={() => {
+                  try {
+                    localStorage.removeItem('audiomorphic_params');
+                  } catch {
+                    /* ignore */
+                  }
+                  window.location.reload();
+                }}
+              >
+                Restablecer Ajustes y Recargar
+              </button>
+            </div>
           </div>
         </div>
       );

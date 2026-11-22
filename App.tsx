@@ -24,6 +24,7 @@ import { EMBED, getPresetParams, getSyntheticMetrics } from './utils/embedMode';
 import { useChromaticMorph } from './hooks/useChromaticMorph';
 import { useMenu3DTilt } from './hooks/useMenu3DTilt';
 import { usePresets } from './hooks/usePresets';
+import { sanitizeVisualizerParams, safeNumber } from './utils/sanitizeParams';
 
 // --- TREATISE DATA: GENESIS & MUSIC ---
 const GENESIS_STAGES = [
@@ -62,12 +63,12 @@ const lerpAngleDegrees = (start: number, end: number, amt: number) => {
 };
 
 // --- MATH ENGINE: TREATISE ON HARMONIC UNIFICATION ---
-const calculateHarmonicGeometry = (V: number, E: number): { 
-  alpha: number, 
-  beta: number, 
-  sigma: number, 
-  gamma: number, 
-  k: number, 
+const calculateHarmonicGeometry = (V: number, E: number): {
+  alpha: number,
+  beta: number,
+  sigma: number,
+  gamma: number,
+  k: number,
   psi: number,
   regime: GeometryRegime
 } => {
@@ -89,7 +90,7 @@ const calculateHarmonicGeometry = (V: number, E: number): {
   const c = Math.max(alpha, beta); // Hipotenusa
   const a = Math.min(alpha, beta); // Cateto Estructural
   // Cateto Base/Oculto: b = sqrt(c^2 - a^2)
-  const b = Math.sqrt((c * c) - (a * a));
+  const b = Math.sqrt(Math.max(0, (c * c) - (a * a)));
 
   // 4. FACTORES DE RESPIRACION
   const sigma = c + b; // Expansión (Yang)
@@ -99,7 +100,7 @@ const calculateHarmonicGeometry = (V: number, E: number): {
   // k = Factor de Cierre. 
   // Treatise: k = Gamma / Sigma. 
   let k_raw = (sigma === 0) ? 1 : (gamma / sigma);
-  
+
   // Special case for perfect equilibrium (Vesica, Square) where Gamma = Sigma (b=0) -> k=1
   if (b < 0.001) k_raw = 1.0;
 
@@ -108,29 +109,40 @@ const calculateHarmonicGeometry = (V: number, E: number): {
   // We map the "geometric tension" (deviation from 1) to a very subtle visual deviation
   // typically between 0.995 and 1.000, so the spiral remains full-screen.
   // The '0.004' factor ensures the geometry influences the shape without destroying visibility.
-  const k = 1.0 - (1.0 - k_raw) * 0.004; 
+  const k = safeNumber(1.0 - (1.0 - k_raw) * 0.004, 1.0); 
 
   // Psi = Angulo de Giro = arccos(b/c)
-  const psi = (c === 0) ? 0 : Math.acos(b / c);
+  const ratio = c === 0 ? 1 : Math.max(-1, Math.min(1, b / c));
+  const psi = (c === 0) ? 0 : safeNumber(Math.acos(ratio), 0);
 
-  return { alpha, beta, sigma, gamma, k, psi, regime };
+  return { alpha: safeNumber(alpha, 0), beta: safeNumber(beta, 0), sigma: safeNumber(sigma, 1), gamma: safeNumber(gamma, 0), k, psi, regime };
 };
 
 
 const App: React.FC = () => {
   const { user, userData, updateSubscription, login, setAuthModalOpen, logout, loginWithGoogle } = useAuth();
-  
+
   // Load initial params from localStorage if available, otherwise use DEFAULT_PARAMS
   const [params, setParams] = useState<VisualizerParams>(() => {
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    const saved = localStorage.getItem('audiomorphic_params');
-    let initialParams = DEFAULT_PARAMS;
+    let saved: string | null = null;
+    try {
+      saved = localStorage.getItem('audiomorphic_params');
+    } catch {
+      saved = null;
+    }
+    let initialParams = sanitizeVisualizerParams(null, DEFAULT_PARAMS);
 
     if (saved) {
       try {
-        initialParams = { ...DEFAULT_PARAMS, ...JSON.parse(saved) };
+        initialParams = sanitizeVisualizerParams(JSON.parse(saved), DEFAULT_PARAMS);
+        try {
+          localStorage.setItem('audiomorphic_params', JSON.stringify(initialParams));
+        } catch {
+          /* ignore storage quota errors */
+        }
       } catch (e) {
-        initialParams = DEFAULT_PARAMS;
+        initialParams = sanitizeVisualizerParams(null, DEFAULT_PARAMS);
       }
     }
 
@@ -143,7 +155,7 @@ const App: React.FC = () => {
     if (EMBED.active) {
       const presetParams = getPresetParams(EMBED.preset);
       if (presetParams) {
-        initialParams = { ...initialParams, ...presetParams };
+        initialParams = sanitizeVisualizerParams(presetParams, initialParams);
       }
       // autostart / bg both imply the visualizer must run on its own.
       if (EMBED.autostart || EMBED.bg) {
@@ -263,7 +275,7 @@ const App: React.FC = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       try {
-        localStorage.setItem('audiomorphic_params', JSON.stringify(paramsRef.current));
+        localStorage.setItem('audiomorphic_params', JSON.stringify(sanitizeVisualizerParams(paramsRef.current)));
       } catch {
         /* ignore storage quota errors */
       }
@@ -274,7 +286,7 @@ const App: React.FC = () => {
   useEffect(() => {
     const flushParams = () => {
       try {
-        localStorage.setItem('audiomorphic_params', JSON.stringify(paramsRef.current));
+        localStorage.setItem('audiomorphic_params', JSON.stringify(sanitizeVisualizerParams(paramsRef.current)));
       } catch {
         /* ignore */
       }
@@ -287,18 +299,18 @@ const App: React.FC = () => {
     handleOpenInfo('donations');
   };
   const audioAnalyzer = useAudioAnalyzer();
-  const { 
-    isActive, 
-    error, 
-    devices, 
-    selectedDeviceId, 
-    setSelectedDeviceId, 
+  const {
+    isActive,
+    error,
+    devices,
+    selectedDeviceId,
+    setSelectedDeviceId,
     outputDevices,
     selectedOutputDeviceId,
     setAudioOutputDevice,
-    startAudio, 
-    stopAudio, 
-    getAudioMetrics 
+    startAudio,
+    stopAudio,
+    getAudioMetrics
   } = audioAnalyzer;
 
   const live = useLiveTransmission({
@@ -336,7 +348,7 @@ const App: React.FC = () => {
     if (!EMBED.mic || micRequestedRef.current) return;
     micRequestedRef.current = true;
     // Fire-and-forget; startAudio handles its own errors internally.
-    Promise.resolve(startAudio('microphone')).catch(() => {});
+    Promise.resolve(startAudio('microphone')).catch(() => { });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -362,7 +374,7 @@ const App: React.FC = () => {
         camStreamRef.current = stream;
         if (camVideoRef.current) {
           camVideoRef.current.srcObject = stream;
-          await camVideoRef.current.play().catch(() => {});
+          await camVideoRef.current.play().catch(() => { });
         }
         setCamActive(true);
       } catch (e) {
@@ -460,7 +472,7 @@ const App: React.FC = () => {
 
   // Logic Refs
   const animationFrameRef = useRef<number>(0);
-  
+
   // --- PILOT STATE ---
   const pilotRef = useRef({
     targetK: DEFAULT_PARAMS.k,
@@ -522,20 +534,17 @@ const App: React.FC = () => {
         // Sincronizar inmediatamente los objetivos del piloto automático para evitar desfase o retención
         if (pilotRef.current) {
           const p = pilotRef.current;
-          if (parsed.k !== undefined) { p.targetK = parsed.k; p.currentParams.k = parsed.k; p.lastEmittedK = parsed.k; p.lastSetK = parsed.k; }
-          if (parsed.psi !== undefined) { p.targetPsi = parsed.psi; p.currentParams.psi = parsed.psi; p.lastEmittedPsi = parsed.psi; p.lastSetPsi = parsed.psi; }
-          if (parsed.zoom !== undefined) { p.targetZoom = parsed.zoom; p.currentParams.zoom = parsed.zoom; p.lastEmittedZoom = parsed.zoom; p.lastSetZoom = parsed.zoom; }
-          if (parsed.distanceZoom !== undefined) { p.targetDistanceZoom = parsed.distanceZoom; p.currentParams.distanceZoom = parsed.distanceZoom; p.lastEmittedDistanceZoom = parsed.distanceZoom; p.lastSetDistanceZoom = parsed.distanceZoom; }
-          if (parsed.baseHue !== undefined) { p.targetHue = parsed.baseHue; p.currentParams.baseHue = parsed.baseHue; p.lastEmittedBaseHue = parsed.baseHue; p.lastSetBaseHue = parsed.baseHue; }
-          if (parsed.z0_r !== undefined) { p.targetZ0_r = parsed.z0_r; p.currentParams.z0_r = parsed.z0_r; p.lastEmittedZ0_r = parsed.z0_r; p.lastSetZ0_r = parsed.z0_r; }
-          if (parsed.z0_i !== undefined) { p.targetZ0_i = parsed.z0_i; p.currentParams.z0_i = parsed.z0_i; p.lastEmittedZ0_i = parsed.z0_i; p.lastSetZ0_i = parsed.z0_i; }
-          if (parsed.spiralThickness !== undefined) { p.targetSpiralThickness = parsed.spiralThickness; p.currentParams.spiralThickness = parsed.spiralThickness; p.lastEmittedSpiralThickness = parsed.spiralThickness; p.lastSetSpiralThickness = parsed.spiralThickness; }
+          if (typeof parsed.k === 'number' && Number.isFinite(parsed.k)) { p.targetK = parsed.k; p.currentParams.k = parsed.k; p.lastEmittedK = parsed.k; p.lastSetK = parsed.k; }
+          if (typeof parsed.psi === 'number' && Number.isFinite(parsed.psi)) { p.targetPsi = parsed.psi; p.currentParams.psi = parsed.psi; p.lastEmittedPsi = parsed.psi; p.lastSetPsi = parsed.psi; }
+          if (typeof parsed.zoom === 'number' && Number.isFinite(parsed.zoom)) { p.targetZoom = parsed.zoom; p.currentParams.zoom = parsed.zoom; p.lastEmittedZoom = parsed.zoom; p.lastSetZoom = parsed.zoom; }
+          if (typeof parsed.distanceZoom === 'number' && Number.isFinite(parsed.distanceZoom)) { p.targetDistanceZoom = parsed.distanceZoom; p.currentParams.distanceZoom = parsed.distanceZoom; p.lastEmittedDistanceZoom = parsed.distanceZoom; p.lastSetDistanceZoom = parsed.distanceZoom; }
+          if (typeof parsed.baseHue === 'number' && Number.isFinite(parsed.baseHue)) { p.targetHue = parsed.baseHue; p.currentParams.baseHue = parsed.baseHue; p.lastEmittedBaseHue = parsed.baseHue; p.lastSetBaseHue = parsed.baseHue; }
+          if (typeof parsed.z0_r === 'number' && Number.isFinite(parsed.z0_r)) { p.targetZ0_r = parsed.z0_r; p.currentParams.z0_r = parsed.z0_r; p.lastEmittedZ0_r = parsed.z0_r; p.lastSetZ0_r = parsed.z0_r; }
+          if (typeof parsed.z0_i === 'number' && Number.isFinite(parsed.z0_i)) { p.targetZ0_i = parsed.z0_i; p.currentParams.z0_i = parsed.z0_i; p.lastEmittedZ0_i = parsed.z0_i; p.lastSetZ0_i = parsed.z0_i; }
+          if (typeof parsed.spiralThickness === 'number' && Number.isFinite(parsed.spiralThickness)) { p.targetSpiralThickness = parsed.spiralThickness; p.currentParams.spiralThickness = parsed.spiralThickness; p.lastEmittedSpiralThickness = parsed.spiralThickness; p.lastSetSpiralThickness = parsed.spiralThickness; }
         }
 
-        setParams(prev => ({
-          ...prev,
-          ...parsed
-        }));
+        setParams(prev => sanitizeVisualizerParams(parsed, prev));
       }
     } catch (e) {
       console.error('Error al aplicar preset:', e);
@@ -553,7 +562,7 @@ const App: React.FC = () => {
 
     const updateLoop = () => {
       const currentParams = paramsRef.current;
-      if (!currentParams.autoPilot) return; 
+      if (!currentParams.autoPilot) return;
 
       // Factor de escala dinámico para móviles (Normalización de proporciones)
       const minDim = Math.min(window.innerWidth, window.innerHeight);
@@ -563,7 +572,7 @@ const App: React.FC = () => {
       const { volume, frequency, bass, mid, treble } = getAudioMetrics(currentParams.sensitivity, currentParams.freqRange);
       const now = Date.now();
       const p = pilotRef.current;
-      
+
       let geometryData: GeometryInfo | undefined;
       const isLocked = (key: keyof VisualizerParams) => currentParams.lockedParams?.includes(key);
 
@@ -604,36 +613,36 @@ const App: React.FC = () => {
 
       // 2. Detect ControlPanel target updates
       if (currentParams.targetK !== undefined && currentParams.targetK !== p.lastSetK) {
-         p.targetK = currentParams.targetK;
-         p.lastSetK = currentParams.targetK;
+        p.targetK = currentParams.targetK;
+        p.lastSetK = currentParams.targetK;
       }
       if (currentParams.targetPsi !== undefined && currentParams.targetPsi !== p.lastSetPsi) {
-         p.targetPsi = currentParams.targetPsi;
-         p.lastSetPsi = currentParams.targetPsi;
+        p.targetPsi = currentParams.targetPsi;
+        p.lastSetPsi = currentParams.targetPsi;
       }
       if (currentParams.targetZ0_r !== undefined && currentParams.targetZ0_r !== p.lastSetZ0_r) {
-         p.targetZ0_r = currentParams.targetZ0_r;
-         p.lastSetZ0_r = currentParams.targetZ0_r;
+        p.targetZ0_r = currentParams.targetZ0_r;
+        p.lastSetZ0_r = currentParams.targetZ0_r;
       }
       if (currentParams.targetZ0_i !== undefined && currentParams.targetZ0_i !== p.lastSetZ0_i) {
-         p.targetZ0_i = currentParams.targetZ0_i;
-         p.lastSetZ0_i = currentParams.targetZ0_i;
+        p.targetZ0_i = currentParams.targetZ0_i;
+        p.lastSetZ0_i = currentParams.targetZ0_i;
       }
       if (currentParams.targetBaseHue !== undefined && currentParams.targetBaseHue !== p.lastSetBaseHue) {
-         p.targetHue = currentParams.targetBaseHue;
-         p.lastSetBaseHue = currentParams.targetBaseHue;
+        p.targetHue = currentParams.targetBaseHue;
+        p.lastSetBaseHue = currentParams.targetBaseHue;
       }
       if (currentParams.targetZoom !== undefined && currentParams.targetZoom !== p.lastSetZoom) {
-         p.targetZoom = currentParams.targetZoom;
-         p.lastSetZoom = currentParams.targetZoom;
+        p.targetZoom = currentParams.targetZoom;
+        p.lastSetZoom = currentParams.targetZoom;
       }
       if (currentParams.targetDistanceZoom !== undefined && currentParams.targetDistanceZoom !== p.lastSetDistanceZoom) {
-         p.targetDistanceZoom = currentParams.targetDistanceZoom;
-         p.lastSetDistanceZoom = currentParams.targetDistanceZoom;
+        p.targetDistanceZoom = currentParams.targetDistanceZoom;
+        p.lastSetDistanceZoom = currentParams.targetDistanceZoom;
       }
       if (currentParams.targetSpiralThickness !== undefined && currentParams.targetSpiralThickness !== p.lastSetSpiralThickness) {
-         p.targetSpiralThickness = currentParams.targetSpiralThickness;
-         p.lastSetSpiralThickness = currentParams.targetSpiralThickness;
+        p.targetSpiralThickness = currentParams.targetSpiralThickness;
+        p.lastSetSpiralThickness = currentParams.targetSpiralThickness;
       }
 
       // --- AUDIO REACTIVE DRIFT & PULSES ---
@@ -659,11 +668,11 @@ const App: React.FC = () => {
 
       // --- GENESIS MODE (Treatise Implementation) ---
       if (currentParams.autoPilotMode === 'genesis') {
-        
+
         // 1. Determine Stage based on Energy
         const emotionSens = currentParams.autoEmotionSensitivity ?? 0.5;
         const energy = (volume + (bass * 0.3) + (mid * 0.2) + (treble * 0.1)) * (0.5 + emotionSens);
-        
+
         let stageIdx = 0;
         if (energy < 0.05) stageIdx = 0;      // Void
         else if (energy < 0.15) stageIdx = 1; // Vesica
@@ -674,14 +683,14 @@ const App: React.FC = () => {
         else stageIdx = 6;                    // Metatron (Max complexity)
 
         if (Math.abs(stageIdx - p.genesisTargetStage) > 0.1) {
-             p.genesisTargetStage = stageIdx;
+          p.genesisTargetStage = stageIdx;
         }
 
         const currentStage = GENESIS_STAGES[p.genesisTargetStage];
         const math = calculateHarmonicGeometry(currentStage.V, currentStage.E);
 
         // Audio reactivity modulates the strict math slightly (Breathing)
-        const breathing = 1.0 + (volume * 0.015 * (emotionSens * 2)); 
+        const breathing = 1.0 + (volume * 0.015 * (emotionSens * 2));
 
         p.targetPsi = math.psi;
         p.targetK = math.k * breathing;
@@ -689,11 +698,11 @@ const App: React.FC = () => {
         p.targetZ0_i = 0;
 
         if (math.regime === 'primary') {
-             p.targetHue = 200 - (p.genesisTargetStage * 10); // Cool colors
+          p.targetHue = 200 - (p.genesisTargetStage * 10); // Cool colors
         } else if (math.regime === 'reciprocal') {
-             p.targetHue = 0 + (p.genesisTargetStage * 5); // Warm/Hot colors
+          p.targetHue = 0 + (p.genesisTargetStage * 5); // Warm/Hot colors
         } else {
-             p.targetHue = 240; // Void = Dark Blue
+          p.targetHue = 240; // Void = Dark Blue
         }
 
         geometryData = {
@@ -713,65 +722,65 @@ const App: React.FC = () => {
         pulseZ0_i += (Math.random() > 0.5 ? 1 : -1) * (treble * 0.01);
         pulsePsi += (mid * 0.0005) * (currentParams.autoSpeed ?? 1.0);
         pulseHue += (volume * 0.5) * (currentParams.autoSpeed ?? 1.0);
-      } 
+      }
       // --- HARMONIC MODE (Musical Geometry) ---
       else if (currentParams.autoPilotMode === 'harmonic') {
-         const emotionSens = currentParams.autoEmotionSensitivity ?? 0.5;
-         const rawNote = Math.floor(frequency * 36); 
-         const noteIndex = rawNote % 12;
-         const interval = Math.abs(noteIndex - currentParams.rootNote) % 12;
-         
-         let V=1, E=0, name="Unison";
-         switch(interval) {
-            case 6: V=2; E=1; name="Tritono"; break;
-            case 4: V=3; E=3; name="Aumentada"; break;
-            case 3: V=4; E=4; name="Disminuida"; break;
-            case 2: V=6; E=6; name="Tonos Enteros"; break;
-            case 7: V=7; E=7; name="Escala Mayor"; break;
-            default: V=12; E=12; name="Cromática"; break;
-         }
+        const emotionSens = currentParams.autoEmotionSensitivity ?? 0.5;
+        const rawNote = Math.floor(frequency * 36);
+        const noteIndex = rawNote % 12;
+        const interval = Math.abs(noteIndex - currentParams.rootNote) % 12;
 
-         const math = calculateHarmonicGeometry(V, E);
-         const breathing = 1.0 + (volume * 0.012 * (emotionSens * 2)); 
+        let V = 1, E = 0, name = "Unison";
+        switch (interval) {
+          case 6: V = 2; E = 1; name = "Tritono"; break;
+          case 4: V = 3; E = 3; name = "Aumentada"; break;
+          case 3: V = 4; E = 4; name = "Disminuida"; break;
+          case 2: V = 6; E = 6; name = "Tonos Enteros"; break;
+          case 7: V = 7; E = 7; name = "Escala Mayor"; break;
+          default: V = 12; E = 12; name = "Cromática"; break;
+        }
 
-         p.targetPsi = math.psi;
-         p.targetK = math.k * breathing;
-         p.targetHue = (noteIndex * 30) % 360;
-         p.targetZ0_r = 0;
-         p.targetZ0_i = 0;
+        const math = calculateHarmonicGeometry(V, E);
+        const breathing = 1.0 + (volume * 0.012 * (emotionSens * 2));
 
-         geometryData = {
-            V, E, alpha: math.alpha, beta: math.beta, regime: math.regime, name
-         };
+        p.targetPsi = math.psi;
+        p.targetK = math.k * breathing;
+        p.targetHue = (noteIndex * 30) % 360;
+        p.targetZ0_r = 0;
+        p.targetZ0_i = 0;
 
-         pulseZoom += (volume * 0.0002);
-         pulseDistanceZoom += (volume * 0.05 * scaleFactor);
-         pulseSpiralThickness += (bass * 0.04 * scaleFactor);
-         pulseK += (bass * 0.005);
-         pulseZ0_r += (Math.random() > 0.5 ? 1 : -1) * (mid * 0.01);
-         pulseZ0_i += (Math.random() > 0.5 ? 1 : -1) * (treble * 0.01);
-         pulsePsi += (mid * 0.0005) * (currentParams.autoSpeed ?? 1.0);
-         pulseHue += (volume * 0.5) * (currentParams.autoSpeed ?? 1.0);
-      } 
+        geometryData = {
+          V, E, alpha: math.alpha, beta: math.beta, regime: math.regime, name
+        };
+
+        pulseZoom += (volume * 0.0002);
+        pulseDistanceZoom += (volume * 0.05 * scaleFactor);
+        pulseSpiralThickness += (bass * 0.04 * scaleFactor);
+        pulseK += (bass * 0.005);
+        pulseZ0_r += (Math.random() > 0.5 ? 1 : -1) * (mid * 0.01);
+        pulseZ0_i += (Math.random() > 0.5 ? 1 : -1) * (treble * 0.01);
+        pulsePsi += (mid * 0.0005) * (currentParams.autoSpeed ?? 1.0);
+        pulseHue += (volume * 0.5) * (currentParams.autoSpeed ?? 1.0);
+      }
       // --- DRIFT & ADVANCED RANDOM MODES ---
       else {
         const emotionSens = currentParams.autoRelationshipMode === 'empathetic' ? (currentParams.autoEmotionSensitivity ?? 0.5) : 0.5;
         const fluidity = currentParams.autoRelationshipMode === 'empathetic' ? (currentParams.autoStyleFluidity ?? 0.5) : 0.5;
         const speed = currentParams.autoSpeed ?? 1.0;
-        
+
         // Time Delay
         let beatCooldown = 0;
         if (currentParams.autoTimeDelayMode === 'custom') {
           beatCooldown = currentParams.autoTimeDelay * 1000;
         } else if (currentParams.autoTimeDelayMode === 'smart') {
-          beatCooldown = (3000 - (fluidity * 2000)) / Math.max(0.1, speed); 
+          beatCooldown = (3000 - (fluidity * 2000)) / Math.max(0.1, speed);
         }
 
         // Mode-specific continuous audio reactivity
         if (currentParams.autoRandomMode === 'sacred') {
           const isHarmonic = mid > 0.4 && treble < 0.8 && volume > 0.2;
           const isDeepResonance = bass > 0.6 && volume > 0.4;
-          
+
           if ((isHarmonic || isDeepResonance) && (now - p.lastBeatTime > beatCooldown)) {
             p.lastBeatTime = now;
             p.targetPsi += (Math.PI / 4) * (isDeepResonance ? 0.5 : 1.0);
@@ -792,7 +801,7 @@ const App: React.FC = () => {
         else if (currentParams.autoRandomMode === 'rhythmic') {
           const isBeat = bass > 0.6;
           const isSnare = treble > 0.6 && mid > 0.5;
-          
+
           if ((isBeat || isSnare) && (now - p.lastBeatTime > beatCooldown)) {
             p.lastBeatTime = now;
             p.targetPsi += (Math.PI / 2) * (isBeat ? 1 : -1);
@@ -801,8 +810,8 @@ const App: React.FC = () => {
             p.targetDistanceZoom += (Math.random() > 0.5 ? 1 : -1) * (volume * 0.8);
             p.targetSpiralThickness += (Math.random() > 0.5 ? 1 : -1) * (volume * 0.5);
             if (isSnare) {
-               p.targetZ0_r += (Math.random() - 0.5) * 0.5 * emotionSens;
-               p.targetZ0_i += (Math.random() - 0.5) * 0.5 * emotionSens;
+              p.targetZ0_r += (Math.random() - 0.5) * 0.5 * emotionSens;
+              p.targetZ0_i += (Math.random() - 0.5) * 0.5 * emotionSens;
             }
           }
           pulsePsi += (mid * 0.002) * speed;
@@ -816,32 +825,32 @@ const App: React.FC = () => {
         }
         else {
           // Default/Smart/DJ/Rainbow/Astral/Drift
-          const isBeat = currentParams.autoRelationshipMode === 'empathetic' 
+          const isBeat = currentParams.autoRelationshipMode === 'empathetic'
             ? bass > (0.6 - (emotionSens * 0.4)) || volume > (0.7 - (emotionSens * 0.3))
             : bass > 0.6 || volume > 0.7;
-          
+
           if (isBeat && (now - p.lastBeatTime > beatCooldown)) {
             p.lastBeatTime = now;
             p.targetPsi += (Math.random() * Math.PI * 0.5);
             p.targetZoom += (Math.random() * 0.002 - 0.001) * emotionSens;
             p.targetDistanceZoom += (Math.random() * 1.0 - 0.5) * emotionSens;
             p.targetSpiralThickness += (Math.random() * 0.5 - 0.25) * emotionSens;
-            
+
             if (currentParams.autoRelationshipMode === 'technical') {
-               p.targetK += (Math.random() > 0.5 ? 1 : -1) * (volume * 0.02);
-               p.targetZ0_r += (Math.random() > 0.5 ? 1 : -1) * (frequency * 0.2);
-               p.targetZ0_i += (Math.random() > 0.5 ? 1 : -1) * (volume * 0.2);
+              p.targetK += (Math.random() > 0.5 ? 1 : -1) * (volume * 0.02);
+              p.targetZ0_r += (Math.random() > 0.5 ? 1 : -1) * (frequency * 0.2);
+              p.targetZ0_i += (Math.random() > 0.5 ? 1 : -1) * (volume * 0.2);
             } else {
               if (Math.random() < fluidity) {
-                 p.targetK += (Math.random() * 0.02 - 0.01) * emotionSens;
+                p.targetK += (Math.random() * 0.02 - 0.01) * emotionSens;
               }
               if (Math.random() < fluidity * 0.5) {
-                 p.targetZ0_r += (Math.random() * 0.2 - 0.1) * emotionSens;
-                 p.targetZ0_i += (Math.random() * 0.2 - 0.1) * emotionSens;
+                p.targetZ0_r += (Math.random() * 0.2 - 0.1) * emotionSens;
+                p.targetZ0_i += (Math.random() * 0.2 - 0.1) * emotionSens;
               }
             }
           }
-          
+
           if (currentParams.autoRelationshipMode === 'technical') {
             pulsePsi += (mid * 0.001) * speed;
             pulseHue += (volume * 2.0) * speed;
@@ -865,8 +874,8 @@ const App: React.FC = () => {
       }
 
       // --- PHYSICS & REGENERATION ---
-      let alpha = 1.0; 
-      
+      let alpha = 1.0;
+
       if (currentParams.autoParamRegenMode === 'custom') {
         const delayFrames = Math.max(1, currentParams.autoParamRegenDelay * 60);
         const bufferFactor = 1.0 + (volume * (currentParams.autoParamRegenBuffer / 100));
@@ -917,15 +926,15 @@ const App: React.FC = () => {
       if (!isLocked('distanceZoom')) p.currentParams.distanceZoom = lerp(p.currentParams.distanceZoom, p.targetDistanceZoom, adjustedAlpha * 0.5);
       if (!isLocked('spiralThickness')) p.currentParams.spiralThickness = lerp(p.currentParams.spiralThickness, p.targetSpiralThickness, adjustedAlpha);
 
-      // Add pulses to base values for the final output
-      const nextK = p.currentParams.k + (isLocked('k') ? 0 : pulseK);
-      const nextPsi = p.currentParams.psi + (isLocked('psi') ? 0 : pulsePsi);
-      const nextZ0_r = p.currentParams.z0_r + (isLocked('z0_r') ? 0 : pulseZ0_r);
-      const nextZ0_i = p.currentParams.z0_i + (isLocked('z0_i') ? 0 : pulseZ0_i);
-      const nextBaseHue = (((p.currentParams.baseHue + (isLocked('baseHue') ? 0 : pulseHue)) % 360) + 360) % 360;
-      const nextZoom = Math.max(0.0001, p.currentParams.zoom + (isLocked('zoom') ? 0 : pulseZoom));
-      const nextDistanceZoom = Math.max(0.01, p.currentParams.distanceZoom + (isLocked('distanceZoom') ? 0 : pulseDistanceZoom));
-      const nextSpiralThickness = Math.max(0.01, p.currentParams.spiralThickness + (isLocked('spiralThickness') ? 0 : pulseSpiralThickness));
+      // Add pulses to base values for the final output (always finite)
+      const nextK = safeNumber(p.currentParams.k + (isLocked('k') ? 0 : pulseK), DEFAULT_PARAMS.k);
+      const nextPsi = safeNumber(p.currentParams.psi + (isLocked('psi') ? 0 : pulsePsi), DEFAULT_PARAMS.psi);
+      const nextZ0_r = safeNumber(p.currentParams.z0_r + (isLocked('z0_r') ? 0 : pulseZ0_r), DEFAULT_PARAMS.z0_r);
+      const nextZ0_i = safeNumber(p.currentParams.z0_i + (isLocked('z0_i') ? 0 : pulseZ0_i), DEFAULT_PARAMS.z0_i);
+      const nextBaseHue = safeNumber((((p.currentParams.baseHue + (isLocked('baseHue') ? 0 : pulseHue)) % 360) + 360) % 360, DEFAULT_PARAMS.baseHue);
+      const nextZoom = safeNumber(Math.max(0.0001, p.currentParams.zoom + (isLocked('zoom') ? 0 : pulseZoom)), DEFAULT_PARAMS.zoom);
+      const nextDistanceZoom = safeNumber(Math.max(0.01, p.currentParams.distanceZoom + (isLocked('distanceZoom') ? 0 : pulseDistanceZoom)), DEFAULT_PARAMS.distanceZoom);
+      const nextSpiralThickness = safeNumber(Math.max(0.01, p.currentParams.spiralThickness + (isLocked('spiralThickness') ? 0 : pulseSpiralThickness)), DEFAULT_PARAMS.spiralThickness);
 
       // Update lastEmitted so we can detect manual slider drags next frame
       p.lastEmittedK = nextK;
@@ -985,10 +994,10 @@ const App: React.FC = () => {
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
     };
   }, [
-    params.autoPilot, 
+    params.autoPilot,
     isActive,
     getAudioMetrics
-  ]); 
+  ]);
 
   // --- STANDALONE PORTABLE 4D CARD STAGE (?card=pioneros-01) ---
   if (portableCardParam) {
@@ -1072,11 +1081,10 @@ const App: React.FC = () => {
             <button
               type="button"
               onClick={toggleAudio}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 cursor-pointer border ${
-                isActive
-                  ? 'bg-red-500/20 border-red-400/50 text-red-200 animate-pulse'
-                  : 'morph-btn-glass text-cyan-200'
-              }`}
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 cursor-pointer border ${isActive
+                ? 'bg-red-500/20 border-red-400/50 text-red-200 animate-pulse'
+                : 'morph-btn-glass text-cyan-200'
+                }`}
             >
               <Activity className="w-3.5 h-3.5" />
               <span>{isActive ? 'Sonido Activo' : 'Activar Sonido'}</span>
@@ -1117,7 +1125,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <div 
+    <div
       className={`flex h-viewport-full w-screen overflow-hidden bg-black text-white relative ${EMBED.bg ? 'pointer-events-none select-none' : ''}`}
       onPointerDown={EMBED.bg ? undefined : () => {
         if (showTouchHint) setShowTouchHint(false);
@@ -1138,8 +1146,8 @@ const App: React.FC = () => {
       <div className="absolute inset-0 z-0">
         <BackgroundLayer params={params} getAudioMetrics={getVisualMetrics} />
         {(params.vrMode || params.arPortalMode) ? (
-          <VisualizerVR 
-            params={params} 
+          <VisualizerVR
+            params={params}
             getAudioMetrics={getVisualMetrics}
             setParams={setParams}
             audioActive={isActive}
@@ -1151,8 +1159,8 @@ const App: React.FC = () => {
             onAudioDeviceChange={setSelectedDeviceId}
           />
         ) : (
-          <VisualizerCanvas 
-            params={params} 
+          <VisualizerCanvas
+            params={params}
             liveParamsRef={paramsRef}
             getAudioMetrics={getVisualMetrics}
           />
@@ -1160,74 +1168,73 @@ const App: React.FC = () => {
       </div>
 
       {!EMBED.bg && !(params.vrMode || params.arPortalMode) && params.showIndicators && (
-        <div 
-          className="absolute top-3 right-3 sm:top-6 sm:right-6 flex items-center gap-1.5 sm:gap-2.5 z-20 transition-opacity duration-500 max-w-[calc(100vw-1.5rem)] overflow-hidden" 
-          style={{ 
-            top: 'max(0.75rem, env(safe-area-inset-top))', 
+        <div
+          className="absolute top-3 right-3 sm:top-6 sm:right-6 flex items-center gap-1.5 sm:gap-2.5 z-20 transition-opacity duration-500 max-w-[calc(100vw-1.5rem)] overflow-hidden"
+          style={{
+            top: 'max(0.75rem, env(safe-area-inset-top))',
             right: 'max(0.75rem, env(safe-area-inset-right))',
-            opacity: controlsVisible ? 1 : 0.78 
+            opacity: controlsVisible ? 1 : 0.78
           }}
         >
-           <div className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full border text-[11px] sm:text-xs font-mono pointer-events-none shrink-0
-             ${isActive 
-               ? 'bg-red-500/15 border-red-400/50 text-red-300 animate-pulse' 
-               : 'quantum-glass text-slate-300'}
+          <div className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full border text-[11px] sm:text-xs font-mono pointer-events-none shrink-0
+             ${isActive
+              ? 'bg-red-500/15 border-red-400/50 text-red-300 animate-pulse'
+              : 'quantum-glass text-slate-300'}
            `}>
-             <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${isActive ? 'bg-red-400' : 'bg-slate-400'}`}></div>
-             <span>{isActive ? 'MIC' : 'OFF'}</span>
-           </div>
-           
-           {params.autoPilot && (
-             <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full morph-pill text-[11px] sm:text-xs font-mono shrink min-w-0">
-                <Zap className="w-3 h-3 sm:w-3.5 sm:h-3.5 morph-accent-text shrink-0" />
-                <span className="font-bold tracking-wider hidden md:inline starseed-text-gradient">Audiomorphic</span>
-                <RotateCw size={10} className="animate-spin opacity-60 shrink-0 hidden xs:inline" /> 
-                <span className="truncate max-w-[85px] xs:max-w-[120px] sm:max-w-none">
-                  {params.autoRandomMode === 'sacred' ? 'RESONANCIAS' :
-                   params.autoRandomMode === 'rhythmic' ? 'RITMOS' :
-                   params.autoPilotMode === 'harmonic' ? 'ARMÓNICA' : 
-                   params.autoPilotMode === 'genesis' ? 'GÉNESIS' : 
-                   'DERIVA'}
-                </span>
-             </div>
-           )}
+            <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${isActive ? 'bg-red-400' : 'bg-slate-400'}`}></div>
+            <span>{isActive ? 'MIC' : 'OFF'}</span>
+          </div>
 
-           {presetsStore.selectedBrain && (
-             <button
-               type="button"
-               onClick={() => handleOpenInfo('account')}
-               className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full quantum-glass hover:brightness-110 text-[11px] font-mono text-slate-100 pointer-events-auto cursor-pointer shrink-0 max-w-[170px]"
-               title={`Cerebro activo: ${presetsStore.selectedBrain.name}`}
-             >
-               <StarSeedSymbol size="xs" glow />
-               <span className="truncate">{presetsStore.selectedBrain.name}</span>
-             </button>
-           )}
+          {params.autoPilot && (
+            <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full morph-pill text-[11px] sm:text-xs font-mono shrink min-w-0">
+              <Zap className="w-3 h-3 sm:w-3.5 sm:h-3.5 morph-accent-text shrink-0" />
+              <span className="font-bold tracking-wider hidden md:inline starseed-text-gradient">Audiomorphic</span>
+              <RotateCw size={10} className="animate-spin opacity-60 shrink-0 hidden xs:inline" />
+              <span className="truncate max-w-[85px] xs:max-w-[120px] sm:max-w-none">
+                {params.autoRandomMode === 'sacred' ? 'RESONANCIAS' :
+                  params.autoRandomMode === 'rhythmic' ? 'RITMOS' :
+                    params.autoPilotMode === 'harmonic' ? 'ARMÓNICA' :
+                      params.autoPilotMode === 'genesis' ? 'GÉNESIS' :
+                        'DERIVA'}
+              </span>
+            </div>
+          )}
 
-           <button
-             type="button"
-             onClick={() => handleOpenLive(live.session ? 'room' : 'discover')}
-             className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-mono pointer-events-auto cursor-pointer shrink-0 border ${
-               live.session
-                 ? 'bg-rose-500/20 border-rose-400/50 text-rose-200'
-                 : 'morph-btn-glass text-cyan-200'
-             }`}
-             title="Transmisiones En Vivo: Estaciones & Canales P2P StarSeed"
-           >
-             <Radio size={12} className={live.session ? 'animate-pulse text-rose-300' : 'text-cyan-300'} />
-             <span className="hidden xs:inline font-semibold">{live.session ? 'EN VIVO' : 'Transmitir'}</span>
-           </button>
+          {presetsStore.selectedBrain && (
+            <button
+              type="button"
+              onClick={() => handleOpenInfo('account')}
+              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full quantum-glass hover:brightness-110 text-[11px] font-mono text-slate-100 pointer-events-auto cursor-pointer shrink-0 max-w-[170px]"
+              title={`Cerebro activo: ${presetsStore.selectedBrain.name}`}
+            >
+              <StarSeedSymbol size="xs" glow />
+              <span className="truncate">{presetsStore.selectedBrain.name}</span>
+            </button>
+          )}
 
-           <button
-             type="button"
-             onClick={() => handleOpenInfo('guide')}
-             className="flex items-center gap-1 px-2.5 sm:px-3 py-1 rounded-full morph-btn-glass text-[11px] sm:text-xs font-mono pointer-events-auto cursor-pointer shrink-0"
-             title="Centro de Información, Cerebros & Red StarSeed"
-           >
-             <Info size={12} className="morph-accent-text" />
-             <span className="font-semibold tracking-wide">Info</span>
-           </button>
-      </div>
+          <button
+            type="button"
+            onClick={() => handleOpenLive(live.session ? 'room' : 'discover')}
+            className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-mono pointer-events-auto cursor-pointer shrink-0 border ${live.session
+              ? 'bg-rose-500/20 border-rose-400/50 text-rose-200'
+              : 'morph-btn-glass text-cyan-200'
+              }`}
+            title="Transmisiones En Vivo: Estaciones & Canales P2P StarSeed"
+          >
+            <Radio size={12} className={live.session ? 'animate-pulse text-rose-300' : 'text-cyan-300'} />
+            <span className="hidden xs:inline font-semibold">{live.session ? 'EN VIVO' : 'Transmitir'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleOpenInfo('guide')}
+            className="flex items-center gap-1 px-2.5 sm:px-3 py-1 rounded-full morph-btn-glass text-[11px] sm:text-xs font-mono pointer-events-auto cursor-pointer shrink-0"
+            title="Centro de Información, Cerebros & Red StarSeed"
+          >
+            <Info size={12} className="morph-accent-text" />
+            <span className="font-semibold tracking-wide">Info</span>
+          </button>
+        </div>
       )}
 
       {!EMBED.bg && error && (
@@ -1239,7 +1246,7 @@ const App: React.FC = () => {
 
       {/* Indicador parpadeante translúcido centrado al iniciar la app */}
       {showTouchHint && !controlsVisible && !EMBED.bg && (
-        <div 
+        <div
           className="fixed inset-0 z-30 flex items-center justify-center pointer-events-none select-none px-4 animate-in fade-in duration-700"
           aria-hidden="true"
         >
@@ -1255,7 +1262,7 @@ const App: React.FC = () => {
       {!EMBED.bg && !(params.vrMode) && (
         <>
           {/* Overlay to close menu when clicking outside */}
-          <div 
+          <div
             className={`absolute inset-0 z-20 transition-opacity duration-200 ${controlsVisible ? 'opacity-100 bg-black/40 desktop-backdrop-blur pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
             onPointerDown={(e) => {
               e.stopPropagation();
@@ -1265,7 +1272,7 @@ const App: React.FC = () => {
             onTouchMove={(e) => e.stopPropagation()}
             onWheel={(e) => e.stopPropagation()}
           />
-          <div 
+          <div
             aria-hidden={!controlsVisible}
             className={`
               fixed inset-0 z-30 flex items-center justify-center p-2 sm:p-4 md:p-5 overflow-hidden menu-3d-stage pointer-events-none
@@ -1306,37 +1313,37 @@ const App: React.FC = () => {
               onWheel={(e) => { e.stopPropagation(); resetHideTimer(); }}
             >
               <div className="menu-3d-glare rounded-[inherit]" aria-hidden="true" />
-            <ControlPanel 
-              params={params} 
-              setParams={setParams} 
-              audioActive={isActive}
-              toggleAudio={toggleAudio}
-              onClose={handleCloseControls}
-              getAudioMetrics={getAudioMetrics}
-              subscriptionTier={subscriptionTier}
-              trialEndTime={trialEndTime}
-              onShowSubscription={handleOpenDonations}
-              onOpenInfo={handleOpenInfo}
-              audioDevices={devices}
-              selectedAudioDeviceId={selectedDeviceId}
-              onAudioDeviceChange={setSelectedDeviceId}
-              outputAudioDevices={outputDevices}
-              selectedOutputAudioDeviceId={selectedOutputDeviceId}
-              onOutputAudioDeviceChange={setAudioOutputDevice}
-              onApplyPreset={handleApplyPreset}
-              selectedLibraryPreset={selectedLibraryPresetForFolder}
-              onSelectLibraryPreset={setSelectedLibraryPresetForFolder}
-              sync={sync}
-              onOpenLive={handleOpenLive}
-              liveSession={live.session}
-              liveTelemetry={live.telemetry}
-              gyroSupported={menuTilt.gyroSupported}
-              gyroActive={menuTilt.gyroActive}
-              needsGyroPermission={menuTilt.needsGyroPermission}
-              tiltEnabled={menuTilt.tiltEnabled}
-              onRequestGyro={menuTilt.requestGyroPermission}
-              onToggleTilt={menuTilt.toggleTilt}
-            />
+              <ControlPanel
+                params={params}
+                setParams={setParams}
+                audioActive={isActive}
+                toggleAudio={toggleAudio}
+                onClose={handleCloseControls}
+                getAudioMetrics={getAudioMetrics}
+                subscriptionTier={subscriptionTier}
+                trialEndTime={trialEndTime}
+                onShowSubscription={handleOpenDonations}
+                onOpenInfo={handleOpenInfo}
+                audioDevices={devices}
+                selectedAudioDeviceId={selectedDeviceId}
+                onAudioDeviceChange={setSelectedDeviceId}
+                outputAudioDevices={outputDevices}
+                selectedOutputAudioDeviceId={selectedOutputDeviceId}
+                onOutputAudioDeviceChange={setAudioOutputDevice}
+                onApplyPreset={handleApplyPreset}
+                selectedLibraryPreset={selectedLibraryPresetForFolder}
+                onSelectLibraryPreset={setSelectedLibraryPresetForFolder}
+                sync={sync}
+                onOpenLive={handleOpenLive}
+                liveSession={live.session}
+                liveTelemetry={live.telemetry}
+                gyroSupported={menuTilt.gyroSupported}
+                gyroActive={menuTilt.gyroActive}
+                needsGyroPermission={menuTilt.needsGyroPermission}
+                tiltEnabled={menuTilt.tiltEnabled}
+                onRequestGyro={menuTilt.requestGyroPermission}
+                onToggleTilt={menuTilt.toggleTilt}
+              />
             </div>
           </div>
         </>

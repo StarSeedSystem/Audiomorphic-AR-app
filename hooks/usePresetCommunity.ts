@@ -545,15 +545,56 @@ const INITIAL_RATINGS: Record<string, { totalScore: number; votesCount: number }
   'community-pulsar-astral': { totalScore: 160, votesCount: 35 },   // ~4.6
 };
 
+const toFinite = (v: unknown, fb: number): number =>
+  typeof v === 'number' && Number.isFinite(v) ? v : fb;
+
 const loadStore = (): CommunityStore => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
+      const mergedRatings: Record<string, { totalScore: number; votesCount: number; userVote?: number }> = {
+        ...INITIAL_RATINGS,
+        ...(parsed?.ratings && typeof parsed.ratings === 'object' ? parsed.ratings : {}),
+      };
+      for (const k of Object.keys(mergedRatings)) {
+        const rec = mergedRatings[k];
+        if (!rec || typeof rec !== 'object') {
+          mergedRatings[k] = INITIAL_RATINGS[k] || { totalScore: 5, votesCount: 1 };
+        } else {
+          const votesCount = Math.max(0, Math.round(toFinite(rec.votesCount, 1)));
+          const totalScore = toFinite(rec.totalScore, votesCount > 0 ? votesCount * 5 : 5);
+          mergedRatings[k] = {
+            totalScore,
+            votesCount,
+            ...(typeof rec.userVote === 'number' && Number.isFinite(rec.userVote) ? { userVote: rec.userVote } : {}),
+          };
+        }
+      }
+
+      const mergedRecs: Record<string, MusicRecommendation[]> = {
+        ...INITIAL_RECOMMENDATIONS,
+        ...(parsed?.recommendations && typeof parsed.recommendations === 'object' ? parsed.recommendations : {}),
+      };
+      for (const k of Object.keys(mergedRecs)) {
+        const list = mergedRecs[k];
+        mergedRecs[k] = Array.isArray(list)
+          ? list.filter(Boolean).map((item) => ({
+              ...item,
+              rating: toFinite(item?.rating, 5),
+              votesCount: Math.max(1, Math.round(toFinite(item?.votesCount, 1))),
+              userVote: typeof item?.userVote === 'number' && Number.isFinite(item.userVote) ? item.userVote : undefined,
+            }))
+          : INITIAL_RECOMMENDATIONS[k] || [];
+      }
+
       return {
-        ratings: { ...INITIAL_RATINGS, ...(parsed.ratings || {}) },
-        comments: { ...INITIAL_COMMENTS, ...(parsed.comments || {}) },
-        recommendations: { ...INITIAL_RECOMMENDATIONS, ...(parsed.recommendations || {}) }
+        ratings: mergedRatings,
+        comments: {
+          ...INITIAL_COMMENTS,
+          ...(parsed?.comments && typeof parsed.comments === 'object' ? parsed.comments : {}),
+        },
+        recommendations: mergedRecs,
       };
     }
   } catch {
@@ -584,14 +625,15 @@ export const usePresetCommunity = () => {
   // Get average rating for a preset
   const getPresetRating = useCallback((presetId: string) => {
     const record = store.ratings[presetId];
-    if (!record || record.votesCount === 0) {
+    if (!record || !Number.isFinite(record.votesCount) || record.votesCount <= 0) {
       return { average: 5.0, count: 1, userRating: undefined };
     }
-    const average = Math.round((record.totalScore / record.votesCount) * 10) / 10;
+    const rawAvg = (toFinite(record.totalScore, 5) / Math.max(1, record.votesCount));
+    const average = Number.isFinite(rawAvg) ? Math.round(rawAvg * 10) / 10 : 5.0;
     return {
       average,
       count: record.votesCount,
-      userRating: record.userVote
+      userRating: typeof record.userVote === 'number' && Number.isFinite(record.userVote) ? record.userVote : undefined
     };
   }, [store.ratings]);
 
@@ -716,11 +758,13 @@ export const usePresetCommunity = () => {
       const list = prev.recommendations[presetId] || [];
       const updated = list.map(item => {
         if (item.id !== recommendationId) return item;
-        const hadVote = item.userVote !== undefined;
-        const currentTotal = item.rating * item.votesCount;
-        const newTotal = hadVote ? currentTotal - (item.userVote || 0) + clamped : currentTotal + clamped;
-        const newCount = hadVote ? item.votesCount : item.votesCount + 1;
-        const newAvg = Math.round((newTotal / newCount) * 10) / 10;
+        const hadUserVote = typeof item.userVote === 'number' && Number.isFinite(item.userVote);
+        const safeCount = Math.max(1, Math.round(toFinite(item.votesCount, 1)));
+        const currentTotal = toFinite(item.rating, 5) * safeCount;
+        const newTotal = hadUserVote ? currentTotal - (item.userVote || 0) + clamped : currentTotal + clamped;
+        const newCount = hadUserVote ? safeCount : safeCount + 1;
+        const rawNewAvg = newTotal / Math.max(1, newCount);
+        const newAvg = Number.isFinite(rawNewAvg) ? Math.round(rawNewAvg * 10) / 10 : 5.0;
         return {
           ...item,
           rating: newAvg,

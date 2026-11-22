@@ -72,6 +72,7 @@ import {
 } from '../lib/spotifyBridge';
 import type { VisualizerParams } from '../types';
 import type { BrainNeuronDevice } from '../lib/starseedBrains';
+import { safeFixed } from '../utils/sanitizeParams';
 
 export type LiveHubTab = 'discover' | 'create' | 'audio' | 'room' | 'mesh';
 
@@ -1366,7 +1367,7 @@ export const LiveTransmissionHub: React.FC<LiveTransmissionHubProps> = ({
                           />
                         </label>
                         <label className="space-y-1">
-                          <span className="text-slate-300">Escala ×{live.relativeOffsets.scaleMult.toFixed(2)}</span>
+                          <span className="text-slate-300">Escala ×{safeFixed(live.relativeOffsets?.scaleMult, 2, 1)}</span>
                           <input
                             type="range"
                             min={0.5}
@@ -1380,7 +1381,7 @@ export const LiveTransmissionHub: React.FC<LiveTransmissionHubProps> = ({
                           />
                         </label>
                         <label className="space-y-1">
-                          <span className="text-slate-300">Sensibilidad ×{live.relativeOffsets.reactivityMult.toFixed(2)}</span>
+                          <span className="text-slate-300">Sensibilidad ×{safeFixed(live.relativeOffsets?.reactivityMult, 2, 1)}</span>
                           <input
                             type="range"
                             min={0.5}

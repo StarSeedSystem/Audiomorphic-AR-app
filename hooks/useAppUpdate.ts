@@ -69,9 +69,9 @@ export interface HardwarePermissionsState {
   fullscreen: boolean;  // Fullscreen API available
 }
 
-export const CURRENT_APP_VERSION = '1.5.0';
-export const CURRENT_BUILD_DATE = '2026-11-21';
-export const CURRENT_NATIVE_CONTAINER = '1.5.0';
+export const CURRENT_APP_VERSION = '1.5.1';
+export const CURRENT_BUILD_DATE = '2026-11-22';
+export const CURRENT_NATIVE_CONTAINER = '1.5.1';
 
 const GITHUB_REPO_URL = 'https://github.com/StarSeedSystem/Audiomorphic-AR-app';
 const GOOGLE_DRIVE_MIRROR = 'https://drive.google.com/drive/folders/1bZ8yvbWr7r3eJUdKIQCSSuu-p398mAkn?usp=sharing';
@@ -120,6 +120,18 @@ export const OFFICIAL_DOWNLOADS: PlatformDownloads = {
 };
 
 export const CHANGELOG_HISTORY: VersionChangelog[] = [
+  {
+    version: '1.5.1',
+    date: '2026-11-22',
+    type: 'native_required',
+    title: 'Blindaje Anticaídas (toFixed null), Reparación Automática en Android/Desktop y Arranque Offline 100%',
+    notes: [
+      'Corrección raíz de la pantalla "¡Ups! Algo salió mal — Cannot read properties of null (reading \'toFixed\')" al iniciar o reinstalar en Android y escritorio: sanitización profunda automática de `audiomorphic_params`, `sgSettings`, `geometryData` y comunidad al arrancar.',
+      'Protección completa de todas las lecturas numéricas con `safeNumber`/`safeFixed` en controles, `LiquidSlider`, piloto automático armónico (`Math.sqrt`/`Math.acos`), cromatismo vivo y modo 3D.',
+      'Nuevo botón de respaldo en `ErrorBoundary` ("Restablecer Ajustes y Recargar") para reparar parámetros sin perder cuentas, presets ni tarjetas StarSeed.',
+      'Verificado arranque completo 100% sin conexión a internet tanto en Android móvil como en escritorio (`app://`).',
+    ],
+  },
   {
     version: '1.5.0',
     date: '2026-11-21',

@@ -33,6 +33,7 @@ import { usePresets, Preset, ESSENTIALS_FOLDER_NAME } from '../hooks/usePresets'
 import { usePresetCommunity, MusicRecommendationType } from '../hooks/usePresetCommunity';
 import { UseStarSeedSyncResult } from '../hooks/useStarSeedSync';
 import SaveToBrainModal from './SaveToBrainModal';
+import { sanitizeVisualizerParams, safeFixed } from '../utils/sanitizeParams';
 
 interface PresetsHubModalProps {
   open: boolean;
@@ -298,7 +299,7 @@ const PresetsHubModal: React.FC<PresetsHubModalProps> = ({
   const handleLoadPersonalPreset = (preset: Preset) => {
     try {
       const parsed = typeof preset.params === 'string' ? JSON.parse(preset.params) : preset.params;
-      setParams((prev) => ({ ...prev, ...parsed }));
+      setParams((prev) => sanitizeVisualizerParams(parsed, prev));
       if (onApplyPreset) {
         onApplyPreset(parsed);
       }
@@ -534,7 +535,7 @@ const PresetsHubModal: React.FC<PresetsHubModalProps> = ({
                         <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-black/40 border border-white/5 text-xs min-w-0">
                           <div className="flex items-center gap-1.5 shrink-0">
                             <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-                            <span className="font-bold text-white">{ratingData.average.toFixed(1)}</span>
+                            <span className="font-bold text-white">{safeFixed(ratingData?.average, 1, 5)}</span>
                             <span className="text-gray-400 text-[11px]">
                               ({ratingData.count} {ratingData.count === 1 ? 'voto' : 'votos'})
                             </span>
@@ -840,7 +841,7 @@ const PresetsHubModal: React.FC<PresetsHubModalProps> = ({
                                       </span>
                                       <div className="flex items-center gap-1 shrink-0">
                                         <Star size={11} className="text-amber-400 fill-amber-400" />
-                                        <span className="font-bold text-white">{rec.rating.toFixed(1)}</span>
+                                        <span className="font-bold text-white">{safeFixed(rec?.rating, 1, 5)}</span>
                                         <span className="text-gray-400 text-[9px]">({rec.votesCount})</span>
                                         <div className="flex items-center gap-0.5 ml-1">
                                           {[1, 2, 3, 4, 5].map((s) => (

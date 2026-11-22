@@ -156,8 +156,15 @@ export function useMenu3DTilt(options: Menu3DTiltOptions = {}): Menu3DTiltResult
     window.addEventListener('resize', updateCoarseState);
 
     const applyVars = (el: HTMLDivElement, s: typeof currentRef.current, isCoarse: boolean) => {
-      const glareTx = ((s.gx - 50) * 0.65).toFixed(1);
-      const glareTy = ((s.gy - 35) * 0.65).toFixed(1);
+      const fin = (v: number, fb = 0) => (typeof v === 'number' && Number.isFinite(v) ? v : fb);
+      const gx = fin(s.gx, 50);
+      const gy = fin(s.gy, 35);
+      const tx = fin(s.tx, 0);
+      const ty = fin(s.ty, 0);
+      const rx = fin(s.rx, 0);
+      const ry = fin(s.ry, 0);
+      const glareTx = ((gx - 50) * 0.65).toFixed(1);
+      const glareTy = ((gy - 35) * 0.65).toFixed(1);
       el.style.setProperty('--glare-tx', `${glareTx}px`);
       el.style.setProperty('--glare-ty', `${glareTy}px`);
 
@@ -165,13 +172,13 @@ export function useMenu3DTilt(options: Menu3DTiltOptions = {}): Menu3DTiltResult
         !isCoarse &&
         tiltEnabledRef.current &&
         !reducedMotionRef.current &&
-        (Math.abs(s.rx) > 0.025 ||
-          Math.abs(s.ry) > 0.025 ||
-          Math.abs(s.tx) > 0.06 ||
-          Math.abs(s.ty) > 0.06);
+        (Math.abs(rx) > 0.025 ||
+          Math.abs(ry) > 0.025 ||
+          Math.abs(tx) > 0.06 ||
+          Math.abs(ty) > 0.06);
 
       if (active3D) {
-        el.style.transform = `perspective(1400px) translate3d(${s.tx.toFixed(2)}px, ${s.ty.toFixed(2)}px, 0) rotateX(${s.rx.toFixed(3)}deg) rotateY(${s.ry.toFixed(3)}deg)`;
+        el.style.transform = `perspective(1400px) translate3d(${tx.toFixed(2)}px, ${ty.toFixed(2)}px, 0) rotateX(${rx.toFixed(3)}deg) rotateY(${ry.toFixed(3)}deg)`;
       } else if (el.style.transform) {
         el.style.transform = '';
       }

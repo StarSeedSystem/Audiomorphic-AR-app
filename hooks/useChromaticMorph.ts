@@ -121,26 +121,34 @@ export function useChromaticMorph(
       if (hueDiff < 1.2 && valDiff < 0.025) return;
       lastWritten = { ...s };
 
-      const root = document.documentElement.style;
-      const h1 = s.hue1.toFixed(1);
-      const h2 = s.hue2.toFixed(1);
-      const h3 = s.hue3.toFixed(1);
-      const textL1 = safeNeonTextLightness(s.hue1);
-      const textL2 = safeNeonTextLightness(s.hue2);
+      const fin = (v: number, fb: number) => (typeof v === 'number' && Number.isFinite(v) ? v : fb);
+      const safeHue1 = fin(s.hue1, 175);
+      const safeHue2 = fin(s.hue2, 312);
+      const safeHue3 = fin(s.hue3, 89);
+      const safeEnergy = fin(s.energy, 0.22);
+      const safeBass = fin(s.bass, 0.14);
+      const safeTreble = fin(s.treble, 0.16);
 
-      const accentBgLum = hslLuminance(s.hue1, 86, 46);
+      const root = document.documentElement.style;
+      const h1 = safeHue1.toFixed(1);
+      const h2 = safeHue2.toFixed(1);
+      const h3 = safeHue3.toFixed(1);
+      const textL1 = safeNeonTextLightness(safeHue1);
+      const textL2 = safeNeonTextLightness(safeHue2);
+
+      const accentBgLum = hslLuminance(safeHue1, 86, 46);
       const onAccent = accentBgLum > 0.34 ? '#050811' : '#f8fafc';
 
       root.setProperty('--morph-hue-1', h1);
       root.setProperty('--morph-hue-2', h2);
       root.setProperty('--morph-hue-3', h3);
-      root.setProperty('--morph-energy', s.energy.toFixed(3));
-      root.setProperty('--morph-bass', s.bass.toFixed(3));
-      root.setProperty('--morph-treble', s.treble.toFixed(3));
+      root.setProperty('--morph-energy', safeEnergy.toFixed(3));
+      root.setProperty('--morph-bass', safeBass.toFixed(3));
+      root.setProperty('--morph-treble', safeTreble.toFixed(3));
       root.setProperty('--morph-text-l1', `${textL1}%`);
       root.setProperty('--morph-text-l2', `${textL2}%`);
       root.setProperty('--morph-on-accent', onAccent);
-      root.setProperty('--morph-glow-alpha', (0.24 + s.energy * 0.36).toFixed(3));
+      root.setProperty('--morph-glow-alpha', (0.24 + safeEnergy * 0.36).toFixed(3));
       root.setProperty('--morph-accent-bg', `hsl(${h1}, 86%, 46%)`);
     };
 

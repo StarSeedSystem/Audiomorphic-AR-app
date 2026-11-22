@@ -385,7 +385,7 @@ export async function registerNeuronHeartbeat(userId: string, force = false): Pr
       capabilities: {
         platform: neuron.platform,
         app: 'Audiomorphic',
-        version: '1.5.0',
+        version: '1.5.1',
         installedApp:
           typeof window !== 'undefined' &&
           (Boolean((window as any).electronAPI) ||

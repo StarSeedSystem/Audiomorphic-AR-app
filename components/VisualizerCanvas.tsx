@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { VisualizerParams, DEFAULT_PARAMS, SacredGeometrySettings, SacredGeometryMode } from '../types';
+import { safeFixed } from '../utils/sanitizeParams';
 import {
   drawMetatron,
   drawMerkaba,
@@ -864,7 +865,7 @@ const VisualizerCanvas: React.FC<VisualizerCanvasProps> = ({ params, liveParamsR
       if (p.geometryData && p.autoPilotMode !== 'drift' && p.showIndicators) {
           ctx.fillStyle = 'rgba(255,255,255,0.5)';
           ctx.font = '10px monospace';
-          ctx.fillText(`${p.geometryData.name} [α:${p.geometryData.alpha.toFixed(1)} β:${p.geometryData.beta.toFixed(2)}]`, 20, height - 20);
+          ctx.fillText(`${p.geometryData.name || 'Cromática'} [α:${safeFixed(p.geometryData.alpha, 1, 0)} β:${safeFixed(p.geometryData.beta, 2, 0)}]`, 20, height - 20);
       }
 
       animationFrameId = requestAnimationFrame(render);

@@ -193,16 +193,17 @@ export function useAmbientCameraLight(): AmbientCameraLightState {
         const gOut = Math.round(s.g);
         const bOut = Math.round(s.b);
 
+        const fin = (v: number) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
         setMetrics({
           ambientHex: `#${toHexByte(rOut)}${toHexByte(gOut)}${toHexByte(bOut)}`,
           r: rOut,
           g: gOut,
           b: bOut,
-          luminance: Number(s.lum.toFixed(3)),
-          warmth: Number(s.warmth.toFixed(3)),
+          luminance: Number(fin(s.lum).toFixed(3)),
+          warmth: Number(fin(s.warmth).toFixed(3)),
           dominantHue: rgbToHue(rOut, gOut, bOut),
-          lightX: Number(s.lx.toFixed(3)),
-          lightY: Number(s.ly.toFixed(3)),
+          lightX: Number(fin(s.lx).toFixed(3)),
+          lightY: Number(fin(s.ly).toFixed(3)),
         });
       };
 

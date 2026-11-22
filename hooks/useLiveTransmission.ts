@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { VisualizerParams } from '../types';
+import { sanitizeVisualizerParams } from '../utils/sanitizeParams';
 import { supabase } from '../lib/supabaseClient';
 import { UseStarSeedSyncResult } from './useStarSeedSync';
 import { StarSeedIdentity } from './useStarSeedIdentity';
@@ -499,15 +500,18 @@ export function useLiveTransmission({
       if (!incomingVisual || typeof incomingVisual !== 'object') return;
       suppressingParamBroadcastRef.current = true;
       setParams((prev) => {
-        const next = parametrosDesdeVisual(incomingVisual, prev as unknown as Record<string, any>) as VisualizerParams;
+        const next = sanitizeVisualizerParams(
+          parametrosDesdeVisual(incomingVisual, prev as unknown as Record<string, any>),
+          prev
+        );
         const curSession = sessionRef.current;
         if (curSession?.format === 'presets_relative' && !curSession.isHost) {
           const off = offsetsRef.current;
-          next.baseHue = (((Number(next.baseHue) || 0) + off.hueDelta) % 360 + 360) % 360;
-          next.zoom = Math.max(0.0005, (Number(next.zoom) || 0.001) * off.scaleMult);
-          next.sensitivity = Math.max(0.2, Math.min(20, (Number(next.sensitivity) || 5) * off.reactivityMult));
+          next.baseHue = (((Number(next.baseHue) || 0) + (Number(off.hueDelta) || 0)) % 360 + 360) % 360;
+          next.zoom = Math.max(0.0005, (Number(next.zoom) || 0.001) * (Number(off.scaleMult) || 1));
+          next.sensitivity = Math.max(0.2, Math.min(20, (Number(next.sensitivity) || 5) * (Number(off.reactivityMult) || 1)));
         }
-        return next;
+        return sanitizeVisualizerParams(next, prev);
       });
       setTimeout(() => {
         suppressingParamBroadcastRef.current = false;

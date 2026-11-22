@@ -19,13 +19,18 @@ const LiquidSlider: React.FC<LiquidSliderProps> = ({
   className = '',
   disabled = false,
 }) => {
+  const safeMin = typeof min === 'number' && Number.isFinite(min) ? min : 0;
+  const safeMax = typeof max === 'number' && Number.isFinite(max) ? max : 100;
+  const safeStep = typeof step === 'number' && Number.isFinite(step) && step > 0 ? step : 1;
+  const safeValue = typeof value === 'number' && Number.isFinite(value) ? value : safeMin;
+
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const latestRef = useRef({ onChange, min, max, step, disabled });
-  latestRef.current = { onChange, min, max, step, disabled };
+  const latestRef = useRef({ onChange, min: safeMin, max: safeMax, step: safeStep, disabled });
+  latestRef.current = { onChange, min: safeMin, max: safeMax, step: safeStep, disabled };
 
-  const percentage = Math.max(0, Math.min(100, ((value - min) / (max - min || 1)) * 100));
+  const percentage = Math.max(0, Math.min(100, ((safeValue - safeMin) / (safeMax - safeMin || 1)) * 100));
 
   const updateFromClientX = (clientX: number) => {
     const { onChange: emit, min: lo, max: hi, step: st, disabled: isDis } = latestRef.current;
@@ -81,9 +86,9 @@ const LiquidSlider: React.FC<LiquidSliderProps> = ({
       onPointerUp={handlePointerEnd}
       onPointerCancel={handlePointerEnd}
       role="slider"
-      aria-valuemin={min}
-      aria-valuemax={max}
-      aria-valuenow={value}
+      aria-valuemin={safeMin}
+      aria-valuemax={safeMax}
+      aria-valuenow={safeValue}
       aria-disabled={disabled}
     >
       <div className="absolute inset-0 h-1.5 my-auto w-full bg-white/10 rounded-full overflow-hidden border border-white/10 shadow-inner" />
@@ -118,7 +123,7 @@ const LiquidSlider: React.FC<LiquidSliderProps> = ({
             }`}
             style={{ borderColor: 'var(--morph-border)' }}
           >
-            {value.toFixed(1)}
+            {safeValue.toFixed(1)}
           </div>
         )}
       </div>

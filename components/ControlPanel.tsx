@@ -4,6 +4,7 @@ import { Activity, Zap, Maximize, Minimize, RotateCw, Palette, Target, Music, Br
 import { useAuth } from '../contexts/AuthContext';
 import { isInstalledApp } from '../utils/platform';
 import { DEFAULT_PRESETS } from '../lib/defaultPresets';
+import { sanitizeVisualizerParams, safeNumber, safeFixed } from '../utils/sanitizeParams';
 
 import { usePresets, Preset, ESSENTIALS_FOLDER_NAME } from '../hooks/usePresets';
 import { UseStarSeedSyncResult } from '../hooks/useStarSeedSync';
@@ -1840,7 +1841,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       if (json.freqRange !== undefined) importData.freqRange = json.freqRange;
     }
 
-    setParams(prev => ({ ...prev, ...importData }));
+    setParams(prev => sanitizeVisualizerParams(importData, prev));
     setShowPresetModal(false);
   };
 
@@ -1922,6 +1923,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
     const isPremiumLocked = needsPremium && isLocked;
 
     const handleManualChange = (val: number) => {
+      if (typeof val !== 'number' || !Number.isFinite(val)) return;
       if (isPremiumLocked) {
         onShowSubscription();
         return;
@@ -1946,6 +1948,9 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       });
     };
 
+    const rawDefault = DEFAULT_PARAMS[key];
+    const safeVal = safeNumber(params[key], typeof rawDefault === 'number' ? rawDefault : min);
+
     return (
       <div className={`mb-3 transition-colors duration-500 ${isParamLocked ? 'bg-indigo-900/40 border border-indigo-500/50 p-2 rounded-lg' : ''} ${isAutoActive ? 'opacity-70' : 'opacity-100'} ${isPremiumLocked ? 'opacity-80' : 'opacity-100'}`}>
         <div className="flex justify-between items-center mb-1.5 gap-2">
@@ -1965,7 +1970,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             <input
               type="number"
               step="any"
-              value={typeof params[key] === 'number' ? Number(params[key]).toFixed(3) : params[key] as unknown as number}
+              value={safeVal.toFixed(3)}
               onChange={(e) => handleManualChange(parseFloat(e.target.value))}
               className="font-mono text-xs text-cyan-200 bg-black/30 border border-white/10 rounded-lg px-2 py-1 focus:border-cyan-400 outline-none text-right w-16 sm:w-20 hover:border-white/30 transition-colors shadow-inner shrink-0"
               readOnly={isPremiumLocked}
@@ -1975,7 +1980,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         </div>
         <div onClick={isPremiumLocked ? onShowSubscription : undefined} className={isPremiumLocked ? "cursor-pointer" : ""}>
           <LiquidSlider
-            value={params[key] as number}
+            value={safeVal}
             onChange={handleManualChange}
             min={min}
             max={max}
@@ -1996,7 +2001,9 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
     step: number,
     needsPremium: boolean = true
   ) => {
-    const value = params.sgSettings[selectedSgEditMode][key];
+    const fallbackSg = DEFAULT_PARAMS.sgSettings[selectedSgEditMode] || DEFAULT_PARAMS.sgSettings.flowerOfLife;
+    const rawSgVal = params.sgSettings?.[selectedSgEditMode]?.[key];
+    const value = safeNumber(rawSgVal, typeof fallbackSg[key] === 'number' ? (fallbackSg[key] as number) : min);
     const isPremiumLocked = needsPremium && isLocked;
     return (
       <div className={`mb-3 transition-colors duration-500 ${isPremiumLocked ? 'opacity-60' : 'opacity-100'}`}>
@@ -2010,7 +2017,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           <input
             type="number"
             step="any"
-            value={Number(value).toFixed(3)}
+            value={value.toFixed(3)}
             onChange={(e) => {
               if (isPremiumLocked) {
                 onShowSubscription();
@@ -3738,11 +3745,11 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                             <div className="grid grid-cols-2 gap-3 text-xs font-mono">
                                 <div className="bg-black/40 p-2 rounded-xl border border-white/5">
                                     <div className="text-gray-400 mb-1">α (Estructura)</div>
-                                    <div className="text-cyan-300 font-bold text-sm drop-shadow-[0_0_5px_rgba(0,242,254,0.5)]">{params.geometryData.alpha.toFixed(1)}</div>
+                                    <div className="text-cyan-300 font-bold text-sm drop-shadow-[0_0_5px_rgba(0,242,254,0.5)]">{safeFixed(params.geometryData.alpha, 1, 0)}</div>
                                 </div>
                                 <div className="bg-black/40 p-2 rounded-xl border border-white/5">
                                     <div className="text-gray-400 mb-1">β (Potencial)</div>
-                                    <div className="text-pink-300 font-bold text-sm drop-shadow-[0_0_5px_rgba(255,8,68,0.5)]">{params.geometryData.beta.toFixed(2)}</div>
+                                    <div className="text-pink-300 font-bold text-sm drop-shadow-[0_0_5px_rgba(255,8,68,0.5)]">{safeFixed(params.geometryData.beta, 2, 0)}</div>
                                 </div>
                             </div>
                          </div>

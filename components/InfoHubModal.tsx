@@ -64,6 +64,7 @@ import { VisualizerParams } from '../types';
 import { useAppUpdate } from '../hooks/useAppUpdate';
 import { useMenu3DTilt } from '../hooks/useMenu3DTilt';
 import { openExternalUrl, buildStarSeedOsHandoffUrl } from '../utils/platform';
+import { safeFixed } from '../utils/sanitizeParams';
 import { STARSEED_OS_OFFICIAL_URL } from '../lib/supabaseClient';
 import StarSeedSymbol from './StarSeedSymbol';
 import { STARSEED_ECOSYSTEM_APPS, EcosystemCategory } from '../lib/starseedEcosystem';
@@ -2208,7 +2209,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                         <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-black/40 border border-white/5 text-xs min-w-0">
                           <div className="flex items-center gap-1.5 shrink-0">
                             <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-                            <span className="font-bold text-white">{ratingData.average.toFixed(1)}</span>
+                            <span className="font-bold text-white">{safeFixed(ratingData?.average, 1, 5)}</span>
                             <span className="text-gray-400 text-[11px]">
                               ({ratingData.count} {ratingData.count === 1 ? 'voto' : 'votos'})
                             </span>
@@ -2486,7 +2487,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                                       </span>
                                       <div className="flex items-center gap-1">
                                         <Star size={11} className="text-amber-400 fill-amber-400" />
-                                        <span className="font-bold text-white">{rec.rating.toFixed(1)}</span>
+                                        <span className="font-bold text-white">{safeFixed(rec?.rating, 1, 5)}</span>
                                         <span className="text-gray-400 text-[9px]">({rec.votesCount})</span>
                                         <div className="flex items-center gap-0.5 ml-1">
                                           {[1, 2, 3, 4, 5].map((s) => (

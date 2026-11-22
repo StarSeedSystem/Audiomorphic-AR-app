@@ -22,6 +22,7 @@ import { Preset } from '../hooks/usePresets';
 import { usePresetCommunity, MusicRecommendationType } from '../hooks/usePresetCommunity';
 import { DEFAULT_PRESETS } from '../lib/defaultPresets';
 import { AUTO_MODE_LABELS } from './ControlPanel';
+import { safeFixed } from '../utils/sanitizeParams';
 
 interface PresetDetailModalProps {
   open: boolean;
@@ -186,7 +187,7 @@ export const PresetDetailModal: React.FC<PresetDetailModalProps> = ({
               {/* Estrellas interactivas */}
               <div className="flex items-center gap-1">
                 <Star size={12} className="text-amber-400 fill-amber-400" />
-                <span className="font-bold text-white">{ratingData.average.toFixed(1)}</span>
+                <span className="font-bold text-white">{safeFixed(ratingData?.average, 1, 5)}</span>
                 <span className="text-[11px] text-gray-400">({ratingData.count} votos)</span>
               </div>
             </div>

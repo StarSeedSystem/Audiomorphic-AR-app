@@ -193,7 +193,7 @@ export async function testSpotifyMcpConnection(endpointUrl: string): Promise<Spo
     await jsonRpc(url, 'initialize', {
       protocolVersion: '2024-11-05',
       capabilities: {},
-      clientInfo: { name: 'Audiomorphic-StarSeed', version: '1.5.0' },
+      clientInfo: { name: 'Audiomorphic-StarSeed', version: '1.5.1' },
     }).catch(() => null);
 
     const { result, rttMs } = await jsonRpc(url, 'tools/list', {});
