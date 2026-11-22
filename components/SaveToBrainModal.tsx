@@ -17,6 +17,7 @@ import {
 import { VisualizerParams } from '../types';
 import { usePresets, ESSENTIALS_FOLDER_NAME } from '../hooks/usePresets';
 import { canWriteBrain } from '../lib/starseedBrains';
+import StarSeedSymbol from './StarSeedSymbol';
 
 interface SaveToBrainModalProps {
   isOpen: boolean;
@@ -228,18 +229,18 @@ export const SaveToBrainModal: React.FC<SaveToBrainModalProps> = ({
       {...({ closedby: 'any' } as any)}
       className="morph-dialog w-[95vw] max-w-lg max-h-[92dvh] rounded-3xl border-0 shadow-none"
     >
-      <div className="art-nouveau-frame rounded-3xl w-full max-h-[92dvh] flex flex-col overflow-hidden text-slate-100">
+      <div className="art-nouveau-frame menu-audio-rim rounded-3xl w-full max-h-[92dvh] flex flex-col overflow-hidden text-slate-100">
         {/* Header */}
         <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 border-b border-white/10 bg-black/35 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="p-2.5 rounded-2xl morph-pill shrink-0">
-              <FolderPlus size={19} />
+            <div className="p-2 rounded-2xl morph-pill shrink-0 flex items-center justify-center">
+              <StarSeedSymbol size="md" glow />
             </div>
             <div className="min-w-0">
               <h3 id="save-to-brain-title" className="text-base font-bold starseed-text-gradient truncate">
                 Guardar Preset en Cerebro & Carpeta
               </h3>
-              <p className="text-[10px] uppercase tracking-widest morph-accent-text truncate">
+              <p className="text-[10px] uppercase tracking-widest morph-accent-text truncate flex items-center gap-1.5">
                 {isLoggedIn
                   ? `StarSeed OS · ${onlineNeuronsCount || 1} Neurona(s) conectadas`
                   : 'Modo Local Autónomo del Dispositivo'}

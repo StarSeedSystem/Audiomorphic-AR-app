@@ -12,9 +12,11 @@ import { VisualizerParams, DEFAULT_PARAMS, GeometryInfo, GeometryRegime, SacredG
 import { useAudioAnalyzer } from './hooks/useAudioAnalyzer';
 import { useAuth } from './contexts/AuthContext';
 import ProfileMenu from './components/ProfileMenu';
+import StarSeedSymbol from './components/StarSeedSymbol';
 import { Zap, Activity, RotateCw, Star, Clock, Info, Heart, BrainCircuit } from 'lucide-react';
 import { EMBED, getPresetParams, getSyntheticMetrics } from './utils/embedMode';
 import { useChromaticMorph } from './hooks/useChromaticMorph';
+import { useMenu3DTilt } from './hooks/useMenu3DTilt';
 import { usePresets } from './hooks/usePresets';
 
 // --- TREATISE DATA: GENESIS & MUSIC ---
@@ -220,11 +222,33 @@ const App: React.FC = () => {
 
   // (Se han eliminado la cuenta atras de la prueba y su expiracion: ya no hay
   // planes. La app entera esta abierta desde el primer segundo.)
-  // Sync params to localStorage whenever they change
+  // Sync params to paramsRef and debounce localStorage persistence (avoids 60Hz JSON writes)
   useEffect(() => {
-    localStorage.setItem('audiomorphic_params', JSON.stringify(params));
     paramsRef.current = params;
   }, [params]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      try {
+        localStorage.setItem('audiomorphic_params', JSON.stringify(paramsRef.current));
+      } catch {
+        /* ignore storage quota errors */
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [params]);
+
+  useEffect(() => {
+    const flushParams = () => {
+      try {
+        localStorage.setItem('audiomorphic_params', JSON.stringify(paramsRef.current));
+      } catch {
+        /* ignore */
+      }
+    };
+    window.addEventListener('pagehide', flushParams);
+    return () => window.removeEventListener('pagehide', flushParams);
+  }, []);
 
   const handleSubscribe = async (tier: SubscriptionTier, trialDurationMs?: number) => {
     handleOpenInfo('donations');
@@ -314,6 +338,48 @@ const App: React.FC = () => {
   const [controlsVisible, setControlsVisible] = useState(false);
   const [showTouchHint, setShowTouchHint] = useState(true);
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const controlsVisibleRef = useRef(false);
+  controlsVisibleRef.current = controlsVisible;
+  const menuInteractingRef = useRef(false);
+  const interactionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastUiSyncTimeRef = useRef(0);
+
+  const menuTilt = useMenu3DTilt({ maxDeg: 3.5, maxTranslatePx: 6, autoGyro: true });
+
+  const setMenuInteracting = useCallback(
+    (active: boolean) => {
+      menuInteractingRef.current = active;
+      menuTilt.setInteractionPaused(active);
+      if (interactionTimerRef.current) {
+        clearTimeout(interactionTimerRef.current);
+        interactionTimerRef.current = null;
+      }
+      if (active) {
+        interactionTimerRef.current = setTimeout(() => {
+          menuInteractingRef.current = false;
+          menuTilt.setInteractionPaused(false);
+        }, 3000);
+      }
+    },
+    [menuTilt]
+  );
+
+  useEffect(() => {
+    const release = () => {
+      if (menuInteractingRef.current) setMenuInteracting(false);
+    };
+    window.addEventListener('pointerup', release);
+    window.addEventListener('pointercancel', release);
+    window.addEventListener('blur', release);
+    return () => {
+      window.removeEventListener('pointerup', release);
+      window.removeEventListener('pointercancel', release);
+      window.removeEventListener('blur', release);
+    };
+  }, [setMenuInteracting]);
+
+  const handleCloseControls = useCallback(() => setControlsVisible(false), []);
+  const handleOpenDonations = useCallback(() => handleOpenInfo('donations'), [handleOpenInfo]);
 
   const resetHideTimer = useCallback(() => {
     if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
@@ -325,14 +391,18 @@ const App: React.FC = () => {
   useEffect(() => {
     if (controlsVisible) {
       if (showTouchHint) setShowTouchHint(false);
+      if (paramsRef.current.autoPilot) {
+        setParams({ ...paramsRef.current });
+      }
       resetHideTimer();
     } else {
       if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
+      setMenuInteracting(false);
     }
     return () => {
       if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
     };
-  }, [controlsVisible, showTouchHint, resetHideTimer]);
+  }, [controlsVisible, showTouchHint, resetHideTimer, setMenuInteracting]);
 
   // Logic Refs
   const animationFrameRef = useRef<number>(0);
@@ -813,34 +883,46 @@ const App: React.FC = () => {
       p.lastEmittedDistanceZoom = nextDistanceZoom;
       p.lastEmittedSpiralThickness = nextSpiralThickness;
 
-      setParams(prev => {
-        const next = {
-          ...prev,
-          genesisStage: p.genesisTargetStage,
-        };
-        
-        if (geometryData) {
-          next.geometryData = geometryData;
-        }
+      const base = paramsRef.current;
+      const next: VisualizerParams = {
+        ...base,
+        genesisStage: p.genesisTargetStage,
+      };
 
-        if (!isLocked('k')) next.k = nextK;
-        if (!isLocked('psi')) next.psi = nextPsi;
-        if (!isLocked('z0_r')) next.z0_r = nextZ0_r;
-        if (!isLocked('z0_i')) next.z0_i = nextZ0_i;
-        if (!isLocked('baseHue')) next.baseHue = nextBaseHue;
-        if (!isLocked('zoom')) next.zoom = nextZoom;
-        if (!isLocked('distanceZoom')) next.distanceZoom = nextDistanceZoom;
-        if (!isLocked('spiralThickness')) next.spiralThickness = nextSpiralThickness;
+      if (geometryData) {
+        next.geometryData = geometryData;
+      }
 
-        if (p.sgModesUpdatedThisFrame) {
-          next.sacredGeometryModes = isLocked('sacredGeometryModes') ? prev.sacredGeometryModes : p.currentParams.sacredGeometryModes;
-          next.spiralResonanceModes = isLocked('spiralResonanceModes') ? prev.spiralResonanceModes : p.currentParams.spiralResonanceModes;
-          next.sgTheme = isLocked('sgTheme') ? prev.sgTheme : p.currentParams.sgTheme;
-          p.sgModesUpdatedThisFrame = false;
-        }
+      if (!isLocked('k')) next.k = nextK;
+      if (!isLocked('psi')) next.psi = nextPsi;
+      if (!isLocked('z0_r')) next.z0_r = nextZ0_r;
+      if (!isLocked('z0_i')) next.z0_i = nextZ0_i;
+      if (!isLocked('baseHue')) next.baseHue = nextBaseHue;
+      if (!isLocked('zoom')) next.zoom = nextZoom;
+      if (!isLocked('distanceZoom')) next.distanceZoom = nextDistanceZoom;
+      if (!isLocked('spiralThickness')) next.spiralThickness = nextSpiralThickness;
 
-        return next;
-      });
+      const modesChanged = p.sgModesUpdatedThisFrame;
+      if (modesChanged) {
+        next.sacredGeometryModes = isLocked('sacredGeometryModes') ? base.sacredGeometryModes : p.currentParams.sacredGeometryModes;
+        next.spiralResonanceModes = isLocked('spiralResonanceModes') ? base.spiralResonanceModes : p.currentParams.spiralResonanceModes;
+        next.sgTheme = isLocked('sgTheme') ? base.sgTheme : p.currentParams.sgTheme;
+        p.sgModesUpdatedThisFrame = false;
+      }
+
+      // Escribir a 60fps en ref para el canvas sin forzar re-render de React en cada fotograma
+      paramsRef.current = next;
+
+      const needsVrSync = Boolean(base.vrMode || base.arPortalMode);
+      const shouldSyncUi =
+        modesChanged ||
+        needsVrSync ||
+        (controlsVisibleRef.current && !menuInteractingRef.current && now - lastUiSyncTimeRef.current >= 150);
+
+      if (shouldSyncUi) {
+        lastUiSyncTimeRef.current = now;
+        setParams(next);
+      }
 
       animationFrameRef.current = requestAnimationFrame(updateLoop);
     };
@@ -894,6 +976,7 @@ const App: React.FC = () => {
         ) : (
           <VisualizerCanvas 
             params={params} 
+            liveParamsRef={paramsRef}
             getAudioMetrics={getVisualMetrics}
           />
         )}
@@ -939,7 +1022,7 @@ const App: React.FC = () => {
                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full quantum-glass hover:brightness-110 text-[11px] font-mono text-slate-100 pointer-events-auto cursor-pointer shrink-0 max-w-[170px]"
                title={`Cerebro activo: ${presetsStore.selectedBrain.name}`}
              >
-               <BrainCircuit size={12} className="morph-accent-text-2 shrink-0" />
+               <StarSeedSymbol size="xs" glow />
                <span className="truncate">{presetsStore.selectedBrain.name}</span>
              </button>
            )}
@@ -970,7 +1053,7 @@ const App: React.FC = () => {
           aria-hidden="true"
         >
           <div className="px-6 py-3.5 sm:px-8 sm:py-4 rounded-full art-nouveau-frame animate-pulse flex items-center gap-3">
-            <span className="w-2.5 h-2.5 rounded-full animate-ping shrink-0" style={{ backgroundColor: 'var(--morph-accent-1)' }} />
+            <StarSeedSymbol size="sm" glow />
             <p className="starseed-text-gradient text-sm sm:text-base md:text-lg font-bold tracking-wider text-center">
               Toca la pantalla para abrir el menú
             </p>
@@ -993,25 +1076,44 @@ const App: React.FC = () => {
           />
           <div 
             className={`
-              absolute top-1/2 left-1/2 z-30 w-[96vw] sm:w-[92vw] max-w-5xl h-[94dvh] sm:h-[90vh] max-h-[920px] flex flex-col
-              transform -translate-x-1/2 -translate-y-1/2 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]
-              ${controlsVisible ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none'}
+              fixed inset-0 z-30 flex items-center justify-center p-2 sm:p-5 menu-3d-stage pointer-events-none
+              transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]
+              ${controlsVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}
             `}
-            onPointerDown={(e) => { e.stopPropagation(); resetHideTimer(); }}
-            onPointerMove={(e) => { e.stopPropagation(); resetHideTimer(); }}
-            onTouchMove={(e) => { e.stopPropagation(); resetHideTimer(); }}
-            onWheel={(e) => { e.stopPropagation(); resetHideTimer(); }}
           >
+            <div
+              ref={menuTilt.surfaceRef}
+              className={`
+                w-full max-w-6xl h-[94dvh] sm:h-[90vh] max-h-[920px] flex flex-col relative menu-3d-surface
+                ${controlsVisible ? 'pointer-events-auto' : 'pointer-events-none'}
+              `}
+              onPointerDown={(e) => {
+                e.stopPropagation();
+                setMenuInteracting(true);
+                resetHideTimer();
+              }}
+              onPointerUp={() => setMenuInteracting(false)}
+              onPointerCancel={() => setMenuInteracting(false)}
+              onPointerMove={(e) => {
+                e.stopPropagation();
+                resetHideTimer();
+                menuTilt.onPointerMove(e);
+              }}
+              onPointerLeave={() => menuTilt.onPointerLeave()}
+              onTouchMove={(e) => { e.stopPropagation(); resetHideTimer(); }}
+              onWheel={(e) => { e.stopPropagation(); resetHideTimer(); }}
+            >
+              <div className="menu-3d-glare rounded-[32px] md:rounded-[44px]" aria-hidden="true" />
             <ControlPanel 
               params={params} 
               setParams={setParams} 
               audioActive={isActive}
               toggleAudio={toggleAudio}
-              onClose={() => setControlsVisible(false)}
+              onClose={handleCloseControls}
               getAudioMetrics={getAudioMetrics}
               subscriptionTier={subscriptionTier}
               trialEndTime={trialEndTime}
-              onShowSubscription={() => handleOpenInfo('donations')}
+              onShowSubscription={handleOpenDonations}
               onOpenInfo={handleOpenInfo}
               audioDevices={devices}
               selectedAudioDeviceId={selectedDeviceId}
@@ -1023,7 +1125,14 @@ const App: React.FC = () => {
               selectedLibraryPreset={selectedLibraryPresetForFolder}
               onSelectLibraryPreset={setSelectedLibraryPresetForFolder}
               sync={sync}
+              gyroSupported={menuTilt.gyroSupported}
+              gyroActive={menuTilt.gyroActive}
+              needsGyroPermission={menuTilt.needsGyroPermission}
+              tiltEnabled={menuTilt.tiltEnabled}
+              onRequestGyro={menuTilt.requestGyroPermission}
+              onToggleTilt={menuTilt.toggleTilt}
             />
+            </div>
           </div>
         </>
       )}

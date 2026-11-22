@@ -69,9 +69,9 @@ export interface HardwarePermissionsState {
   fullscreen: boolean;  // Fullscreen API available
 }
 
-export const CURRENT_APP_VERSION = '1.3.0';
+export const CURRENT_APP_VERSION = '1.3.1';
 export const CURRENT_BUILD_DATE = '2026-11-21';
-export const CURRENT_NATIVE_CONTAINER = '1.3.0';
+export const CURRENT_NATIVE_CONTAINER = '1.3.1';
 
 const GITHUB_REPO_URL = 'https://github.com/StarSeedSystem/Audiomorphic-AR-app';
 const GOOGLE_DRIVE_MIRROR = 'https://drive.google.com/drive/folders/1bZ8yvbWr7r3eJUdKIQCSSuu-p398mAkn?usp=sharing';
@@ -120,6 +120,17 @@ export const OFFICIAL_DOWNLOADS: PlatformDownloads = {
 };
 
 export const CHANGELOG_HISTORY: VersionChangelog[] = [
+  {
+    version: '1.3.1',
+    date: '2026-11-21',
+    type: 'native_required',
+    title: 'Menú 3D Fluido sin Parpadeos, Giroscopio e Identidad Oficial StarSeed OS',
+    notes: [
+      'Corrección raíz de parpadeos y reinicios al interactuar con sliders y menús: las transiciones ya no compiten con el motor cromático reactivo y el piloto automático mantiene 60fps en el lienzo sin re-renderizar el menú cada fotograma.',
+      'Rejilla simétrica centrada en 2 columnas fijas con profundidad 3D reactiva al giroscopio del dispositivo (y al puntero en escritorio) y reflejos cromáticos al sonido.',
+      'Integración del símbolo oficial de StarSeed OS y los iconos oficiales de las 12 apps del Ecosistema StarSeed con fichas detalladas y filtros interactivos.',
+    ],
+  },
   {
     version: '1.3.0',
     date: '2026-11-21',

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { VisualizerParams, SacredGeometryMode, SacredGeometrySettings, DEFAULT_PARAMS, AutoPilotMode, BackgroundMode, GeometryInfo, SubscriptionTier } from '../types';
-import { Activity, Zap, Maximize, Minimize, RotateCw, Palette, Target, Music, BrainCircuit, Wind, Droplets, Waves, Shuffle, Sprout, Glasses, Download, X, RotateCcw, Save, Upload, Heart, Lock, Unlock, LogIn, LogOut, User, Star, Cloud, Trash2, Info, ChevronUp, ChevronDown, Volume2, Folder, FolderPlus, FolderOpen, Filter, ArrowUpDown, Plus, Bookmark, ExternalLink, Search, Sparkles, Check, Play, Cpu, RefreshCw, HardDrive, WifiOff } from 'lucide-react';
+import { Activity, Zap, Maximize, Minimize, RotateCw, Palette, Target, Music, BrainCircuit, Wind, Droplets, Waves, Shuffle, Sprout, Glasses, Download, X, RotateCcw, Save, Upload, Heart, Lock, Unlock, LogIn, LogOut, User, Star, Cloud, Trash2, Info, ChevronUp, ChevronDown, Volume2, Folder, FolderPlus, FolderOpen, Filter, ArrowUpDown, Plus, Bookmark, ExternalLink, Search, Sparkles, Check, Play, Cpu, RefreshCw, HardDrive, WifiOff, Compass, Globe } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { isInstalledApp } from '../utils/platform';
 import { DEFAULT_PRESETS } from '../lib/defaultPresets';
@@ -13,6 +13,7 @@ import SaveToBrainModal from './SaveToBrainModal';
 import ProfileMenu from './ProfileMenu';
 import LiquidSelect from './LiquidSelect';
 import LiquidSlider from './LiquidSlider';
+import StarSeedSymbol from './StarSeedSymbol';
 
 export const AUTO_MODE_LABELS: Record<string, string> = {
   rhythmic: 'Ritmos Musicales',
@@ -46,6 +47,12 @@ interface ControlPanelProps {
   selectedLibraryPreset?: any;
   onSelectLibraryPreset?: (preset: any) => void;
   sync?: UseStarSeedSyncResult;
+  gyroSupported?: boolean;
+  gyroActive?: boolean;
+  needsGyroPermission?: boolean;
+  tiltEnabled?: boolean;
+  onRequestGyro?: () => Promise<boolean> | void;
+  onToggleTilt?: () => void;
 }
 
 const SACRED_GEOMETRY_OPTIONS = [
@@ -91,7 +98,13 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onApplyPreset,
   selectedLibraryPreset,
   onSelectLibraryPreset,
-  sync
+  sync,
+  gyroSupported = false,
+  gyroActive = false,
+  needsGyroPermission = false,
+  tiltEnabled = true,
+  onRequestGyro,
+  onToggleTilt,
 }) => {
   const { user, login, setAuthModalOpen, logout, createStripeCheckout } = useAuth();
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -2067,412 +2080,89 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           </linearGradient>
         </defs>
       </svg>
-      <style>{`
-        .liquid-panel {
-          background:
-            radial-gradient(
-              115% 85% at 12% 0%,
-              hsla(var(--morph-hue-1, 185), 88%, 56%, calc(${params.menuTransparency} * 0.16 * var(--morph-glow-alpha, 1))) 0%,
-              transparent 58%
-            ),
-            radial-gradient(
-              95% 85% at 92% 100%,
-              hsla(var(--morph-hue-2, 265), 88%, 58%, calc(${params.menuTransparency} * 0.14 * var(--morph-glow-alpha, 1))) 0%,
-              transparent 60%
-            ),
-            rgba(14, 18, 26, calc(${params.menuTransparency} * 0.28 + 0.12));
-          backdrop-filter: blur(calc(${params.menuTransparency} * 22px + 4px)) saturate(165%) contrast(112%);
-          -webkit-backdrop-filter: blur(calc(${params.menuTransparency} * 22px + 4px)) saturate(165%) contrast(112%);
-          border: 1px solid hsla(var(--morph-hue-1, 185), 85%, 72%, 0.24);
-          box-shadow: 
-            0 40px 100px rgba(0, 0, 0, 0.65),
-            0 0 42px hsla(var(--morph-hue-1, 185), 90%, 60%, calc(0.14 * var(--morph-glow-alpha, 1))),
-            inset 0 2px 4px rgba(255, 255, 255, 0.22),
-            inset 0 -10px 40px hsla(var(--morph-hue-2, 265), 75%, 65%, 0.08),
-            inset 0 20px 60px rgba(255, 255, 255, 0.03);
-          border-radius: 32px;
-          overflow: hidden;
-          position: relative;
-          transition: border-color 0.45s ease, box-shadow 0.45s ease;
-        }
-        @media (min-width: 768px) {
-          .liquid-panel {
-            border-radius: 48px;
-          }
-        }
-
-        .liquid-panel::before {
-          content: '';
-          position: absolute;
-          top: 0; left: 0; right: 0; bottom: 0;
-          background: linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 30%, rgba(255,255,255,0) 70%, rgba(255,255,255,0.1) 100%);
-          pointer-events: none;
-          z-index: -1;
-        }
-
-        .liquid-bubble {
-          background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%);
-          backdrop-filter: blur(16px) saturate(150%);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          border-top: 1px solid rgba(255, 255, 255, 0.4);
-          border-bottom: 1px solid rgba(0, 0, 0, 0.2);
-          box-shadow: 
-            0 8px 32px 0 rgba(0, 0, 0, 0.3),
-            inset 0 2px 4px rgba(255, 255, 255, 0.3),
-            inset 0 -2px 4px rgba(0, 0, 0, 0.2);
-          border-radius: 9999px;
-          transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-          position: relative;
-          overflow: hidden;
-        }
-
-        .liquid-bubble::before {
-          content: '';
-          position: absolute;
-          top: 5%; left: 10%; right: 10%; height: 40%;
-          background: linear-gradient(to bottom, rgba(255,255,255,0.6), transparent);
-          border-radius: 50%;
-          pointer-events: none;
-          filter: blur(2px);
-        }
-
-        .liquid-bubble:hover {
-          transform: translateY(-2px);
-          background: linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.1) 100%);
-          border-top: 1px solid rgba(255, 255, 255, 0.5);
-          box-shadow: 
-            0 12px 40px 0 rgba(0, 0, 0, 0.4),
-            inset 0 2px 4px rgba(255, 255, 255, 0.4),
-            inset 0 -2px 4px rgba(0, 0, 0, 0.2);
-        }
-
-        .liquid-bubble:active {
-          transform: translateY(1px);
-          box-shadow: 
-            0 4px 16px 0 rgba(0, 0, 0, 0.3),
-            inset 0 2px 4px rgba(255, 255, 255, 0.1),
-            inset 0 -2px 4px rgba(0, 0, 0, 0.3);
-        }
-
-        .icon-neon {
-          filter: drop-shadow(0 0 8px rgba(0, 242, 254, 0.8)) drop-shadow(0 0 2px rgba(255, 255, 255, 0.8));
-          stroke: url(#neon-gradient);
-          stroke-width: 2.5;
-        }
-        .icon-neon-emerald {
-          filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.8)) drop-shadow(0 0 2px rgba(255, 255, 255, 0.8));
-          stroke: url(#emerald-gradient);
-          stroke-width: 2.5;
-        }
-        .icon-neon-pink {
-          filter: drop-shadow(0 0 8px rgba(255, 8, 68, 0.8)) drop-shadow(0 0 2px rgba(255, 255, 255, 0.8));
-          stroke: url(#pink-gradient);
-          stroke-width: 2.5;
-        }
-        .icon-neon-indigo {
-          filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.8)) drop-shadow(0 0 2px rgba(255, 255, 255, 0.8));
-          stroke: url(#indigo-gradient);
-          stroke-width: 2.5;
-        }
-
-        .liquid-slider {
-          -webkit-appearance: none;
-          width: 100%;
-          height: 14px;
-          border-radius: 14px;
-          background: rgba(0, 0, 0, 0.4);
-          box-shadow: inset 0 2px 6px rgba(0,0,0,0.6), 0 1px 1px rgba(255,255,255,0.15);
-          outline: none;
-          position: relative;
-        }
-
-        .liquid-slider::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          appearance: none;
-          width: 26px;
-          height: 26px;
-          border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
-          background: radial-gradient(circle at 30% 30%, rgba(255,255,255,1), rgba(100,200,255,0.8));
-          box-shadow: 
-            0 4px 12px rgba(0,0,0,0.5), 
-            inset 0 2px 5px rgba(255,255,255,1),
-            inset 0 -2px 5px rgba(0,0,0,0.3);
-          cursor: pointer;
-          transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-          border: 1px solid rgba(255,255,255,0.6);
-        }
-
-        .liquid-slider::-webkit-slider-thumb:hover {
-          transform: scale(1.25);
-          border-radius: 50% 50% 40% 60% / 60% 40% 50% 50%;
-          box-shadow: 
-            0 8px 20px rgba(0,242,254,0.6), 
-            inset 0 2px 5px rgba(255,255,255,1);
-        }
-
-        .liquid-slider-emerald::-webkit-slider-thumb {
-          background: radial-gradient(circle at 30% 30%, rgba(255,255,255,1), rgba(16,185,129,0.8));
-        }
-        .liquid-slider-emerald::-webkit-slider-thumb:hover {
-          box-shadow: 0 8px 20px rgba(16,185,129,0.6), inset 0 2px 5px rgba(255,255,255,1);
-        }
-
-        .neon-text {
-          background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          text-shadow: 0 0 20px rgba(0, 242, 254, 0.8);
-        }
-
-        .neon-text-pink {
-          background: linear-gradient(135deg, #ff0844 0%, #ffb199 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          text-shadow: 0 0 20px rgba(255, 8, 68, 0.8);
-        }
-
-        .neon-text-emerald {
-          background: linear-gradient(135deg, #0ba360 0%, #3cba92 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          text-shadow: 0 0 20px rgba(11, 163, 96, 0.8);
-        }
-
-        .liquid-switch {
-          width: 56px;
-          height: 30px;
-          border-radius: 30px;
-          background: rgba(0,0,0,0.5);
-          box-shadow: inset 0 2px 8px rgba(0,0,0,0.7), 0 1px 2px rgba(255,255,255,0.15);
-          position: relative;
-          cursor: pointer;
-          border: 1px solid rgba(255,255,255,0.15);
-          transition: all 0.4s ease;
-          overflow: hidden;
-        }
-
-        .liquid-switch::before {
-          content: '';
-          position: absolute;
-          top: 0; left: 0; right: 0; bottom: 0;
-          background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 100%);
-          pointer-events: none;
-        }
-
-        .liquid-switch-thumb {
-          position: absolute;
-          top: 2px;
-          left: 2px;
-          width: 24px;
-          height: 24px;
-          border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
-          background: radial-gradient(circle at 30% 30%, rgba(255,255,255,1), rgba(200,200,200,0.6));
-          box-shadow: 0 2px 6px rgba(0,0,0,0.5), inset 0 2px 3px rgba(255,255,255,1);
-          transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-
-        .liquid-switch.active {
-          background: rgba(0, 242, 254, 0.25);
-          border-color: rgba(0, 242, 254, 0.5);
-          box-shadow: inset 0 2px 8px rgba(0,242,254,0.3), 0 0 15px rgba(0,242,254,0.2);
-        }
-
-        .liquid-switch.active .liquid-switch-thumb {
-          left: 28px;
-          border-radius: 50% 50% 40% 60% / 60% 40% 50% 50%;
-          background: radial-gradient(circle at 30% 30%, #fff, #00f2fe);
-          box-shadow: 0 0 20px #00f2fe, inset 0 2px 3px rgba(255,255,255,1);
-        }
-
-        .liquid-switch.active-emerald {
-          background: rgba(16, 185, 129, 0.25);
-          border-color: rgba(16, 185, 129, 0.5);
-          box-shadow: inset 0 2px 8px rgba(16,185,129,0.3), 0 0 15px rgba(16,185,129,0.2);
-        }
-        .liquid-switch.active-emerald .liquid-switch-thumb {
-          left: 28px;
-          border-radius: 50% 50% 40% 60% / 60% 40% 50% 50%;
-          background: radial-gradient(circle at 30% 30%, #fff, #10b981);
-          box-shadow: 0 0 20px #10b981, inset 0 2px 3px rgba(255,255,255,1);
-        }
-
-        .liquid-switch.active-purple {
-          background: rgba(168, 85, 247, 0.25);
-          border-color: rgba(168, 85, 247, 0.5);
-          box-shadow: inset 0 2px 8px rgba(168,85,247,0.3), 0 0 15px rgba(168,85,247,0.2);
-        }
-        .liquid-switch.active-purple .liquid-switch-thumb {
-          left: 28px;
-          border-radius: 50% 50% 40% 60% / 60% 40% 50% 50%;
-          background: radial-gradient(circle at 30% 30%, #fff, #a855f7);
-          box-shadow: 0 0 20px #a855f7, inset 0 2px 3px rgba(255,255,255,1);
-        }
-
-        .liquid-switch.active-pink {
-          background: rgba(236, 72, 153, 0.25);
-          border-color: rgba(236, 72, 153, 0.5);
-          box-shadow: inset 0 2px 8px rgba(236,72,153,0.3), 0 0 15px rgba(236,72,153,0.2);
-        }
-        .liquid-switch.active-pink .liquid-switch-thumb {
-          left: 28px;
-          border-radius: 50% 50% 40% 60% / 60% 40% 50% 50%;
-          background: radial-gradient(circle at 30% 30%, #fff, #ec4899);
-          box-shadow: 0 0 20px #ec4899, inset 0 2px 3px rgba(255,255,255,1);
-        }
-
-        .liquid-section {
-          background:
-            linear-gradient(
-              145deg,
-              hsla(var(--morph-hue-1, 185), 75%, 52%, 0.08) 0%,
-              hsla(var(--morph-hue-2, 265), 70%, 50%, 0.05) 55%,
-              rgba(255, 255, 255, 0.04) 100%
-            );
-          backdrop-filter: blur(12px) saturate(140%);
-          -webkit-backdrop-filter: blur(12px) saturate(140%);
-          border: 1px solid hsla(var(--morph-hue-1, 185), 75%, 72%, 0.18);
-          border-top: 1px solid hsla(var(--morph-hue-2, 265), 85%, 78%, 0.32);
-          border-radius: 24px;
-          box-shadow: 
-            inset 0 0 30px rgba(255, 255, 255, 0.05), 
-            0 15px 35px rgba(0,0,0,0.2),
-            inset 0 2px 4px rgba(255,255,255,0.1);
-          position: relative;
-          overflow: hidden;
-          padding: 0.75rem;
-          margin-bottom: 1rem;
-        }
-        @media (min-width: 768px) {
-          .liquid-section {
-            border-radius: 32px;
-            padding: 1rem;
-          }
-        }
-
-        .liquid-section::before {
-          content: '';
-          position: absolute;
-          top: -50%; left: -50%; width: 200%; height: 200%;
-          background: radial-gradient(circle at 50% 0%, rgba(255,255,255,0.15), transparent 50%);
-          pointer-events: none;
-        }
-
-        .liquid-panel .liquid-bubble {
-          background:
-            linear-gradient(
-              135deg,
-              hsla(var(--morph-hue-1, 185), 85%, 56%, 0.14),
-              hsla(var(--morph-hue-2, 265), 82%, 56%, 0.10)
-            );
-          border-color: hsla(var(--morph-hue-1, 185), 85%, 72%, 0.28);
-          transition: transform 0.2s ease, border-color 0.35s ease, box-shadow 0.35s ease, background 0.35s ease;
-        }
-
-        .liquid-panel .liquid-bubble:hover {
-          border-color: hsla(var(--morph-hue-2, 265), 90%, 76%, 0.55);
-          box-shadow: 0 0 18px hsla(var(--morph-hue-1, 185), 90%, 60%, calc(0.28 * var(--morph-glow-alpha, 1)));
-        }
-
-        .liquid-panel .liquid-switch.active {
-          background: linear-gradient(
-            135deg,
-            hsla(var(--morph-hue-1, 185), 90%, 56%, 0.85),
-            hsla(var(--morph-hue-2, 265), 88%, 60%, 0.85)
-          );
-          box-shadow: 0 0 16px hsla(var(--morph-hue-1, 185), 90%, 62%, calc(0.45 * var(--morph-glow-alpha, 1)));
-        }
-
-        @media (forced-colors: active) {
-          .liquid-panel,
-          .liquid-section,
-          .liquid-panel .liquid-bubble {
-            border-color: CanvasText;
-            box-shadow: none;
-          }
-          .liquid-panel .liquid-switch.active {
-            background: Highlight;
-            color: HighlightText;
-          }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .liquid-panel,
-          .liquid-panel .liquid-bubble {
-            transition: none;
-          }
-        }
-
-        .neon-metal-text {
-          background: linear-gradient(
-            270deg,
-            #ff007f,
-            #7f00ff,
-            #00ffff,
-            #00ff7f,
-            #ffff00,
-            #ff007f
-          );
-          background-size: 400% 400%;
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          animation: morphing-colors 8s ease infinite;
-          text-shadow: 
-            0px 2px 2px rgba(255,255,255,0.5),
-            0px 4px 4px rgba(0,0,0,0.5),
-            0 0 10px rgba(255,255,255,0.2),
-            0 0 20px rgba(0, 255, 255, 0.5);
-        }
-        @keyframes morphing-colors {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-
-        .liquid-scroll::-webkit-scrollbar {
-          width: 10px;
-        }
-        .liquid-scroll::-webkit-scrollbar-track {
-          background: rgba(0,0,0,0.3);
-          border-radius: 10px;
-          margin: 10px 0;
-        }
-        .liquid-scroll::-webkit-scrollbar-thumb {
-          background: rgba(255,255,255,0.25);
-          border-radius: 10px;
-          border: 1px solid rgba(255,255,255,0.15);
-        }
-        .liquid-scroll::-webkit-scrollbar-thumb:hover {
-          background: rgba(255,255,255,0.4);
-        }
-        @keyframes shimmer {
-          100% {
-            transform: translateX(100%);
-          }
-        }
-      `}</style>
-
-      <div className="liquid-panel w-full h-full flex-1 flex flex-col relative z-10 overflow-hidden">
-        {/* ROW 1: PRIMARY TITLE & CORE ACTIONS (Sleek, compact, never wraps into 5 lines) */}
-        <div className="px-3 sm:px-6 py-2 sm:py-3 border-b border-white/10 flex justify-between items-center bg-white/5 gap-2 shrink-0">
-          <div className="flex items-center gap-2 min-w-0">
-            <Activity className="w-5 h-5 sm:w-7 sm:h-7 icon-neon text-cyan-400 shrink-0" />
+      <div
+        className="liquid-panel menu-audio-rim w-full h-full flex-1 flex flex-col relative z-10 overflow-hidden"
+        style={{ '--menu-transparency': params.menuTransparency } as React.CSSProperties}
+      >
+        {/* ROW 1: BALANCED STARSEED OS HEADER */}
+        <div className="px-3 sm:px-6 py-2.5 sm:py-3 border-b border-white/10 flex justify-between items-center bg-black/25 gap-2.5 shrink-0 relative z-10">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 starseed-app-squircle p-0.5 shrink-0 flex items-center justify-center">
+              <img
+                src="./starseed/app-icons/audiomorphic.png"
+                alt="Audiomorphic"
+                className="w-full h-full object-cover rounded-[20%]"
+              />
+            </div>
             <div className="min-w-0">
-              <h1 className="text-base sm:text-2xl font-bold neon-metal-text tracking-wider truncate">
+              <h1 className="text-base sm:text-2xl font-extrabold starseed-text-gradient tracking-wider truncate">
                 Audiomorphic
               </h1>
-              <p className="text-[9px] sm:text-[11px] text-cyan-100/70 font-medium tracking-wide truncate hidden xs:block">
-                Recurrencia Compleja Sonora
+              <p className="text-[9px] sm:text-[11px] morph-accent-text font-medium tracking-wide truncate hidden xs:block">
+                Recurrencia Compleja Sonora · StarSeed OS
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          {/* Center: Cerebro / Autónomo status pill */}
+          <div className="hidden lg:flex items-center justify-center flex-1 min-w-0 px-2">
+            <button
+              type="button"
+              onClick={() => (user ? setShowPresetModal(true) : setAuthModalOpen(true))}
+              className="morph-pill px-3.5 py-1.5 text-xs font-semibold flex items-center gap-2 max-w-[260px] cursor-pointer hover:brightness-110 transition-opacity"
+              title={
+                user
+                  ? `Cerebro activo: ${selectedBrain?.name || 'Personal'} (${isOnline ? `${neurons.filter((n) => n.isOnline).length} neurona(s) en línea` : 'Modo autónomo offline'})`
+                  : 'Modo autónomo local — Conectar cuenta StarSeed OS'
+              }
+            >
+              <StarSeedSymbol size="xs" glow />
+              <span className="truncate">
+                {user ? (selectedBrain?.name || 'Cerebro') : 'StarSeed · Autónomo Local'}
+              </span>
+              {user && (
+                <span className="text-[10px] opacity-85 font-mono shrink-0">
+                  {isOnline ? `${neurons.filter((n) => n.isOnline).length}N` : 'Offline'}
+                </span>
+              )}
+            </button>
+          </div>
+
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+            {(gyroSupported || onToggleTilt) && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (needsGyroPermission && onRequestGyro) {
+                    void onRequestGyro();
+                  } else {
+                    onToggleTilt?.();
+                  }
+                }}
+                className={`liquid-bubble p-2 sm:px-3 sm:py-2 text-xs font-bold flex items-center gap-1.5 cursor-pointer ${
+                  tiltEnabled ? 'morph-accent-text' : 'text-slate-400'
+                }`}
+                title={
+                  needsGyroPermission
+                    ? 'Activar giroscopio 3D del dispositivo'
+                    : tiltEnabled
+                    ? 'Menú 3D dinámico activado (toca para fijar)'
+                    : 'Activar menú 3D dinámico'
+                }
+              >
+                <Compass size={15} className={gyroActive && tiltEnabled ? 'animate-pulse shrink-0' : 'shrink-0'} />
+                <span className="hidden xl:inline">
+                  {needsGyroPermission ? 'Activar Gyro' : gyroActive ? 'Gyro 3D' : tiltEnabled ? '3D Vivo' : '3D Fijo'}
+                </span>
+              </button>
+            )}
+
             <button
               onClick={toggleAudio}
-              className={`liquid-bubble px-3.5 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-base font-bold flex items-center gap-2 transition-all cursor-pointer ${
+              className={`liquid-bubble px-3 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold flex items-center gap-2 cursor-pointer ${
                 audioActive 
                   ? 'text-red-300 shadow-[0_0_15px_rgba(239,68,68,0.4)] border-red-500/40 bg-red-950/30' 
-                  : 'text-cyan-300 hover:text-cyan-200'
+                  : 'morph-accent-text hover:text-white'
               }`}
               title={audioActive ? 'Detener captura de audio' : 'Iniciar captura de audio'}
             >
@@ -2483,55 +2173,63 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
             <button
               onClick={toggleFullScreen}
-              className="liquid-bubble p-2 sm:px-4 sm:py-2.5 text-xs sm:text-base font-bold flex items-center gap-1.5 text-purple-300 hover:text-purple-200 transition-all cursor-pointer"
+              className="liquid-bubble p-2 sm:px-3.5 sm:py-2 text-xs sm:text-sm font-bold flex items-center gap-1.5 text-purple-200 hover:text-white cursor-pointer"
               title="Alternar Pantalla Completa (F11)"
             >
-              {isFullscreen ? <Minimize className="w-5 h-5 sm:w-6 sm:h-6 icon-neon" /> : <Maximize className="w-5 h-5 sm:w-6 sm:h-6 icon-neon" />}
-              <span className="hidden md:inline">Pantalla Completa</span>
+              {isFullscreen ? <Minimize className="w-4 h-4 sm:w-5 sm:h-5 icon-neon" /> : <Maximize className="w-4 h-4 sm:w-5 sm:h-5 icon-neon" />}
+              <span className="hidden md:inline">Pantalla</span>
             </button>
 
             {onClose && (
               <button
                 onClick={onClose}
-                className="liquid-bubble p-2 sm:px-3.5 sm:py-2.5 text-red-400 hover:text-red-300 border-red-500/30 transition-all cursor-pointer"
+                className="liquid-bubble p-2 sm:px-3 sm:py-2 text-red-400 hover:text-red-300 border-red-500/30 cursor-pointer"
                 title="Cerrar Menú"
                 aria-label="Cerrar Menú"
               >
-                <X className="w-5 h-5 sm:w-6 sm:h-6 icon-neon" />
+                <X className="w-4 h-4 sm:w-5 sm:h-5 icon-neon" />
               </button>
             )}
           </div>
         </div>
 
-        {/* ROW 2: SECONDARY TOOLS & AUDIO ROUTING (Fluid responsive toolbar) */}
-        <div className="px-3 sm:px-6 py-2 sm:py-2.5 border-b border-white/10 bg-black/40 flex flex-wrap items-center justify-between gap-2.5 shrink-0">
+        {/* ROW 2: CENTERED TOOLBAR & AUDIO ROUTING */}
+        <div className="px-3 sm:px-6 py-2 border-b border-white/10 bg-black/35 flex flex-wrap items-center justify-center lg:justify-between gap-2 shrink-0 relative z-10">
           {/* Quick Hub & Presets Buttons */}
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
+          <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 py-0.5">
             {onOpenInfo && (
               <>
                 <button
                   onClick={() => onOpenInfo('guide')}
-                  className="liquid-bubble px-3.5 sm:px-4 py-1.5 sm:py-2 text-cyan-300 hover:text-cyan-200 flex items-center gap-1.5 text-xs sm:text-sm font-semibold shrink-0 cursor-pointer"
+                  className="liquid-bubble px-3 py-1.5 text-cyan-200 hover:text-white flex items-center gap-1.5 text-xs font-semibold shrink-0 cursor-pointer"
                   title="Información & Ciencia"
                 >
-                  <Info size={15} className="text-cyan-400" />
+                  <Info size={14} className="morph-accent-text" />
                   <span>Info</span>
                 </button>
                 <button
+                  onClick={() => onOpenInfo('ecosystem')}
+                  className="liquid-bubble px-3 py-1.5 text-slate-100 hover:text-white flex items-center gap-1.5 text-xs font-semibold shrink-0 cursor-pointer"
+                  title="Explorar Ecosistema StarSeed y aplicaciones conectadas"
+                >
+                  <StarSeedSymbol size="xs" glow />
+                  <span>Ecosistema</span>
+                </button>
+                <button
                   onClick={() => onOpenInfo('donations')}
-                  className="liquid-bubble px-3.5 sm:px-4 py-1.5 sm:py-2 text-amber-300 hover:text-amber-200 flex items-center gap-1.5 text-xs sm:text-sm font-semibold shrink-0 cursor-pointer"
+                  className="liquid-bubble px-3 py-1.5 text-amber-300 hover:text-amber-200 flex items-center gap-1.5 text-xs font-semibold shrink-0 cursor-pointer"
                   title="Donaciones Opcionales & Tarjeta 3D"
                 >
-                  <Heart size={15} className="text-amber-400" fill="currentColor" />
+                  <Heart size={14} className="text-amber-400" fill="currentColor" />
                   <span>Donar</span>
                 </button>
                 {!isInstalled && (
                   <button
                     onClick={() => onOpenInfo('updates')}
-                    className="liquid-bubble px-3.5 sm:px-4 py-1.5 sm:py-2 text-emerald-300 hover:text-emerald-200 flex items-center gap-1.5 text-xs sm:text-sm font-semibold shrink-0 cursor-pointer"
+                    className="liquid-bubble px-3 py-1.5 text-emerald-300 hover:text-emerald-200 flex items-center gap-1.5 text-xs font-semibold shrink-0 cursor-pointer"
                     title="Instaladores para Android, Windows, Mac y Linux"
                   >
-                    <Download size={15} className="text-emerald-400" />
+                    <Download size={14} className="text-emerald-400" />
                     <span>Apps</span>
                   </button>
                 )}
@@ -2541,23 +2239,15 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             <button
               type="button"
               onClick={() => (user ? setShowPresetModal(true) : setAuthModalOpen(true))}
-              className="morph-pill px-3 py-1.5 sm:py-2 text-xs font-semibold flex items-center gap-1.5 shrink-0 cursor-pointer"
+              className="lg:hidden morph-pill px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 shrink-0 cursor-pointer"
               title={
                 user
                   ? `Cerebro activo: ${selectedBrain?.name || 'Personal'} (${isOnline ? `${neurons.filter((n) => n.isOnline).length} neurona(s) en línea` : 'Modo autónomo offline'})`
                   : 'Modo autónomo local — Conectar cuenta StarSeed OS'
               }
             >
-              {user ? (
-                isOnline ? (
-                  <Cpu size={14} className="text-cyan-300 shrink-0" />
-                ) : (
-                  <WifiOff size={14} className="text-amber-300 shrink-0" />
-                )
-              ) : (
-                <HardDrive size={14} className="text-emerald-300 shrink-0" />
-              )}
-              <span className="max-w-[120px] truncate">
+              <StarSeedSymbol size="xs" glow />
+              <span className="max-w-[115px] truncate">
                 {user ? (selectedBrain?.name || 'Cerebro') : 'Autónomo Local'}
               </span>
               {user && (
@@ -2569,38 +2259,38 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             <button
               type="button"
               onClick={() => setShowSaveToBrainModal(true)}
-              className="morph-btn-primary px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-full flex items-center gap-1.5 text-xs sm:text-sm font-semibold shrink-0 cursor-pointer"
+              className="morph-btn-primary px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-bold shrink-0 cursor-pointer"
               title="Guardar ajuste actual en un Cerebro y Folder específico de StarSeed OS"
             >
-              <Cloud size={15} className="shrink-0" />
+              <Cloud size={14} className="shrink-0" />
               <span>Guardar en Cerebro</span>
             </button>
             <button
               onClick={() => setShowPresetModal(true)}
-              className="liquid-bubble px-3.5 sm:px-4 py-1.5 sm:py-2 text-yellow-300 hover:text-yellow-200 flex items-center gap-1.5 text-xs sm:text-sm font-semibold shrink-0 cursor-pointer"
+              className="liquid-bubble px-3 py-1.5 text-yellow-200 hover:text-white flex items-center gap-1.5 text-xs font-semibold shrink-0 cursor-pointer"
               title="Guardar / Cargar Ajustes y Presets"
             >
-              <Save size={15} className="icon-neon" />
+              <Save size={14} className="icon-neon" />
               <span>Presets</span>
             </button>
 
             <button
               onClick={() => setParams(DEFAULT_PARAMS)}
-              className="liquid-bubble p-2 text-red-400 hover:text-red-300 shrink-0 cursor-pointer"
+              className="liquid-bubble p-1.5 text-red-400 hover:text-red-300 shrink-0 cursor-pointer"
               title="Restaurar Valores por Defecto"
             >
-              <RotateCcw size={15} className="icon-neon" />
+              <RotateCcw size={14} className="icon-neon" />
             </button>
           </div>
 
           {/* Audio Inputs, Outputs & Profile */}
-          <div className="flex items-center gap-2.5 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap justify-center">
             <div className="flex bg-black/60 rounded-full p-0.5 border border-white/10 shrink-0">
               <button
                 onClick={() => handleChange('audioSource', 'microphone')}
-                className={`px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-bold rounded-full transition-all cursor-pointer ${
+                className={`px-3 py-1 text-xs font-bold rounded-full transition-opacity cursor-pointer ${
                   params.audioSource === 'microphone' 
-                    ? 'bg-cyan-500/30 text-cyan-300 shadow-[0_0_8px_rgba(6,182,212,0.4)]' 
+                    ? 'morph-tab-active' 
                     : 'text-gray-400 hover:text-gray-200'
                 }`}
               >
@@ -2608,9 +2298,9 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               </button>
               <button
                 onClick={() => handleChange('audioSource', 'system')}
-                className={`px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-bold rounded-full transition-all cursor-pointer ${
+                className={`px-3 py-1 text-xs font-bold rounded-full transition-opacity cursor-pointer ${
                   params.audioSource === 'system' 
-                    ? 'bg-cyan-500/30 text-cyan-300 shadow-[0_0_8px_rgba(6,182,212,0.4)]' 
+                    ? 'morph-tab-active' 
                     : 'text-gray-400 hover:text-gray-200'
                 }`}
               >
@@ -2654,11 +2344,12 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           </div>
         </div>
 
-        <div className="p-2 md:p-4 overflow-y-auto flex-1 min-h-0 liquid-scroll">
-          <div className="columns-1 lg:columns-2 gap-2 md:gap-4">
+        <div className="p-2.5 md:p-4 overflow-y-auto flex-1 min-h-0 liquid-scroll relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 items-start gap-3 md:gap-4 max-w-6xl mx-auto">
+            <div className="space-y-4 min-w-0">
             
             {/* Ajustes Automáticos Section */}
-            <div className="liquid-section break-inside-avoid">
+            <div className="liquid-section">
                <div className="flex justify-between items-center mb-4">
                  <h3 className="text-lg font-bold neon-text flex items-center gap-2">
                   <Shuffle className="w-5 h-5 icon-neon" /> 
@@ -2783,9 +2474,9 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                         <>
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <div className="flex flex-wrap items-center gap-1.5 min-w-0">
-                              <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-cyan-300">
-                                <Cpu size={12} className="shrink-0" />
-                                Cerebro:
+                              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider morph-accent-text">
+                                <StarSeedSymbol size="xs" glow />
+                                Cerebro StarSeed:
                               </span>
                               {brains.length > 0 ? (
                                 <select
@@ -2963,9 +2654,9 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                           <button
                             type="button"
                             onClick={() => setAuthModalOpen(true)}
-                            className="morph-btn-glass px-2.5 py-1 rounded-lg text-[10px] font-semibold inline-flex items-center gap-1 cursor-pointer"
+                            className="morph-btn-glass px-2.5 py-1 rounded-lg text-[10px] font-semibold inline-flex items-center gap-1.5 cursor-pointer"
                           >
-                            <Cloud size={11} className="text-cyan-300" />
+                            <StarSeedSymbol size="xs" />
                             <span>Conectar StarSeed OS</span>
                           </button>
                         </div>
@@ -3871,7 +3562,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
              </div>
 
             {/* Interface Section (Segunda sección después de Ajustes Automáticos) */}
-            <div className="liquid-section break-inside-avoid">
+            <div className="liquid-section">
               <h3 className="text-lg font-bold neon-text text-yellow-400 mb-6 flex items-center gap-2" style={{backgroundImage: 'linear-gradient(135deg, #fde047 0%, #eab308 100%)'}}>
                 <Zap className="w-5 h-5 icon-neon" /> Interfaz
               </h3>
@@ -3898,7 +3589,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             </div>
 
             {/* Auto Pilot Section */}
-            <div className="liquid-section break-inside-avoid">
+            <div className="liquid-section">
                <div className="flex justify-between items-center mb-4">
                  <h3 className="text-lg font-bold neon-text flex items-center gap-2">
                   <BrainCircuit className="w-5 h-5 icon-neon-indigo" /> 
@@ -4016,7 +3707,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             </div>
 
             {/* Perturbación de Espiral Section */}
-            <div className="liquid-section break-inside-avoid border-emerald-500/30 shadow-[inset_0_0_30px_rgba(16,185,129,0.05)]">
+            <div className="liquid-section border-emerald-500/30 shadow-[inset_0_0_30px_rgba(16,185,129,0.05)]">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-bold neon-text-emerald flex items-center gap-2">
                   <Waves className="w-5 h-5 icon-neon-emerald" /> Perturbación de Espiral {!isPremium && <span className="text-[10px] bg-emerald-500/10 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/20">MODO LECTURA</span>}
@@ -4081,9 +3772,11 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 })}
               </div>
             </div>
+            </div>
 
+            <div className="space-y-4 min-w-0">
             {/* Sacred Geometry Section */}
-            <div className={`liquid-section break-inside-avoid border-emerald-500/30 shadow-[inset_0_0_30px_rgba(16,185,129,0.05)] transition-all duration-500`}>
+            <div className="liquid-section border-emerald-500/30 shadow-[inset_0_0_30px_rgba(16,185,129,0.05)]">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-bold neon-text-emerald flex items-center gap-2">
                   <Sprout className="w-5 h-5 icon-neon-emerald" /> Geometría Sagrada
@@ -4427,7 +4120,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           </div>
 
             {/* Reactivity */}
-            <div className="liquid-section break-inside-avoid">
+            <div className="liquid-section">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-lg font-bold neon-text text-yellow-400 flex items-center gap-2" style={{backgroundImage: 'linear-gradient(135deg, #fde047 0%, #eab308 100%)'}}>
                   <Zap className="w-5 h-5 icon-neon" /> Reactividad
@@ -4442,7 +4135,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             </div>
 
             {/* Colors */}
-            <div className="liquid-section break-inside-avoid border-pink-500/30 shadow-[inset_0_0_30px_rgba(236,72,153,0.05)]">
+            <div className="liquid-section border-pink-500/30 shadow-[inset_0_0_30px_rgba(236,72,153,0.05)]">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-bold neon-text-pink flex items-center gap-2">
                   <Palette className="w-5 h-5 icon-neon-pink" /> Cromatismo
@@ -4488,7 +4181,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             </div>
 
             {/* Background */}
-            <div className="liquid-section break-inside-avoid border-cyan-500/30 shadow-[inset_0_0_30px_rgba(0,242,254,0.05)]">
+            <div className="liquid-section border-cyan-500/30 shadow-[inset_0_0_30px_rgba(0,242,254,0.05)]">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-bold neon-text flex items-center gap-2">
                   <Palette className="w-5 h-5 icon-neon" /> Fondo
@@ -4596,7 +4289,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             </div>
 
             {/* Base Geometry */}
-            <div className="liquid-section break-inside-avoid">
+            <div className="liquid-section">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-bold neon-text text-purple-400 flex items-center gap-2" style={{backgroundImage: 'linear-gradient(135deg, #c084fc 0%, #a855f7 100%)'}}>
                   <Maximize className="w-5 h-5 icon-neon" /> Geometría Base
@@ -4613,7 +4306,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             </div>
 
             {/* Transformation */}
-            <div className="liquid-section break-inside-avoid">
+            <div className="liquid-section">
               <div className="flex justify-between items-center mb-4">
                  <h3 className="text-lg font-bold neon-text text-green-400 flex items-center gap-2" style={{backgroundImage: 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)'}}>
                   <RotateCw className="w-5 h-5 icon-neon" /> Transformación
@@ -4644,7 +4337,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             </div>
 
             {/* VR Section (Versión Alpha) */}
-            <div className="liquid-section break-inside-avoid border-purple-500/30 shadow-[inset_0_0_30px_rgba(168,85,247,0.05)]">
+            <div className="liquid-section border-purple-500/30 shadow-[inset_0_0_30px_rgba(168,85,247,0.05)]">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-bold neon-text text-purple-400 flex items-center gap-2" style={{backgroundImage: 'linear-gradient(135deg, #c084fc 0%, #a855f7 100%)'}}>
                   <Glasses className="w-5 h-5 icon-neon-pink" /> 
@@ -4765,7 +4458,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             </div>
 
             {/* AR Portal Section (Versión Alpha) */}
-            <div className="liquid-section break-inside-avoid border-emerald-500/30 shadow-[inset_0_0_30px_rgba(168,85,247,0.05)]">
+            <div className="liquid-section border-emerald-500/30 shadow-[inset_0_0_30px_rgba(168,85,247,0.05)]">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-bold neon-text text-emerald-400 flex items-center gap-2" style={{backgroundImage: 'linear-gradient(135deg, #34d399 0%, #10b981 100%)'}}>
                   <Glasses className="w-5 h-5 icon-neon-pink" /> 
@@ -4808,6 +4501,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               )}
             </div>
 
+            </div>
           </div>
         </div>
       </div>
@@ -4862,4 +4556,4 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   );
 };
 
-export default ControlPanel;
+export default React.memo(ControlPanel);

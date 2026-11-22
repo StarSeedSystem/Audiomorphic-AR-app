@@ -17,6 +17,8 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { STARSEED_OS_OFFICIAL_URL } from '../lib/supabaseClient';
 import { openExternalUrl } from '../utils/platform';
+import StarSeedSymbol from './StarSeedSymbol';
+import { useMenu3DTilt } from '../hooks/useMenu3DTilt';
 
 export const AuthModal: React.FC = () => {
   const { isAuthModalOpen, setAuthModalOpen, loginWithIdentifier, signUpWithIdentifier } = useAuth();
@@ -28,6 +30,7 @@ export const AuthModal: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const cardTilt = useMenu3DTilt({ maxDeg: 5, maxTranslatePx: 5 });
 
   useEffect(() => {
     if (!isAuthModalOpen) return;
@@ -81,7 +84,7 @@ export const AuthModal: React.FC = () => {
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-300"
+      className="fixed inset-0 z-[200] flex items-center justify-center p-4 overflow-y-auto menu-3d-stage animate-in fade-in duration-300"
       role="dialog"
       aria-modal="true"
       aria-labelledby="auth-modal-title"
@@ -91,19 +94,28 @@ export const AuthModal: React.FC = () => {
         onClick={() => setAuthModalOpen(false)}
       />
 
-      <div className="relative w-full max-w-[440px] my-auto max-h-[92dvh] overflow-y-auto art-nouveau-frame rounded-3xl p-5 sm:p-8 text-white">
+      <div
+        ref={cardTilt.surfaceRef}
+        onPointerMove={cardTilt.onPointerMove}
+        onPointerLeave={cardTilt.onPointerLeave}
+        className="relative w-full max-w-[445px] my-auto max-h-[92dvh] overflow-y-auto art-nouveau-frame menu-3d-surface menu-audio-rim rounded-3xl p-5 sm:p-8 text-white"
+      >
+        <div className="menu-3d-glare rounded-3xl" aria-hidden="true" />
         <button
           type="button"
           onClick={() => setAuthModalOpen(false)}
-          className="absolute top-4 right-4 p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+          className="absolute top-4 right-4 z-10 p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
           aria-label="Cerrar"
         >
           <X size={18} />
         </button>
 
-        <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center gap-2 mb-2 px-3 py-1 rounded-full morph-pill text-xs font-bold">
-            <Sparkles size={14} />
+        <div className="relative z-10 text-center mb-6">
+          <div className="mx-auto mb-3 w-20 h-20 rounded-2xl quantum-glass flex items-center justify-center p-2 shadow-lg">
+            <StarSeedSymbol size="xl" glow alt="Símbolo oficial de StarSeed OS" />
+          </div>
+          <div className="inline-flex items-center justify-center gap-2 mb-2.5 px-3 py-1 rounded-full morph-pill text-xs font-bold">
+            <StarSeedSymbol size="xs" glow />
             <span>Ecosistema StarSeed OS</span>
           </div>
           <h2 id="auth-modal-title" className="text-2xl font-extrabold starseed-text-gradient tracking-tight">
@@ -114,11 +126,11 @@ export const AuthModal: React.FC = () => {
           </p>
         </div>
 
-        <div className="relative grid grid-cols-2 mb-5 p-1 rounded-2xl bg-black/40 border border-white/10">
+        <div className="relative z-10 grid grid-cols-2 mb-5 p-1 rounded-2xl bg-black/40 border border-white/10">
           <button
             type="button"
             onClick={() => switchTab(true)}
-            className={`py-2 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer ${
+            className={`py-2 text-xs sm:text-sm font-bold rounded-xl transition-opacity duration-150 cursor-pointer ${
               isLogin ? 'morph-tab-active' : 'text-slate-400 hover:text-white'
             }`}
           >
@@ -127,7 +139,7 @@ export const AuthModal: React.FC = () => {
           <button
             type="button"
             onClick={() => switchTab(false)}
-            className={`py-2 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer ${
+            className={`py-2 text-xs sm:text-sm font-bold rounded-xl transition-opacity duration-150 cursor-pointer ${
               !isLogin ? 'morph-tab-active' : 'text-slate-400 hover:text-white'
             }`}
           >
@@ -136,19 +148,19 @@ export const AuthModal: React.FC = () => {
         </div>
 
         {notice && (
-          <div className="mb-4 p-3 bg-emerald-500/15 border border-emerald-500/35 rounded-xl flex items-start gap-2 text-emerald-200 text-xs">
+          <div className="relative z-10 mb-4 p-3 bg-emerald-500/15 border border-emerald-500/35 rounded-xl flex items-start gap-2 text-emerald-200 text-xs">
             <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-emerald-400" />
             <p>{notice}</p>
           </div>
         )}
         {error && (
-          <div className="mb-4 p-3 bg-red-500/15 border border-red-500/35 rounded-xl flex items-start gap-2 text-red-200 text-xs">
+          <div className="relative z-10 mb-4 p-3 bg-red-500/15 border border-red-500/35 rounded-xl flex items-start gap-2 text-red-200 text-xs">
             <AlertCircle size={15} className="mt-0.5 shrink-0 text-red-400" />
             <p>{error}</p>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-3.5">
+        <form onSubmit={handleSubmit} className="relative z-10 space-y-3.5">
           {!isLogin && (
             <div>
               <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-300 mb-1">
@@ -229,7 +241,7 @@ export const AuthModal: React.FC = () => {
           </button>
         </form>
 
-        <div className="mt-5 pt-4 border-t border-white/10 space-y-2.5">
+        <div className="relative z-10 mt-5 pt-4 border-t border-white/10 space-y-2.5">
           <button
             type="button"
             onClick={() => setAuthModalOpen(false)}
@@ -244,7 +256,7 @@ export const AuthModal: React.FC = () => {
             onClick={() => openExternalUrl(STARSEED_OS_OFFICIAL_URL)}
             className="w-full py-2 px-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.09] border border-white/10 text-[11px] text-slate-300 hover:text-white flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
           >
-            <Globe size={13} className="morph-accent-text-2" />
+            <StarSeedSymbol size="xs" />
             <span>Abrir Portal Oficial starseed-os.vercel.app</span>
             <ExternalLink size={11} />
           </button>

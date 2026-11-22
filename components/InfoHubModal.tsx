@@ -61,8 +61,11 @@ import { ThankYouCard3D } from './ThankYouCard3D';
 import { ThankYouCardRecord, AudiomorphicPresetRecord } from '../lib/starseedDb';
 import { VisualizerParams } from '../types';
 import { useAppUpdate } from '../hooks/useAppUpdate';
+import { useMenu3DTilt } from '../hooks/useMenu3DTilt';
 import { openExternalUrl, buildStarSeedOsHandoffUrl } from '../utils/platform';
 import { STARSEED_OS_OFFICIAL_URL } from '../lib/supabaseClient';
+import StarSeedSymbol from './StarSeedSymbol';
+import { STARSEED_ECOSYSTEM_APPS, EcosystemCategory } from '../lib/starseedEcosystem';
 
 export type InfoHubTab = 'donations' | 'guide' | 'updates' | 'ecosystem' | 'account' | 'presets';
 
@@ -80,45 +83,6 @@ interface InfoHubModalProps {
 
 const OS_URL = 'https://starseed-os.vercel.app';
 const FUNDACION_LINKTREE = 'https://linktr.ee/FundacionStarseed';
-
-const ECOSYSTEM_SYSTEMS = [
-  {
-    icon: <Globe size={22} />,
-    name: 'StarSeed OS',
-    gradient: 'from-violet-500 to-indigo-600',
-    summary: 'Tu sistema operativo soberano: identidad, perfil, agente Astraura, lienzos y conocimiento descentralizado.',
-    connection: 'Audiomorphic se integra como área viva dentro del OS. Tu cuenta es la misma en todo el ecosistema.',
-    url: OS_URL,
-    badge: '100% Gratis en OS',
-  },
-  {
-    icon: <Sparkles size={22} />,
-    name: 'StarSeed Nexus',
-    gradient: 'from-cyan-500 to-emerald-500',
-    summary: 'El portal de entrada tridimensional: explora todas las áreas, funciones y la materia viva del ecosistema en 3D.',
-    connection: 'Comparte tu identidad unificada y navega entre dimensiones en un solo clic.',
-    url: 'https://starseed-nexus.vercel.app',
-    badge: 'Portal 3D',
-  },
-  {
-    icon: <Coffee size={22} />,
-    name: 'StarSeed Café',
-    gradient: 'from-amber-500 to-orange-600',
-    summary: 'Comunidad, menú y economía de Granos & Semillas. La capa física y social del movimiento.',
-    connection: 'Misma cuenta, comunidades y eventos sincronizados en tiempo real.',
-    url: 'https://starseed-cafe.vercel.app/cafe/',
-    badge: 'Comunidad',
-  },
-  {
-    icon: <Radio size={22} />,
-    name: 'Omnifrecuencias',
-    gradient: 'from-fuchsia-500 to-pink-600',
-    summary: 'Frecuencias armónicas, sonido sagrado y expansión de conciencia. La aplicación hermana de Audiomorphic.',
-    connection: 'Tus presets y resonancias viajan contigo por toda la red StarSeed.',
-    url: OS_URL + '/omnifrecuencias',
-    badge: 'App Hermana',
-  },
-];
 
 const SINESTESIA_PREVIEWS = [
   {
@@ -155,6 +119,8 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
   onSelectLibraryPreset,
 }) => {
   const [activeTab, setActiveTab] = useState<InfoHubTab>(initialTab);
+  const [ecosystemCategory, setEcosystemCategory] = useState<'all' | EcosystemCategory>('all');
+  const cardTilt = useMenu3DTilt({ maxDeg: 2.2, maxTranslatePx: 4, autoGyro: true });
 
   // Hook del sistema inteligente de actualizaciones y descargas
   const updateSystem = useAppUpdate();
@@ -273,52 +239,25 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-2xl animate-in fade-in duration-300 overflow-y-auto"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-2xl menu-3d-stage animate-in fade-in duration-300 overflow-y-auto"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-label="Centro de Información, Actualizaciones y Donaciones StarSeed"
     >
-      {/* Keyframe animations for real-time sinestesia loops */}
-      <style>{`
-        @keyframes ssSpin { to { transform: rotate(360deg); } }
-        @keyframes ssSpinRev { to { transform: rotate(-360deg); } }
-        @keyframes ssPulse { 0%,100% { transform: scale(.82); opacity:.5; } 50% { transform: scale(1.05); opacity:1; } }
-        @keyframes ssDrift { 0% { transform: translate(0,0) scale(1);} 33% { transform: translate(14%,-10%) scale(1.25);} 66% { transform: translate(-12%,8%) scale(.85);} 100% { transform: translate(0,0) scale(1);} }
-        @keyframes ssHue { to { filter: hue-rotate(360deg); } }
-        @keyframes ssTunnel { 0% { transform: scale(.2); opacity:0;} 20%{opacity:.9;} 100% { transform: scale(2.4); opacity:0;} }
-        
-        .info-hub-shell {
-          background: linear-gradient(
-            158deg,
-            hsla(var(--morph-hue-1) 60% 11% / 0.94) 0%,
-            rgba(6, 9, 18, 0.96) 52%,
-            hsla(var(--morph-hue-3) 56% 10% / 0.94) 100%
-          );
-          backdrop-filter: blur(40px) saturate(190%);
-          -webkit-backdrop-filter: blur(40px) saturate(190%);
-          border: 1px solid hsla(var(--morph-hue-1) 88% 66% / 0.45);
-          box-shadow:
-            0 40px 100px rgba(0, 0, 0, 0.88),
-            0 0 55px -12px hsla(var(--morph-hue-1) 92% 60% / var(--morph-glow-alpha)),
-            inset 0 1px 1px hsla(var(--morph-hue-2) 92% 85% / 0.25);
-          border-radius: 32px;
-        }
-        .hub-scroll::-webkit-scrollbar { width: 8px; }
-        .hub-scroll::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); border-radius: 8px; }
-        .hub-scroll::-webkit-scrollbar-thumb { background: hsla(var(--morph-hue-1) 82% 62% / 0.35); border-radius: 8px; }
-        .hub-scroll::-webkit-scrollbar-thumb:hover { background: hsla(var(--morph-hue-2) 86% 68% / 0.55); }
-      `}</style>
-
       <div
-        className="info-hub-shell w-full sm:w-[95vw] md:w-[90vw] max-w-6xl h-[100dvh] sm:h-[94vh] max-h-[920px] rounded-none sm:rounded-[32px] flex flex-col relative overflow-hidden"
+        ref={cardTilt.surfaceRef}
+        onPointerMove={cardTilt.onPointerMove}
+        onPointerLeave={cardTilt.onPointerLeave}
+        className="info-hub-shell menu-3d-surface menu-audio-rim w-full sm:w-[95vw] md:w-[90vw] max-w-6xl h-[100dvh] sm:h-[94vh] max-h-[920px] rounded-none sm:rounded-[32px] flex flex-col relative overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
+        <div className="menu-3d-glare rounded-none sm:rounded-[32px]" aria-hidden="true" />
         {/* SLIM UNIFIED APP BAR */}
         <div className="px-3 sm:px-6 py-2.5 sm:py-3.5 border-b border-white/10 flex justify-between items-center bg-black/45 backdrop-blur-md shrink-0 z-20">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-xl morph-pill flex items-center justify-center p-0.5 shrink-0">
-              <Sparkles size={16} className="animate-pulse" />
+            <div className="w-9 h-9 rounded-xl morph-pill flex items-center justify-center p-1 shrink-0">
+              <StarSeedSymbol size="sm" glow />
             </div>
             <div className="min-w-0">
               <h2 className="text-sm sm:text-base font-extrabold starseed-text-gradient tracking-wide truncate flex items-center gap-1.5">
@@ -1294,75 +1233,154 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
 
           {/* TAB 4: ECOSISTEMA STARSEED */}
           {activeTab === 'ecosystem' && (
-            <div className="space-y-8 animate-in fade-in duration-300">
-              {/* Banner Gratis vía StarSeed OS */}
+            <div className="space-y-6 animate-in fade-in duration-300 max-w-5xl mx-auto">
+              {/* Hero Banner StarSeed OS con símbolo oficial */}
               <a
                 href={OS_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group block rounded-3xl border border-emerald-500/40 bg-gradient-to-r from-emerald-950/40 via-cyan-950/30 to-violet-950/40 hover:border-emerald-400/70 transition-all p-6 shadow-[0_0_30px_rgba(16,185,129,0.15)]"
+                className="group block rounded-3xl art-nouveau-frame menu-audio-rim p-5 sm:p-6 ecosystem-card-3d"
               >
-                <div className="flex items-center gap-5">
-                  <div className="shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-black shadow-lg">
-                    <InfinityIcon size={30} />
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5">
+                  <div className="shrink-0 w-16 h-16 rounded-2xl quantum-glass flex items-center justify-center p-2 mx-auto sm:mx-0">
+                    <StarSeedSymbol size="lg" glow alt="Símbolo StarSeed OS" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2.5 flex-wrap">
-                      <span className="text-base sm:text-lg font-extrabold text-white">
-                        Úsalo 100% GRATIS dentro de StarSeed OS
+                  <div className="flex-1 min-w-0 text-center sm:text-left">
+                    <div className="flex items-center justify-center sm:justify-start gap-2.5 flex-wrap">
+                      <span className="text-base sm:text-lg font-extrabold starseed-text-gradient">
+                        StarSeed OS · Tu Sistema Operativo Soberano
                       </span>
-                      <span className="text-[10px] uppercase tracking-wider bg-emerald-500 text-black font-black px-2.5 py-0.5 rounded-full">
-                        Soberano
+                      <span className="text-[10px] uppercase tracking-wider morph-pill font-black px-2.5 py-0.5 rounded-full">
+                        100% Gratis &amp; Unificado
                       </span>
                     </div>
-                    <p className="text-xs text-gray-300/90 mt-1.5 leading-relaxed">
-                      Audiomorphic es un área nativa del sistema StarSeed. Si inicias sesión desde el OS y lo ejecutas dentro del sistema, tienes la versión completa sin costo alguno y tus presets y memorias viajan contigo en tiempo real.
+                    <p className="text-xs text-slate-300 mt-1.5 leading-relaxed">
+                      Una sola cuenta conecta tus Cerebros, Folders, Neuronas y aplicaciones creativas en todo el ecosistema. Ejecuta Audiomorphic y Omnifrecuencias de forma autónoma o embebidos en vivo dentro de StarSeed OS.
                     </p>
                   </div>
-                  <ArrowRight size={24} className="text-emerald-300 shrink-0 group-hover:translate-x-1.5 transition-transform" />
+                  <ArrowRight size={22} className="morph-accent-text shrink-0 mx-auto sm:mx-0 group-hover:translate-x-1.5 transition-transform" />
                 </div>
               </a>
 
-              {/* Systems Grid */}
-              <div>
-                <h4 className="text-base font-bold text-white mb-4 flex items-center gap-2">
-                  <Boxes className="text-cyan-400" />
-                  Áreas del Ecosistema StarSeed
+              {/* Filtros por categoría centrados */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <h4 className="text-base font-bold text-white flex items-center justify-center sm:justify-start gap-2">
+                  <StarSeedSymbol size="sm" glow />
+                  <span>Aplicaciones del Ecosistema StarSeed ({STARSEED_ECOSYSTEM_APPS.length})</span>
                 </h4>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {ECOSYSTEM_SYSTEMS.map((s) => (
-                    <a
-                      key={s.name}
-                      href={s.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group rounded-2xl border border-white/10 bg-black/40 hover:border-cyan-500/50 transition-all overflow-hidden flex flex-col justify-between p-5 space-y-3"
+                <div className="flex flex-wrap items-center justify-center gap-1.5 bg-black/35 p-1 rounded-2xl border border-white/10">
+                  {[
+                    { id: 'all', label: 'Todas' },
+                    { id: 'nucleo', label: 'Núcleo OS' },
+                    { id: 'creacion', label: 'Audio & Creación' },
+                    { id: 'red', label: 'Red & Comunidad' },
+                    { id: 'utilidades', label: 'Utilidades' },
+                  ].map((cat) => (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setEcosystemCategory(cat.id as 'all' | EcosystemCategory)}
+                      className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-opacity duration-150 cursor-pointer ${
+                        ecosystemCategory === cat.id
+                          ? 'morph-tab-active'
+                          : 'text-slate-300 hover:text-white hover:bg-white/5'
+                      }`}
                     >
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${s.gradient} flex items-center justify-center text-white shadow-md`}>
-                            {s.icon}
-                          </div>
-                          <div>
-                            <span className="text-sm font-bold text-white block">{s.name}</span>
-                            <span className="text-[10px] text-cyan-300 font-mono">{s.badge}</span>
-                          </div>
-                        </div>
-                        <ExternalLink size={16} className="text-gray-500 group-hover:text-cyan-400 transition-colors" />
-                      </div>
-
-                      <p className="text-xs text-gray-300 leading-relaxed">{s.summary}</p>
-
-                      <div className="pt-2 border-t border-white/10">
-                        <p className="text-[11px] text-cyan-300/90 flex items-start gap-1.5">
-                          <Boxes size={13} className="shrink-0 mt-0.5 text-cyan-400" />
-                          <span>{s.connection}</span>
-                        </p>
-                      </div>
-                    </a>
+                      {cat.label}
+                    </button>
                   ))}
                 </div>
+              </div>
+
+              {/* Grid de Apps con iconos oficiales */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {STARSEED_ECOSYSTEM_APPS.filter(
+                  (app) => ecosystemCategory === 'all' || app.category === ecosystemCategory
+                ).map((app) => (
+                  <div
+                    key={app.id}
+                    className={`rounded-2xl quantum-glass ecosystem-card-3d p-4 sm:p-5 flex flex-col justify-between gap-3.5 relative overflow-hidden ${
+                      app.isCurrentApp ? 'ring-1 ring-white/25' : ''
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3.5 min-w-0">
+                        <div className="w-13 h-13 w-12 h-12 sm:w-14 sm:h-14 starseed-app-squircle flex items-center justify-center p-1 shrink-0">
+                          <img
+                            src={app.iconSrc}
+                            alt={app.name}
+                            className="w-full h-full object-cover rounded-[20%]"
+                            loading="lazy"
+                          />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-sm sm:text-base font-extrabold text-white truncate">
+                              {app.name}
+                            </span>
+                            {app.isCurrentApp && (
+                              <span className="text-[9px] uppercase font-black px-2 py-0.5 rounded-full morph-pill">
+                                Estás aquí
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[11px] font-medium morph-accent-text block truncate">
+                            {app.tagline}
+                          </span>
+                          <span className="text-[10px] font-mono text-slate-400 block truncate mt-0.5">
+                            {app.badge}
+                          </span>
+                        </div>
+                      </div>
+
+                      {!app.isCurrentApp && (
+                        <a
+                          href={app.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2 rounded-xl morph-btn-glass shrink-0"
+                          title={`Abrir ${app.name}`}
+                          aria-label={`Abrir ${app.name}`}
+                        >
+                          <ExternalLink size={14} />
+                        </a>
+                      )}
+                    </div>
+
+                    <p className="text-xs text-slate-200 leading-relaxed">{app.summary}</p>
+
+                    <div className="flex flex-wrap gap-1.5">
+                      {app.highlights.map((item) => (
+                        <span
+                          key={item}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-black/40 border border-white/10 text-[10px] text-slate-300"
+                        >
+                          <Sparkles size={10} className="morph-accent-text-2 shrink-0" />
+                          <span>{item}</span>
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="pt-2.5 border-t border-white/10 flex items-center justify-between gap-2">
+                      <p className="text-[11px] morph-accent-text flex items-start gap-1.5 min-w-0">
+                        <Boxes size={13} className="shrink-0 mt-0.5" />
+                        <span className="line-clamp-2">{app.connection}</span>
+                      </p>
+                      {!app.isCurrentApp && (
+                        <a
+                          href={app.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="morph-btn-primary px-3 py-1.5 rounded-xl text-[11px] font-bold shrink-0 inline-flex items-center gap-1"
+                        >
+                          <span>Abrir</span>
+                          <ArrowRight size={12} />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -1373,7 +1391,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
               <div className="p-6 rounded-3xl quantum-glass flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <h3 className="text-xl font-bold starseed-text-gradient mb-1.5 flex items-center gap-2.5">
-                    <Star className="morph-accent-text" />
+                    <StarSeedSymbol size="md" glow />
                     Cuenta StarSeed OS, Cerebros y Neuronas
                   </h3>
                   <p className="text-xs text-slate-300 leading-relaxed max-w-2xl">
@@ -1429,7 +1447,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                           {handoffLoading ? (
                             <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                           ) : (
-                            <Rocket size={15} />
+                            <StarSeedSymbol size="xs" />
                           )}
                           <span>Abrir StarSeed OS</span>
                         </button>
@@ -1630,6 +1648,9 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                 /* Formulario de Login / Registro */
                 <form onSubmit={handleAuthSubmit} className="max-w-md mx-auto p-6 sm:p-8 rounded-3xl quantum-glass space-y-4">
                   <div className="text-center mb-3">
+                    <div className="mx-auto mb-2.5 w-16 h-16 rounded-2xl quantum-glass flex items-center justify-center p-2">
+                      <StarSeedSymbol size="lg" glow />
+                    </div>
                     <h4 className="text-lg font-bold starseed-text-gradient">
                       {isRegistering ? 'Crear Cuenta StarSeed OS' : 'Entrar a tu Cuenta StarSeed'}
                     </h4>
@@ -1691,7 +1712,7 @@ export const InfoHubModal: React.FC<InfoHubModalProps> = ({
                     onClick={() => openExternalUrl(STARSEED_OS_OFFICIAL_URL)}
                     className="w-full py-2.5 px-3 rounded-xl morph-btn-glass text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer"
                   >
-                    <Globe size={14} />
+                    <StarSeedSymbol size="xs" glow />
                     <span>Crear o gestionar cuenta en starseed-os.vercel.app</span>
                     <ExternalLink size={12} />
                   </button>

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 
 interface LiquidSliderProps {
   value: number;
@@ -22,61 +22,74 @@ const LiquidSlider: React.FC<LiquidSliderProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const latestRef = useRef({ onChange, min, max, step, disabled });
+  latestRef.current = { onChange, min, max, step, disabled };
+
   const percentage = Math.max(0, Math.min(100, ((value - min) / (max - min || 1)) * 100));
 
-  const handleInteraction = (clientX: number) => {
-    if (!containerRef.current || disabled) return;
+  const updateFromClientX = (clientX: number) => {
+    const { onChange: emit, min: lo, max: hi, step: st, disabled: isDis } = latestRef.current;
+    if (!containerRef.current || isDis) return;
     const rect = containerRef.current.getBoundingClientRect();
+    if (rect.width <= 0) return;
     const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
-    const rawValue = (x / rect.width) * (max - min) + min;
-    const steppedValue = Math.round(rawValue / step) * step;
-    onChange(Math.max(min, Math.min(max, steppedValue)));
+    const rawValue = (x / rect.width) * (hi - lo) + lo;
+    const stepped = Math.round(rawValue / st) * st;
+    const clamped = Math.max(lo, Math.min(hi, stepped));
+    emit(clamped);
   };
 
-  const onMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true);
-    handleInteraction(e.clientX);
-  };
-
-  const onTouchStart = (e: React.TouchEvent) => {
-    setIsDragging(true);
-    handleInteraction(e.touches[0].clientX);
-  };
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (isDragging) handleInteraction(e.clientX);
-    };
-    const handleTouchMove = (e: TouchEvent) => {
-      if (isDragging) handleInteraction(e.touches[0].clientX);
-    };
-    const handleMouseUp = () => setIsDragging(false);
-
-    if (isDragging) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-      window.addEventListener('touchmove', handleTouchMove);
-      window.addEventListener('touchend', handleMouseUp);
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (disabled) return;
+    e.stopPropagation();
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      /* ignore capture errors on synthetic events */
     }
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-      window.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('touchend', handleMouseUp);
-    };
-  }, [isDragging]);
+    setIsDragging(true);
+    updateFromClientX(e.clientX);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging || disabled) return;
+    e.stopPropagation();
+    updateFromClientX(e.clientX);
+  };
+
+  const handlePointerEnd = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging) return;
+    e.stopPropagation();
+    try {
+      if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      }
+    } catch {
+      /* ignore */
+    }
+    setIsDragging(false);
+  };
 
   return (
     <div
       ref={containerRef}
-      className={`relative h-6 flex items-center group ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'} ${className}`}
-      onMouseDown={onMouseDown}
-      onTouchStart={onTouchStart}
+      className={`relative h-6 flex items-center group touch-none select-none ${
+        disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
+      } ${className}`}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerEnd}
+      onPointerCancel={handlePointerEnd}
+      role="slider"
+      aria-valuemin={min}
+      aria-valuemax={max}
+      aria-valuenow={value}
+      aria-disabled={disabled}
     >
       <div className="absolute inset-0 h-1.5 my-auto w-full bg-white/10 rounded-full overflow-hidden border border-white/10 shadow-inner" />
 
       <div
-        className="absolute h-1.5 my-auto rounded-full transition-all duration-75 ease-out"
+        className={`absolute h-1.5 my-auto rounded-full ${isDragging ? '' : 'transition-[width] duration-75 ease-out'}`}
         style={{
           width: `${percentage}%`,
           background:
@@ -86,8 +99,10 @@ const LiquidSlider: React.FC<LiquidSliderProps> = ({
       />
 
       <div
-        className={`absolute h-4 w-4 rounded-full border border-white/70 transition-all duration-75 ease-out z-10 ${
-          isDragging ? 'scale-125 ring-4 ring-white/15' : 'group-hover:scale-110'
+        className={`absolute h-4 w-4 rounded-full border border-white/75 z-10 ${
+          isDragging
+            ? 'scale-125 ring-4 ring-white/15'
+            : 'transition-transform duration-100 ease-out group-hover:scale-110'
         }`}
         style={{
           left: `calc(${percentage}% - 8px)`,
@@ -96,9 +111,9 @@ const LiquidSlider: React.FC<LiquidSliderProps> = ({
           boxShadow: '0 0 14px hsla(var(--morph-hue-1) 94% 64% / 0.65)',
         }}
       >
-        {(isDragging || !disabled) && (
+        {!disabled && (
           <div
-            className={`absolute -top-8 left-1/2 -translate-x-1/2 bg-black/85 backdrop-blur-md px-1.5 py-0.5 rounded text-[10px] font-mono morph-accent-text border transition-opacity duration-200 ${
+            className={`absolute -top-8 left-1/2 -translate-x-1/2 bg-black/85 backdrop-blur-md px-1.5 py-0.5 rounded text-[10px] font-mono morph-accent-text border pointer-events-none transition-[opacity,transform] duration-150 ${
               isDragging ? 'opacity-100 scale-110' : 'opacity-0 scale-95 group-hover:opacity-100'
             }`}
             style={{ borderColor: 'var(--morph-border)' }}

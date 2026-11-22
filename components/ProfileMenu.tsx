@@ -22,6 +22,7 @@ import { supabase } from '../lib/supabaseClient';
 import { SubscriptionTier } from '../types';
 import { usePresets, Preset } from '../hooks/usePresets';
 import { openExternalUrl, buildStarSeedOsHandoffUrl } from '../utils/platform';
+import StarSeedSymbol from './StarSeedSymbol';
 
 interface ProfileMenuProps {
   subscriptionTier: SubscriptionTier;
@@ -186,7 +187,7 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
 
               {starseedAddress && (
                 <div className="mt-2.5 flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/40 border border-white/10">
-                  <Star size={12} className="text-emerald-400 shrink-0" />
+                  <StarSeedSymbol size="xs" glow />
                   <p className="text-[11px] font-mono text-emerald-300 truncate">{starseedAddress}</p>
                 </div>
               )}
@@ -295,7 +296,7 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
                 {handoffLoading ? (
                   <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : (
-                  <Rocket size={15} />
+                  <StarSeedSymbol size="xs" />
                 )}
                 <span>Abrir StarSeed OS con mi sesión</span>
               </button>

@@ -21,6 +21,7 @@ import {
 
 interface VisualizerCanvasProps {
   params: VisualizerParams;
+  liveParamsRef?: React.MutableRefObject<VisualizerParams>;
   getAudioMetrics: (sensitivity: number, freqRange: number) => { volume: number, frequency: number };
 }
 
@@ -208,11 +209,13 @@ const drawGoldenSpiral = (ctx: CanvasRenderingContext2D, cx: number, cy: number,
     ctx.restore();
 };
 
-const VisualizerCanvas: React.FC<VisualizerCanvasProps> = ({ params, getAudioMetrics }) => {
+const VisualizerCanvas: React.FC<VisualizerCanvasProps> = ({ params, liveParamsRef, getAudioMetrics }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
   // REFS FOR PERSISTENT LOOP STATE
   const paramsRef = useRef(params);
+  const liveParamsRefRef = useRef(liveParamsRef);
+  liveParamsRefRef.current = liveParamsRef;
   const getMetricsRef = useRef(getAudioMetrics);
   const timeRef = useRef<number>(0);
   const currentHueRef = useRef<number>(params.baseHue);
@@ -289,8 +292,8 @@ const VisualizerCanvas: React.FC<VisualizerCanvasProps> = ({ params, getAudioMet
          return;
       }
 
-      // Read latest state from REFS
-      const p = paramsRef.current;
+      // Read latest state from REFS (liveParamsRef allows 60fps updates without React menu re-renders)
+      const p = liveParamsRefRef.current?.current ?? paramsRef.current;
       const getMetrics = getMetricsRef.current;
       
       const { volume, frequency } = getMetrics(p.sensitivity, p.freqRange);

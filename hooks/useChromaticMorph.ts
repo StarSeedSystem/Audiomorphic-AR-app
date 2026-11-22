@@ -8,6 +8,8 @@ export interface ChromaticState {
   hue2: number;
   hue3: number;
   energy: number;
+  bass: number;
+  treble: number;
 }
 
 function hslLuminance(h: number, s: number, l: number): number {
@@ -29,6 +31,11 @@ function lerpHue(current: number, target: number, alpha: number, maxStep = 1.8):
   return (current + step + 360) % 360;
 }
 
+function envelopeSmooth(current: number, target: number, attack: number, release: number): number {
+  const coeff = target > current ? attack : release;
+  return current + (target - current) * coeff;
+}
+
 function safeNeonTextLightness(hue: number): number {
   const lumAt70 = hslLuminance(hue, 88, 70);
   if (lumAt70 < 0.35) return 78;
@@ -37,9 +44,9 @@ function safeNeonTextLightness(hue: number): number {
 }
 
 /**
- * Motor cromático vivo (inspirado en Omni-Frecuencias Holográficas).
- * Actualiza variables CSS globales en :root a ~30fps sin re-renders de React,
- * generando una estética Solarpunk / cristal líquido reactiva al audio y tono visual.
+ * Motor cromático vivo (inspirado en Omni-Frecuencias Holográficas y perfeccionado para Audiomorphic).
+ * Actualiza variables CSS globales en :root sin re-renders de React y con envolventes musicales suaves,
+ * saltando escrituras cuando los deltas son imperceptibles para mantener total fluidez en la UI.
  */
 export function useChromaticMorph(
   getAudioMetrics: (sensitivity: number, freqRange: number) => {
@@ -59,6 +66,8 @@ export function useChromaticMorph(
     hue2: ((baseHue || 175) + GOLDEN_ANGLE) % 360,
     hue3: ((baseHue || 175) + GOLDEN_ANGLE * PHI) % 360,
     energy: 0.22,
+    bass: 0.14,
+    treble: 0.16,
   });
 
   const getMetricsRef = useRef(getAudioMetrics);
@@ -78,7 +87,33 @@ export function useChromaticMorph(
     let lastCssSync = 0;
     const startTime = performance.now();
 
+    let smoothVol = 0.22;
+    let smoothFreq = 0.3;
+    let smoothBass = 0.14;
+    let smoothMid = 0.14;
+    let smoothTreble = 0.16;
+
+    let lastWritten: ChromaticState = {
+      hue1: -999,
+      hue2: -999,
+      hue3: -999,
+      energy: -999,
+      bass: -999,
+      treble: -999,
+    };
+
     const applyCssVariables = (s: ChromaticState) => {
+      const hueDiff =
+        Math.abs(((s.hue1 - lastWritten.hue1 + 540) % 360) - 180) +
+        Math.abs(((s.hue2 - lastWritten.hue2 + 540) % 360) - 180);
+      const valDiff =
+        Math.abs(s.energy - lastWritten.energy) +
+        Math.abs(s.bass - lastWritten.bass) +
+        Math.abs(s.treble - lastWritten.treble);
+
+      if (hueDiff < 0.08 && valDiff < 0.004) return;
+      lastWritten = { ...s };
+
       const root = document.documentElement.style;
       const h1 = s.hue1.toFixed(1);
       const h2 = s.hue2.toFixed(1);
@@ -93,6 +128,8 @@ export function useChromaticMorph(
       root.setProperty('--morph-hue-2', h2);
       root.setProperty('--morph-hue-3', h3);
       root.setProperty('--morph-energy', s.energy.toFixed(3));
+      root.setProperty('--morph-bass', s.bass.toFixed(3));
+      root.setProperty('--morph-treble', s.treble.toFixed(3));
       root.setProperty('--morph-text-l1', `${textL1}%`);
       root.setProperty('--morph-text-l2', `${textL2}%`);
       root.setProperty('--morph-on-accent', onAccent);
@@ -107,39 +144,57 @@ export function useChromaticMorph(
       const active = isAudioActiveRef.current;
       const currentBaseHue = Number.isFinite(baseHueRef.current) ? baseHueRef.current : 175;
 
-      let energy = 0.2;
-      let targetHue1 =
-        (currentBaseHue +
-          Math.sin(elapsedSec * 0.14) * 24 +
-          Math.cos((elapsedSec * 0.14) / PHI) * 16 +
-          elapsedSec * 2.2 +
-          360) %
-        360;
+      let targetEnergy = 0.2 + Math.sin(elapsedSec * 0.45) * 0.04;
+      let targetBass = 0.14 + Math.sin(elapsedSec * 0.65) * 0.04;
+      let targetMid = 0.15 + Math.cos(elapsedSec * 0.5) * 0.04;
+      let targetTreble = 0.16 + Math.sin(elapsedSec * 0.8 + 1.1) * 0.05;
+      let targetFreq = 0.28 + Math.sin(elapsedSec * 0.22) * 0.08;
 
       if (active) {
         const metrics = getMetricsRef.current(sensRef.current, freqRangeRef.current);
-        energy = Math.min(1, Math.max(0.16, metrics.volume * 0.85 + metrics.bass * 0.25));
-        const audioHueShift = (metrics.frequency * 260 + metrics.treble * 55 + metrics.mid * 35) % 360;
-        targetHue1 = (currentBaseHue + audioHueShift + Math.sin(elapsedSec * 0.3) * 14) % 360;
+        targetEnergy = Math.min(1, Math.max(0.16, metrics.volume * 0.85 + metrics.bass * 0.25));
+        targetBass = Math.min(1, Math.max(0.08, metrics.bass));
+        targetMid = Math.min(1, Math.max(0.08, metrics.mid));
+        targetTreble = Math.min(1, Math.max(0.08, metrics.treble));
+        targetFreq = Math.min(1, Math.max(0, metrics.frequency));
       }
 
-      const spreadShift = Math.sin(elapsedSec * 0.25 + energy * Math.PI) * (14 + energy * 18);
+      // Envolventes asimétricas: ataque ágil pero musical, decaimiento sedoso sin parpadeos
+      smoothVol = envelopeSmooth(smoothVol, targetEnergy, active ? 0.18 : 0.05, 0.045);
+      smoothBass = envelopeSmooth(smoothBass, targetBass, active ? 0.2 : 0.05, 0.05);
+      smoothMid = envelopeSmooth(smoothMid, targetMid, active ? 0.16 : 0.05, 0.045);
+      smoothTreble = envelopeSmooth(smoothTreble, targetTreble, active ? 0.18 : 0.05, 0.045);
+      smoothFreq = envelopeSmooth(smoothFreq, targetFreq, 0.1, 0.04);
+
+      const audioHueShift = active
+        ? (smoothFreq * 240 + smoothTreble * 55 + smoothMid * 35) % 360
+        : (Math.sin(elapsedSec * 0.14) * 24 +
+            Math.cos((elapsedSec * 0.14) / PHI) * 16 +
+            elapsedSec * 2.2 +
+            360) %
+          360;
+
+      const targetHue1 =
+        (currentBaseHue + audioHueShift + (active ? Math.sin(elapsedSec * 0.3) * 12 : 0) + 360) % 360;
+
+      const spreadShift = Math.sin(elapsedSec * 0.24 + smoothVol * Math.PI) * (12 + smoothVol * 16);
       const targetHue2 = (targetHue1 + GOLDEN_ANGLE + spreadShift + 360) % 360;
       const targetHue3 = (targetHue1 + GOLDEN_ANGLE * PHI - spreadShift * 0.5 + 360) % 360;
 
       const prev = stateRef.current;
-      const smoothing = active ? 0.065 : 0.018;
-      const maxStep = active ? 2.2 : 0.45;
+      const smoothing = active ? 0.06 : 0.022;
+      const maxStep = active ? 1.85 : 0.45;
       const nextHue1 = lerpHue(prev.hue1, targetHue1, smoothing, maxStep);
       const nextHue2 = lerpHue(prev.hue2, targetHue2, smoothing * 0.92, maxStep * 0.92);
       const nextHue3 = lerpHue(prev.hue3, targetHue3, smoothing * 0.86, maxStep * 0.86);
-      const nextEnergy = prev.energy + (energy - prev.energy) * 0.14;
 
       const next: ChromaticState = {
         hue1: nextHue1,
         hue2: nextHue2,
         hue3: nextHue3,
-        energy: nextEnergy,
+        energy: smoothVol,
+        bass: smoothBass,
+        treble: smoothTreble,
       };
       stateRef.current = next;
 
